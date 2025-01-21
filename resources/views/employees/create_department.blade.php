@@ -1,12 +1,11 @@
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('modules.department.addTitle')</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('modules.department.addTitle') Test</h5>
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
 </div>
 <div class="modal-body">
 
     <x-form id="save-department-data-form">
         <div class="add-client bg-white rounded">
-
             <div class="row p-20">
                 <div class="col-md-6">
                     <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="team_name"
@@ -69,7 +68,7 @@
                     $('#employee_department').html(options);
                     $('#employee_department').selectpicker('refresh');
                     $(MODAL_LG).modal('hide');
-                    
+
                 }
             }
         })

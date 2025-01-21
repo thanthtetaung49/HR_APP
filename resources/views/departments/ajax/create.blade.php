@@ -11,12 +11,12 @@
                 <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.department.addTitle')</h4>
                 <div class="row p-20">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="team_name"
                             fieldRequired="true" :fieldPlaceholder="__('placeholders.department')">
                         </x-forms.text>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.parentId')" fieldName="parent_label">
                         </x-forms.label>
                         <x-forms.input-group>
@@ -25,6 +25,19 @@
                                 <option value="">--</option>
                                 @foreach($departments as $department)
                                     <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                                @endforeach
+                            </select>
+                        </x-forms.input-group>
+                    </div>
+                    <div class="col-md-4">
+                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.designation')" fieldName="designation_label">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker mt" name="designation_id[]" id="designation_id" multiple
+                                data-live-search="true">
+                                <option value="">--</option>
+                                @foreach($designations as $designation)
+                                    <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                                 @endforeach
                             </select>
                         </x-forms.input-group>
@@ -50,6 +63,8 @@
     });
 
     $('#save-department-form').click(function() {
+        // console.log($('#save-department-data-form').serialize());
+
         var url = "{{ route('departments.store') }}";
         $.easyAjax({
             url: url,
@@ -60,6 +75,8 @@
             blockUI: true,
             buttonSelector: "#save-category",
             success: function(response) {
+                // console.log(response);
+                // console.log("after success");
                 if (response.status == 'success') {
                     $('#employee_department').html(response.data);
                     $('#employee_department').selectpicker('refresh');

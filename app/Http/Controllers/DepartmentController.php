@@ -7,6 +7,7 @@ use App\Helper\Reply;
 use App\Models\Team;
 use App\Http\Requests\Team\StoreDepartment;
 use App\Http\Requests\Team\UpdateDepartment;
+use App\Models\Designation;
 use App\Models\EmployeeDetails;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -39,13 +40,14 @@ class DepartmentController extends AccountBaseController
 
         $this->departments = Team::with('childs')->get();
 
+
         return $dataTable->render('departments.index', $this->data);
     }
 
     public function create()
     {
         $this->departments = Team::allDepartments();
-
+        $this->designations = Designation::get();
         $this->view = 'departments.ajax.create';
 
         if (request()->model == true) {
@@ -66,7 +68,7 @@ class DepartmentController extends AccountBaseController
      */
     public function store(StoreDepartment $request)
     {
-
+        dd($request->all());
         $group = new Team();
         $group->team_name = $request->team_name;
         $group->parent_id = $request->parent_id;
@@ -80,7 +82,7 @@ class DepartmentController extends AccountBaseController
             $redirectUrl = route('departments.index');
         }
 
-        return Reply::successWithData(__('messages.recordSaved'), ['departments' => $this->departments, 'redirectUrl' => $redirectUrl]);
+        // return Reply::successWithData(__('messages.recordSaved'), ['departments' => $this->departments, 'redirectUrl' => $redirectUrl]);
     }
 
     public function show($id)
