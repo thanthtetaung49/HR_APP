@@ -11,6 +11,7 @@ return array(
     'password' => 'Must have at least 8 characters',
     'designation' => 'e.g. Team Lead',
     'department' => 'e.g. Human Resource',
+    'location' => 'e.g. Yangon',
     'date' => 'Select Date',
     'address' => 'e.g. 132, My Street, Kingston, New York 12401',
     'skills' => 'e.g. communication, ReactJS',

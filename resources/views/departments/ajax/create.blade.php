@@ -6,17 +6,19 @@
 
 <div class="row">
     <div class="col-sm-12">
-        <x-form id="save-department-data-form">
+        <x-form id="save-department-data-form" class="">
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.department.addTitle')</h4>
                 <div class="row p-20">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="team_name"
                             fieldRequired="true" :fieldPlaceholder="__('placeholders.department')">
                         </x-forms.text>
                     </div>
-                    <div class="col-md-4">
+
+
+                    <div class="col-md-3">
                         <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.parentId')" fieldName="parent_label">
                         </x-forms.label>
                         <x-forms.input-group>
@@ -29,7 +31,22 @@
                             </select>
                         </x-forms.input-group>
                     </div>
-                    <div class="col-md-4">
+
+                    <div class="col-md-3">
+                        <x-forms.label class="my-3" fieldId="location_id" :fieldLabel="__('app.location')" fieldName="location">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker mt" name="location" id="location_id" 
+                                data-live-search="true">
+                                <option value="">--</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->id }}">{{ $location->location_name }}</option>
+                                @endforeach
+                            </select>
+                        </x-forms.input-group>
+                    </div>
+
+                    <div class="col-md-3">
                         <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.designation')" fieldName="designation_label">
                         </x-forms.label>
                         <x-forms.input-group>
@@ -63,8 +80,6 @@
     });
 
     $('#save-department-form').click(function() {
-        // console.log($('#save-department-data-form').serialize());
-
         var url = "{{ route('departments.store') }}";
         $.easyAjax({
             url: url,
@@ -75,8 +90,6 @@
             blockUI: true,
             buttonSelector: "#save-category",
             success: function(response) {
-                // console.log(response);
-                // console.log("after success");
                 if (response.status == 'success') {
                     $('#employee_department').html(response.data);
                     $('#employee_department').selectpicker('refresh');

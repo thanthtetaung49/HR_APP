@@ -77,6 +77,11 @@
                                           icon="plus">
                         @lang('modules.department.addTitle')
                     </x-forms.link-primary>
+
+                    <x-forms.link-primary :link="route('location.create')" class="mr-3 float-left"
+                                          icon="plus">
+                        @lang('app.menu.location')
+                    </x-forms.link-primary>
                 @endif
             </div>
 

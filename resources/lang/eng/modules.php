@@ -1689,6 +1689,10 @@ return array(
         'searchValidation' => 'Type atleast 3 characters',
         'addTitle' => 'Add Department',
     ),
+    'location' => array(
+        'title' => 'Location',
+        'addTitle' => 'Add Location',
+    ),
     'offlinePayment' => array(
         'title' => 'Offline Payment Method',
         'method' => 'Method',

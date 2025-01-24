@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('teams', function (Blueprint $table) {
-            $table->json('designation_ids')->nullable()->after('parent_id');
+            $table->unsignedBigInteger('location_id')->nullable()->after('designation_ids');
+            $table->foreign('location_id')->references('id')->on('locations')->onDelete('cascade');
         });
     }
 
@@ -21,9 +22,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('teams', 'designation_id')) {
+        if (Schema::hasTable('teams') && Schema::hasColumn('teams', 'location_id')) {
             Schema::table('teams', function (Blueprint $table) {
-                $table->dropColumn('designation_id');
+                $table->dropForeign(['location_id']); // Drop foreign key
+                $table->dropColumn('location_id'); // Drop the column
             });
         }
     }

@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('teams', function (Blueprint $table) {
-            $table->json('designation_ids')->nullable()->after('parent_id');
+        Schema::create('locations', function (Blueprint $table) {
+            $table->id();
+            $table->string('location_name')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -21,10 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('teams', 'designation_id')) {
-            Schema::table('teams', function (Blueprint $table) {
-                $table->dropColumn('designation_id');
-            });
-        }
+        Schema::dropIfExists('locations');
     }
 };

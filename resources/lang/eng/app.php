@@ -146,6 +146,7 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'location' => 'Location',
         'units' => 'Units',
         'prefixSettings' => 'Prefix Settings',
         'parent_id' => 'Parent',
@@ -253,6 +254,7 @@ return array(
         'taxSettings' => 'Tax Settings',
         'credit-note' => 'Credit Note',
         'designation' => 'Designation',
+        'location' => 'Location',
         'help' => 'Help',
         'gdpr' => 'GDPR',
         'customers' => 'Customers',

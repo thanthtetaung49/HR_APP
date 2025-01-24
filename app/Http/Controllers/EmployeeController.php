@@ -1193,7 +1193,7 @@ class EmployeeController extends AccountBaseController
         if($rvalue == 'abort'){
             return Reply::error(__('messages.abortAction'));
         }
-        
+
         $view = view('employees.ajax.import_progress', $this->data)->render();
 
         return Reply::successWithData(__('messages.importUploadSuccess'), ['view' => $view]);

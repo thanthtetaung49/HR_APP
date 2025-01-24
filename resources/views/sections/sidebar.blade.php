@@ -71,7 +71,7 @@
                     </a>
                 </div>
 
-                @if (!in_array('client', user_roles()) && ($sidebarUserPermissions['add_employees'] == 4 || $sidebarUserPermissions['add_employees'] == 1) && in_array('employees', user_modules()))
+                @if (!in_array('client', user_roles()) && ($sidebarUserPermissions['add_employees'] == 4 || ['add_employees'] == 1) && in_array('employees', user_modules()))
                     <a class="dropdown-item d-flex justify-content-between align-items-center f-15 text-dark invite-member"
                         href="javascript:;">
                         <span>@lang('app.inviteMember') {{ $companyName }}</span>

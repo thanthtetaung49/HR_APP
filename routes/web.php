@@ -121,6 +121,8 @@ use App\Http\Controllers\LeadContactController;
 use App\Http\Controllers\NoticeFileController;
 use App\Http\Controllers\InvoicePaymentDetailController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\LocationController;
+
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('image/upload', [ImageController::class, 'store'])->name('image.store');
@@ -210,6 +212,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('designations/search-filter', [DesignationController::class, 'searchFilter'])->name('designation.srchFilter');
     Route::post('designations/apply-quick-action', [DesignationController::class, 'applyQuickAction'])->name('designations.apply_quick_action');
     Route::resource('designations', DesignationController::class);
+
+    Route::get('location/create', [LocationController::class, 'index'])->name('location.create');
+    Route::post('location/store', [LocationController::class, 'store'])->name('location.store');
 
     Route::post('departments/apply-quick-action', [DepartmentController::class, 'applyQuickAction'])->name('departments.apply_quick_action');
     Route::get('departments/department-hierarchy', [DepartmentController::class, 'hierarchyData'])->name('department.hierarchy');
