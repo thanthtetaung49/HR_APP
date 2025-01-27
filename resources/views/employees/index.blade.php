@@ -5,23 +5,49 @@
 @endpush
 
 @section('filter-section')
-
     <x-filters.filter-box>
         <!-- CLIENT START -->
         <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.employee')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="employee" id="employee" data-live-search="true"
-                        data-size="8">
+                <select class="form-control select-picker" name="employee" id="employee" data-live-search="true" data-size="8">
                     @if ($employees->count() > 1 || in_array('admin', user_roles()))
                         <option value="all">@lang('app.all')</option>
                     @endif
                     @foreach ($employees as $employee)
-                        <x-user-option :user="$employee"/>
+                        <x-user-option :user="$employee" />
                     @endforeach
                 </select>
             </div>
         </div>
+
+        <!-- LOCATION START -->
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location" id="location">
+                    <option value="all">@lang('app.all')</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->location_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+        <!-- LOCATION END -->
+
+        <!-- DEPARTMENT START -->
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.departments')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="department" id="department">
+                    <option value="all">@lang('app.all')</option>
+                    {{-- @foreach ($departments as $department)
+                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                    @endforeach --}}
+                </select>
+            </div>
+        </div>
+        <!-- DEPARTMENT END -->
 
         <!-- CLIENT END -->
 
@@ -31,9 +57,9 @@
             <div class="select-status">
                 <select class="form-control select-picker" name="designation" id="designation">
                     <option value="all">@lang('app.all')</option>
-                    @foreach ($designations as $designation)
+                    {{-- @foreach ($designations as $designation)
                         <option value="{{ $designation->id }}">{{ $designation->name }}</option>
-                    @endforeach
+                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -50,7 +76,7 @@
                         </span>
                     </div>
                     <input type="text" class="form-control f-14 p-1 border-additional-grey" id="search-text-field"
-                           placeholder="@lang('app.startTyping')">
+                        placeholder="@lang('app.startTyping')">
                 </div>
             </form>
         </div>
@@ -70,8 +96,7 @@
                 <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.department')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="department" data-container="body"
-                                id="department">
+                        <select class="form-control select-picker" name="department" data-container="body" id="department">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($departments as $department)
                                 <option value="{{ $department->id }}">{{ $department->team_name }}</option>
@@ -82,14 +107,13 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 "
-                       for="usr">@lang('modules.employees.role')</label>
+                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.employees.role')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
                         <select class="form-control select-picker" name="role" id="role" data-container="body">
                             <option value="all">@lang('app.all')</option>
                             @foreach ($roles as $role)
-                                    <option value="{{ $role->id }}">{{ $role->display_name }}</option>
+                                <option value="{{ $role->id }}">{{ $role->display_name }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -127,7 +151,8 @@
                 <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.employees.employmentType')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="employmentType" id="employmentType" data-container="body">
+                        <select class="form-control select-picker" name="employmentType" id="employmentType"
+                            data-container="body">
                             <option value="all">@lang('app.all')</option>
                             <option value="probation">@lang('app.onProbation')</option>
                             <option value="internship">@lang('app.onInternship')</option>
@@ -143,7 +168,6 @@
         </x-filters.more-filter-box>
         <!-- MORE FILTERS END -->
     </x-filters.filter-box>
-
 @endsection
 
 @php
@@ -171,7 +195,7 @@
 
                 @if ($addEmployeePermission == 'all')
                     <x-forms.link-secondary :link="route('employees.import')" class="mr-3 openRightModal mb-2 mb-lg-0 d-none d-lg-block"
-                                            icon="file-upload">
+                        icon="file-upload">
                         @lang('app.importExcel')
                     </x-forms.link-secondary>
                 @endif
@@ -204,35 +228,34 @@
         <!-- Task Box End -->
     </div>
     <!-- CONTENT WRAPPER END -->
-
 @endsection
 
 @push('scripts')
     @include('sections.datatable_js')
 
     <script>
-
         var startDate = null;
         var endDate = null;
         var lastStartDate = null;
         var lastEndDate = null;
 
-        @if(request('startDate') != '' && request('endDate') != '' )
-            startDate = '{{ request("startDate") }}';
-        endDate = '{{ request("endDate") }}';
+        @if (request('startDate') != '' && request('endDate') != '')
+            startDate = '{{ request('startDate') }}';
+            endDate = '{{ request('endDate') }}';
         @endif
 
-            @if(request('lastStartDate') !=='' && request('lastEndDate') !=='' )
-            lastStartDate = '{{ request("lastStartDate") }}';
-        lastEndDate = '{{ request("lastEndDate") }}';
+        @if (request('lastStartDate') !== '' && request('lastEndDate') !== '')
+            lastStartDate = '{{ request('lastStartDate') }}';
+            lastEndDate = '{{ request('lastEndDate') }}';
         @endif
 
-        $('#employees-table').on('preXhr.dt', function (e, settings, data) {
+        $('#employees-table').on('preXhr.dt', function(e, settings, data) {
             const status = $('#status').val();
             const employee = $('#employee').val();
             const role = $('#role').val();
             const gender = $('#gender').val();
             const skill = $('#skill').val();
+            const location = $("#location").val();
             const designation = $('#designation').val();
             const department = $('#department').val();
             const employmentType = $('#employmentType').val();
@@ -242,13 +265,15 @@
             data['role'] = role;
             data['gender'] = gender;
             data['skill'] = skill;
+            data['location'] = location;
             data['designation'] = designation;
             data['department'] = department;
             data['employmentType'] = employmentType;
             data['searchText'] = searchText;
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
-            if (status == "all" || employee == "all" || role == "all" || designation == "all" || searchText == "") {
+            if (status == "all" || employee == "all" || role == "all" || location == "all" || department == "all" ||
+                designation == "all" || searchText == "") {
                 data['startDate'] = startDate;
                 data['endDate'] = endDate;
                 data['lastStartDate'] = lastStartDate;
@@ -261,8 +286,87 @@
             window.LaravelDataTables["employees-table"].draw(true);
         }
 
-        $('#employee, #status, #role, #gender, #skill, #designation, #department, #employmentType').on('change keyup',
-            function () {
+        $("#location").on('change', function() {
+            let location_id = $(this).val();
+            let url = "{{ route('location.select') }}";
+
+            $("#department").html("");
+            $("#designation").html("");
+
+            $("#department").selectpicker('refresh');
+            $("#designation").selectpicker('refresh');
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': location_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    let teams = response.data;
+                    let html = `<option value="">--</option>`;
+
+                    teams.forEach((team) => {
+                        html += `
+                            <option value="${team.id}">${team.team_name}</option>
+                        `
+                    });
+
+                    $("#department").html(html);
+                    $("#department").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+            });
+
+            // $.ajax({
+            //     type: "POST",
+            //     url: "{{ route('location.filter') }}",
+            //     data: {
+            //         'id': location_id,
+            //         _token: "{{ csrf_token() }}"
+            //     },
+            //     success: function(response) {
+            //         console.log(response);
+            //     }
+            // });
+        });
+
+        $("#department").on('change', function() {
+            let department_id = $(this).val();
+            let url = "{{ route('department.select') }}";
+
+            $("#designation").html("");
+            $("#designation").selectpicker('refresh');
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': department_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    console.log(response.data);
+                    let designations = response.data;
+                    let html = `<option value="">--</option>`;
+
+                    designations.forEach((designation) => {
+                        html += `
+                            <option value="${designation.id}">${designation.name}</option>
+                        `
+                    });
+
+                    $("#designation").html(html);
+                    $("#designation").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+            });
+        });
+
+        $('#employee, #status, #role, #gender, #skill, #designation, #location, #department, #employmentType').on(
+            'change keyup',
+            function() {
                 if ($('#status').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#employee').val() != "all") {
@@ -275,7 +379,7 @@
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#department').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
-                }else if ($('#employmentType').val() != "all") {
+                } else if ($('#employmentType').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');
@@ -283,14 +387,14 @@
                 showTable();
             });
 
-        $('#search-text-field').on('keyup', function () {
+        $('#search-text-field').on('keyup', function() {
             if ($('#search-text-field').val() != "") {
                 $('#reset-filters').removeClass('d-none');
                 showTable();
             }
         });
 
-        $('#reset-filters, #reset-filters-2').click(function () {
+        $('#reset-filters, #reset-filters-2').click(function() {
             $('#filter-form')[0].reset();
             $('.filter-box .select-picker').selectpicker("refresh");
             $('#reset-filters').addClass('d-none');
@@ -298,7 +402,7 @@
         });
 
 
-        $('#quick-action-type').change(function () {
+        $('#quick-action-type').change(function() {
             const actionValue = $(this).val();
             if (actionValue != '') {
                 $('#quick-action-apply').removeAttr('disabled');
@@ -315,7 +419,7 @@
             }
         });
 
-        $('#quick-action-apply').click(function () {
+        $('#quick-action-apply').click(function() {
             const actionValue = $('#quick-action-type').val();
             if (actionValue == 'delete') {
                 Swal.fire({
@@ -346,7 +450,7 @@
             }
         });
 
-        $('body').on('click', '.delete-table-row', function () {
+        $('body').on('click', '.delete-table-row', function() {
             var id = $(this).data('user-id');
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
@@ -380,7 +484,7 @@
                             '_token': token,
                             '_method': 'DELETE'
                         },
-                        success: function (response) {
+                        success: function(response) {
                             if (response.status == "success") {
                                 showTable();
                             }
@@ -391,7 +495,7 @@
         });
 
         const applyQuickAction = () => {
-            var rowdIds = $("#employees-table input:checkbox:checked").map(function () {
+            var rowdIds = $("#employees-table input:checkbox:checked").map(function() {
                 return $(this).val();
             }).get();
 
@@ -405,7 +509,7 @@
                 buttonSelector: "#quick-action-apply",
                 data: $('#quick-action-form').serialize(),
                 blockUI: true,
-                success: function (response) {
+                success: function(response) {
                     if (response.status == 'success') {
                         showTable();
                         resetActionButtons();
@@ -417,7 +521,7 @@
         };
 
 
-        $('body').on('change', '.assign_role', function () {
+        $('body').on('change', '.assign_role', function() {
             var id = $(this).data('user-id');
             var role = $(this).val();
             var token = "{{ csrf_token() }}";
@@ -433,7 +537,7 @@
                         userId: id,
                         _token: token
                     },
-                    success: function (response) {
+                    success: function(response) {
                         if (response.status == "success") {
                             window.LaravelDataTables["employees-table"].draw(true);
                         }
@@ -443,13 +547,13 @@
 
         });
 
-        $('#designation-setting').click(function () {
+        $('#designation-setting').click(function() {
             const url = "{{ route('designations.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         })
 
-        $('.department-setting').click(function () {
+        $('.department-setting').click(function() {
             const url = "{{ route('departments.create') }}";
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);

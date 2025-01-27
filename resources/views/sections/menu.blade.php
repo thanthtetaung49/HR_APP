@@ -88,6 +88,9 @@
                 @if (in_array('holidays', user_modules()) && $sidebarUserPermissions['view_holiday'] != 5 && $sidebarUserPermissions['view_holiday'] != 'none')
                     <x-sub-menu-item :link="route('holidays.index')" :text="__('app.menu.holiday')" />
                 @endif
+
+                <x-sub-menu-item :link="route('location.index')" :text="__('app.menu.location')" />
+
                 @if (isset($sidebarUserPermissions['view_designation']) && $sidebarUserPermissions['view_designation'] == 4 )
                     <x-sub-menu-item :link="route('designations.index')" :text="__('app.menu.designation')" />
                 @endif

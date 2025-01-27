@@ -1153,6 +1153,8 @@ return array(
     'openTasks' => 'Open Tasks',
     'totalLeads' => 'Total Leads',
     'departmentDetails' => 'Department Details',
+    'locationDetails' => 'Location Details',
+    'editLocation' => 'Edit Location',
     'newHierarchy' => 'New Hierarchy',
     'updateReply' => 'Update Reply',
     'inviteEmployee' => 'Invite Employee',

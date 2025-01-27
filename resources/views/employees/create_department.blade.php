@@ -1,33 +1,61 @@
 <div class="modal-header">
-    <h5 class="modal-title" id="modelHeading">@lang('modules.department.addTitle') Test</h5>
+    <h5 class="modal-title" id="modelHeading">@lang('modules.department.addTitle')</h5>
     <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
 </div>
 <div class="modal-body">
 
-    <x-form id="save-department-data-form">
+    <x-form id="save-department-data-form" class="">
         <div class="add-client bg-white rounded">
             <div class="row p-20">
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="team_name"
                         fieldRequired="true" :fieldPlaceholder="__('placeholders.department')">
                     </x-forms.text>
                 </div>
-                <div class="col-md-6">
-                    <x-forms.label class="mt-3" fieldId="parent_label" :fieldLabel="__('app.parentId')" fieldName="parent_label">
+
+
+                <div class="col-md-3">
+                    <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.parentId')" fieldName="parent_label">
                     </x-forms.label>
                     <x-forms.input-group>
                         <select class="form-control select-picker mt" name="parent_id" id="parent_id"
                             data-live-search="true">
                             <option value="">--</option>
-                            @foreach ($departments as $department)
+                            @foreach($departments as $department)
                                 <option value="{{ $department->id }}">{{ $department->team_name }}</option>
                             @endforeach
                         </select>
                     </x-forms.input-group>
                 </div>
+
+                <div class="col-md-3">
+                    <x-forms.label class="my-3" fieldId="location_id" :fieldLabel="__('app.location')" fieldName="location">
+                    </x-forms.label>
+                    <x-forms.input-group>
+                        <select class="form-control select-picker mt" name="location" id="location_id"
+                            data-live-search="true">
+                            <option value="">--</option>
+                            @foreach($locations as $location)
+                                <option value="{{ $location->id }}">{{ $location->location_name }}</option>
+                            @endforeach
+                        </select>
+                    </x-forms.input-group>
+                </div>
+
+                <div class="col-md-3">
+                    <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.designation')" fieldName="designation_label">
+                    </x-forms.label>
+                    <x-forms.input-group>
+                        <select class="form-control select-picker mt" name="designation_id[]" id="designation_id" multiple
+                            data-live-search="true">
+                            <option value="">--</option>
+                            @foreach($designations as $designation)
+                                <option value="{{ $designation->id }}">{{ $designation->name }}</option>
+                            @endforeach
+                        </select>
+                    </x-forms.input-group>
+                </div>
             </div>
-
-
         </div>
     </x-form>
 

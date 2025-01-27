@@ -1,0 +1,42 @@
+@extends('layouts.app')
+
+@section('content')
+
+<style>
+    .mt{
+        margin-top: -4px;
+    }
+</style>
+
+<div class="row p-20">
+    <div class="col-sm-12">
+        <x-form action="{{ route('location.store') }}" method="POST">
+            @csrf
+            <div class="add-client bg-white rounded">
+                <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
+                    @lang('modules.location.addTitle')</h4>
+                <div class="row p-20">
+                    <div class="col-md-3">
+                        <x-forms.text fieldId="location" :fieldLabel="__('app.menu.location')" fieldName="location"
+                            fieldRequired="true" :fieldPlaceholder="__('placeholders.location')">
+                        </x-forms.text>
+
+                        @error('location')
+                            <span class="text-danger">{{ $message }}</span>
+                        @enderror
+                    </div>
+                </div>
+
+                <x-form-actions >
+                    <button type="submit" class="mr-3 btn-primary rounded f-14 p-2">
+                        <i class="fa fa-check mr-1"></i>@lang('app.save')
+                    </button>
+                    <x-forms.button-cancel :link="route('departments.index')" class="border-0">@lang('app.cancel')
+                    </x-forms.button-cancel>
+                </x-form-actions>
+            </div>
+        </x-form>
+    </div>
+</div>
+@endsection
+

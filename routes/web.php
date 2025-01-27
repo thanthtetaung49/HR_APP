@@ -196,6 +196,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('employees/create-link', [EmployeeController::class, 'createLink'])->name('employees.create_link');
     Route::post('/get-exit-date-message', [EmployeeController::class, 'getExitDateMessage'])->name('getExitDateMessage');
     Route::resource('employees', EmployeeController::class);
+    // select location and department
+    Route::post('location/select', [EmployeeController::class, 'selectLocation'])->name('location.select');
+    Route::post('department/select', [EmployeeController::class, 'selectDepartment'])->name('department.select');
+    Route::post('location/filter', [EmployeeController::class, 'filter'])->name('location.filter');
+
     Route::resource('passport', PassportController::class);
     Route::resource('employee-visa', EmployeeVisaController::class);
 
@@ -213,8 +218,15 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('designations/apply-quick-action', [DesignationController::class, 'applyQuickAction'])->name('designations.apply_quick_action');
     Route::resource('designations', DesignationController::class);
 
-    Route::get('location/create', [LocationController::class, 'index'])->name('location.create');
+    Route::get('location', [LocationController::class, 'index'])->name('location.index');
+    Route::get('location/create', [LocationController::class, 'create'])->name('location.create');
     Route::post('location/store', [LocationController::class, 'store'])->name('location.store');
+    Route::post('location/ajax/store', [LocationController::class, 'ajaxStore'])->name('location.ajax.store');
+    Route::get('location/show/{id}', [LocationController::class, 'show'])->name('location.show');
+    Route::get('location/edit/{id}', [LocationController::class, 'edit'])->name('location.edit');
+    Route::post('location/update/{id}', [LocationController::class, 'update'])->name('location.update');
+    Route::delete('location/delete/{id}', [LocationController::class, 'delete'])->name('location.delete');
+
 
     Route::post('departments/apply-quick-action', [DepartmentController::class, 'applyQuickAction'])->name('departments.apply_quick_action');
     Route::get('departments/department-hierarchy', [DepartmentController::class, 'hierarchyData'])->name('department.hierarchy');

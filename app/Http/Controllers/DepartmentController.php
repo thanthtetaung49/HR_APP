@@ -75,6 +75,7 @@ class DepartmentController extends AccountBaseController
         $group->team_name = $request->team_name;
         $group->parent_id = $request->parent_id;
         $group->designation_ids = json_encode($request->designation_id);
+        $group->location_id = $request->location;
         $group->save();
 
         $this->departments = Team::allDepartments();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Location;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -66,6 +67,10 @@ class Team extends BaseModel
     public function childs(): HasMany
     {
         return $this->hasMany(Team::class, 'parent_id');
+    }
+
+    public function locations() {
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
 }
