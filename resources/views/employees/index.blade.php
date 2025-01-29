@@ -41,15 +41,11 @@
             <div class="select-status">
                 <select class="form-control select-picker" name="department" id="department">
                     <option value="all">@lang('app.all')</option>
-                    {{-- @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
-                    @endforeach --}}
+                    {{-- department display here --}}
                 </select>
             </div>
         </div>
         <!-- DEPARTMENT END -->
-
-        <!-- CLIENT END -->
 
         <!-- DESIGNATION START -->
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
@@ -57,9 +53,7 @@
             <div class="select-status">
                 <select class="form-control select-picker" name="designation" id="designation">
                     <option value="all">@lang('app.all')</option>
-                    {{-- @foreach ($designations as $designation)
-                        <option value="{{ $designation->id }}">{{ $designation->name }}</option>
-                    @endforeach --}}
+                    {{-- designation display here  --}}
                 </select>
             </div>
         </div>
@@ -272,7 +266,7 @@
             data['searchText'] = searchText;
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
-            if (status == "all" || employee == "all" || role == "all" || location == "all" || department == "all" ||
+            if (status == "all" || employee == "all" || role == "all" || location == "all" || designation == "all" || department == "all" ||
                 designation == "all" || searchText == "") {
                 data['startDate'] = startDate;
                 data['endDate'] = endDate;
@@ -317,19 +311,8 @@
                     $("#department").html(html);
                     $("#department").selectpicker('refresh'); // refresh the bootstrap select ui
                 }
-            });
 
-            // $.ajax({
-            //     type: "POST",
-            //     url: "{{ route('location.filter') }}",
-            //     data: {
-            //         'id': location_id,
-            //         _token: "{{ csrf_token() }}"
-            //     },
-            //     success: function(response) {
-            //         console.log(response);
-            //     }
-            // });
+            });
         });
 
         $("#department").on('change', function() {

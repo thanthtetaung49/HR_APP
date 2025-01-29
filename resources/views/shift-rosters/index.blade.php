@@ -7,6 +7,7 @@
         .table h5 {
             font-size: 12px;
         }
+
         .shift-request-change-count {
             left: 28px;
             top: -9px !important;
@@ -20,18 +21,21 @@
             padding: 1rem 0.25rem !important;
         }
 
-        #week-end-date, #week-start-date {
+        #week-end-date,
+        #week-start-date {
             z-index: 0;
         }
 
-        #attendance-data .form-control:focus, .form-control:hover {
+        #attendance-data .form-control:focus,
+        .form-control:hover {
             border-color: #e9ecef;
         }
-</style>
+    </style>
 
     @if ($manageEmployeeShifts != 'all')
         <style>
-            .change-shift, .change-shift-week {
+            .change-shift,
+            .change-shift-week {
                 cursor: unset !important;
             }
         </style>
@@ -43,32 +47,56 @@
         <div class="select-box d-flex py-2 pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.employee')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="user_id" id="user_id" data-live-search="true"
-                        data-size="8">
+                <select class="form-control select-picker" name="user_id" id="user_id" data-live-search="true" data-size="8">
                     @if ($employees->count() > 1 || in_array('admin', user_roles()))
                         <option value="all">@lang('app.all')</option>
                     @endif
                     @forelse ($employees as $item)
-                        <x-user-option :user="$item" :selected="request('employee_id') == $item->id"/>
+                        <x-user-option :user="$item" :selected="request('employee_id') == $item->id" />
                     @empty
-                        <x-user-option :user="user()"/>
+                        <x-user-option :user="user()" />
                     @endforelse
                 </select>
             </div>
         </div>
 
+        <!-- LOCATION START -->
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.department')</p>
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="department" id="department" data-live-search="true"
-                    data-size="8">
+                <select class="form-control select-picker" name="location" id="location">
                     <option value="all">@lang('app.all')</option>
-                    @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->location_name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
+        <!-- LOCATION END -->
+
+        <!-- DEPARTMENT START -->
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.departments')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="department" id="department">
+                    <option value="all">@lang('app.all')</option>
+                    {{-- department display here --}}
+                </select>
+            </div>
+        </div>
+        <!-- DEPARTMENT END -->
+
+        <!-- DESIGNATION START -->
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.designation')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="designation" id="designation">
+                    <option value="all">@lang('app.all')</option>
+                    {{-- location display here --}}
+                </select>
+            </div>
+        </div>
+        <!-- DESIGNATION END -->
 
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
             <div class="select-status">
@@ -82,7 +110,8 @@
 
         <input type="hidden" name="month" id="month" value="{{ $month }}">
         <input type="hidden" name="year" id="year" value="{{ $year }}">
-        <input type="hidden" name="week_start_date" id="week_start_date" value="{{ now(company()->timezone)->toDateString() }}">
+        <input type="hidden" name="week_start_date" id="week_start_date"
+            value="{{ now(company()->timezone)->toDateString() }}">
 
         <!-- RESET START -->
         <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
@@ -102,8 +131,7 @@
         <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($manageEmployeeShifts == 'all')
-                    <x-forms.link-primary :link="route('shifts.create')" class="mr-3 openRightModal float-left"
-                    icon="plus">
+                    <x-forms.link-primary :link="route('shifts.create')" class="mr-3 openRightModal float-left" icon="plus">
                         @lang('modules.attendance.bulkShiftAssign')
                     </x-forms.link-primary>
                 @endif
@@ -119,8 +147,7 @@
                     data-original-title="@lang('app.summary')"><i class="side-icon bi bi-list-ul"></i></a>
                 @if ($manageEmployeeShifts == 'all')
                     <a href="{{ route('shifts-change.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
-                        data-original-title="@lang('modules.attendance.shiftChangeRequests')"><i
-                            class="side-icon bi bi-hourglass-split"></i>
+                        data-original-title="@lang('modules.attendance.shiftChangeRequests')"><i class="side-icon bi bi-hourglass-split"></i>
                         @if ($employeeShiftChangeRequest->request_count > 0)
                             <span
                                 class="badge badge-primary shift-request-change-count position-absolute">{{ $employeeShiftChangeRequest->request_count }}</span>
@@ -131,6 +158,7 @@
             </div>
 
         </div>
+
 
         <!-- Task Box Start -->
         <x-cards.data class="mt-3">
@@ -147,11 +175,17 @@
     <script>
         var manageEmployeeShiftPermission = "{{ $manageEmployeeShifts }}";
 
-        $('#user_id, #department, #view_type').on('change', function() {
+        $('#user_id, #location, #department, #designation, #view_type').on('change', function() {
             if ($('#user_id').val() != "all") {
                 $('#reset-filters').removeClass('d-none');
                 showTable();
+            } else if ($('#location').val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+                showTable();
             } else if ($('#department').val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+                showTable();
+            } else if ($('#designation').val() != "all") {
                 $('#reset-filters').removeClass('d-none');
                 showTable();
             } else {
@@ -193,6 +227,77 @@
             showTable();
         });
 
+        $("#location").on('change', function() {
+            let location_id = $(this).val();
+            let url = "{{ route('location.select') }}";
+
+            $("#department").html("");
+            $("#designation").html("");
+
+            $("#department").selectpicker('refresh');
+            $("#designation").selectpicker('refresh');
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': location_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    let teams = response.data;
+                    let html = `<option value="">--</option>`;
+
+                    teams.forEach((team) => {
+                        html += `
+                            <option value="${team.id}">${team.team_name}</option>
+                        `
+                    });
+
+                    $("#department").html(html);
+                    $("#department").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+
+            });
+
+            showTable();
+        });
+
+        $("#department").on('change', function() {
+            let department_id = $(this).val();
+            let url = "{{ route('department.select') }}";
+
+            $("#designation").html("");
+            $("#designation").selectpicker('refresh');
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': department_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    console.log(response.data);
+                    let designations = response.data;
+                    let html = `<option value="">--</option>`;
+
+                    designations.forEach((designation) => {
+                        html += `
+                            <option value="${designation.id}">${designation.name}</option>
+                        `
+                    });
+
+                    $("#designation").html(html);
+                    $("#designation").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+            });
+
+            showTable();
+        });
+
         function showTable(loading = true) {
 
             var year = $('#year').val();
@@ -200,7 +305,9 @@
             var weekStartDate = $('#week_start_date').val();
 
             var userId = $('#user_id').val();
+            var location = $("#location").val();
             var department = $('#department').val();
+            var designation = $('#designation').val();
             var viewType = $('#view_type').val();
 
             //refresh counts
@@ -213,7 +320,9 @@
                     '_token': token,
                     year: year,
                     month: month,
+                    location: location,
                     department: department,
+                    designation: designation,
                     userId: userId,
                     view_type: viewType,
                     week_start_date: weekStartDate,
@@ -290,7 +399,8 @@
 
                 var url =
                     "{{ route('shifts.export_all', [':year', ':month', ':userId', ':department', ':startDate', ':viewType']) }}";
-                url = url.replace(':year', year).replace(':month', month).replace(':userId', userId).replace(':department', department).replace(':startDate', startDate).replace(':viewType', viewType);
+                url = url.replace(':year', year).replace(':month', month).replace(':userId', userId).replace(
+                    ':department', department).replace(':startDate', startDate).replace(':viewType', viewType);
                 window.location.href = url;
 
             });

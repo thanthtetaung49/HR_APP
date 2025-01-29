@@ -247,17 +247,17 @@ class EmployeesDataTable extends BaseDataTable
             $userRoles = Role::findOrFail($request->role);
         }
 
-        $users = $model->with([
+       $users = User::with([
             'role',
             'roles:name,display_name',
             'roles.roleuser',
             'employeeDetail' => function ($query) {
-                $query->select('notice_period_end_date', 'internship_end_date', 'employment_type', 'probation_end_date', 'user_id', 'added_by', 'designation_id', 'employee_id', 'joining_date', 'reporting_to')
+                $query->select('notice_period_end_date', 'internship_end_date', 'employment_type', 'probation_end_date', 'user_id', 'added_by', 'designation_id', 'employee_id', 'joining_date', 'reporting_to', 'department_id')
                     ->with('reportingTo:id,name,image');
             },
             'session',
             'employeeDetail.designation:id,name',
-            'employeeDetail.department:id,team_name',
+            'employeeDetail.department:id,team_name,location_id',
         ])
             ->withoutGlobalScope(ActiveScope::class)
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
@@ -290,7 +290,8 @@ class EmployeesDataTable extends BaseDataTable
                     ELSE "active"
                     END as status')
             ])
-            ->groupBy('users.id')->whereHas('roles', function ($query) {
+            ->groupBy('users.id', 'teams.team_name')
+            ->whereHas('roles', function ($query) {
                 $query->where('name', 'employee');
             });
 
@@ -416,6 +417,13 @@ class EmployeesDataTable extends BaseDataTable
             }
         }
 
+        $location_id = $request->location;
+
+        if ($location_id != 'all') {
+            $users = $users->whereHas('employeeDetails.department', function ($query) use ($location_id) {
+                $query->where('location_id', $location_id);
+            });
+        }
 
         return $users->groupBy('users.id');
     }
@@ -452,7 +460,6 @@ class EmployeesDataTable extends BaseDataTable
      */
     protected function getColumns()
     {
-
         $data = [
             'check' => [
                 'title' => '<input type="checkbox" name="select_all_table" id="select-all-table" onclick="selectAllTable(this)">',

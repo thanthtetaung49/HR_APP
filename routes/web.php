@@ -199,7 +199,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     // select location and department
     Route::post('location/select', [EmployeeController::class, 'selectLocation'])->name('location.select');
     Route::post('department/select', [EmployeeController::class, 'selectDepartment'])->name('department.select');
-    Route::post('location/filter', [EmployeeController::class, 'filter'])->name('location.filter');
 
     Route::resource('passport', PassportController::class);
     Route::resource('employee-visa', EmployeeVisaController::class);

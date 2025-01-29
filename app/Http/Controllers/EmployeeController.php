@@ -1218,23 +1218,4 @@ class EmployeeController extends AccountBaseController
 
         return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
     }
-
-    public function filter(Request $request)
-    {
-        $location_id = $request->id;
-
-        $employees = User::allEmployees();
-        // $this->skills = Skill::all();
-        // $this->locations = Location::all();
-        // $this->departments = Team::all();
-        // $this->designations = Designation::allDesignations();
-        // $this->totalEmployees = count($this->employees);
-        // $this->roles = Role::where('name', '<>', 'client')->orderBy('id')->get();
-
-        // $this->employees = User::whereHas('employeeDetails.department', function ($query) use ($location_id) {
-        //     $query->where('location_id', $location_id);
-        // })->with(['employeeDetails.department'])->get();
-
-        return response()->json([$employees]);
-    }
 }

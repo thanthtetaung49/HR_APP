@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\BulkShiftEvent;
-use App\Exports\ShiftScheduleExport;
-use App\Helper\Files;
-use App\Helper\Reply;
-use App\Http\Requests\EmployeeShift\StoreBulkShift;
-use App\Models\AttendanceSetting;
-use App\Models\EmailNotificationSetting;
-use App\Models\EmployeeShift;
-use App\Models\EmployeeShiftChangeRequest;
-use App\Models\EmployeeShiftSchedule;
-use App\Models\Holiday;
+use Carbon\Carbon;
 use App\Models\Team;
 use App\Models\User;
-use Carbon\Carbon;
+use App\Helper\Files;
+use App\Helper\Reply;
 use App\Models\Company;
+use App\Models\Holiday;
+use App\Models\Location;
 use Carbon\CarbonPeriod;
-use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Scopes\ActiveScope;
+use Illuminate\Http\Request;
+use App\Models\EmployeeShift;
+use App\Events\BulkShiftEvent;
+use App\Models\AttendanceSetting;
+use App\Exports\ShiftScheduleExport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Models\EmployeeShiftSchedule;
+use App\Models\EmailNotificationSetting;
+use App\Models\EmployeeShiftChangeRequest;
+use App\Http\Requests\EmployeeShift\StoreBulkShift;
 
 class EmployeeShiftScheduleController extends AccountBaseController
 {
@@ -47,7 +48,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
             if (request()->view_type == 'week') {
                 return $this->weekSummaryData($request);
             }
-
             return $this->summaryData($request);
         }
 
@@ -55,7 +55,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
         if ($this->viewShiftPermission == 'owned') {
             $this->employees = User::where('id', user()->id)->get();
-
         }
         else {
             $this->employees = User::allEmployees(null, false, ($this->viewShiftPermission == 'all' ? 'all' : null));
@@ -65,6 +64,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $this->year = $now->format('Y');
         $this->month = $now->format('m');
         $this->departments = Team::all();
+        $this->locations = Location::all();
 
         return view('shift-rosters.index', $this->data);
     }
@@ -390,7 +390,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $this->leaveType = $leaveType;
         $this->shiftColorCode = $shiftColorCode;
         $this->weekMap = Holiday::weekMap('D');
-
+        
         $view = view('shift-rosters.ajax.week_summary_data', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'data' => $view]);
