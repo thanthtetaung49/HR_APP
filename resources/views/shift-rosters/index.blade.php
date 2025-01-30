@@ -65,7 +65,7 @@
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
             <div class="select-status">
                 <select class="form-control select-picker" name="location" id="location">
-                    <option value="all">@lang('app.all')</option>
+                    <option value="all" selected>@lang('app.all')</option>
                     @foreach ($locations as $location)
                         <option value="{{ $location->id }}">{{ $location->location_name }}</option>
                     @endforeach
@@ -229,13 +229,28 @@
 
         $("#location").on('change', function() {
             let location_id = $(this).val();
+            let designation_id = $("#designation").val();
+            let department_id = $("#department").val();
+
+            let department_html = `<option value="all">--</option>`;
+            let designation_html = `<option value="all">--</option>`;
+
             let url = "{{ route('location.select') }}";
 
-            $("#department").html("");
-            $("#designation").html("");
+            if (department_id != "all" && designation_id != "all") {
+                $("#department").html(department_html);
+                $("#department").selectpicker('refresh');
 
-            $("#department").selectpicker('refresh');
-            $("#designation").selectpicker('refresh');
+                $("#designation").html(designation_html);
+                $("#designation").selectpicker('refresh');
+
+            } else if (designation_id != "all") {
+                $("#designation").html(designation_html);
+                $("#designation").selectpicker('refresh');
+            } else {
+                $("#department").html(department_html);
+                $("#department").selectpicker('refresh');
+            }
 
 
             $.ajax({
@@ -247,7 +262,7 @@
                 },
                 success: function(response) {
                     let teams = response.data;
-                    let html = `<option value="">--</option>`;
+                    let html = department_html;
 
                     teams.forEach((team) => {
                         html += `
@@ -261,16 +276,21 @@
 
             });
 
-            showTable();
         });
 
         $("#department").on('change', function() {
             let department_id = $(this).val();
+            let location_id = $("#location").val();
+            let designation_id = $("#designation").val();
+
             let url = "{{ route('department.select') }}";
 
-            $("#designation").html("");
-            $("#designation").selectpicker('refresh');
+            let designation_html = `<option value="all">--</option>`;
 
+            if (designation_id != "all") {
+                $("#designation").html(designation_html);
+                $("#designation").selectpicker('refresh');
+            }
 
             $.ajax({
                 type: "POST",
@@ -280,9 +300,8 @@
                     _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
-                    console.log(response.data);
                     let designations = response.data;
-                    let html = `<option value="">--</option>`;
+                    let html = designation_html;
 
                     designations.forEach((designation) => {
                         html += `
@@ -294,8 +313,6 @@
                     $("#designation").selectpicker('refresh'); // refresh the bootstrap select ui
                 }
             });
-
-            showTable();
         });
 
         function showTable(loading = true) {
@@ -331,6 +348,7 @@
                 blockUI: loading,
                 container: '.content-wrapper',
                 success: function(response) {
+                    // console.log(response.data);
                     $('#attendance-data').html(response.data);
                     $('#attendance-data #change-year').selectpicker("refresh");
                     $('#attendance-data #change-month').selectpicker("refresh");

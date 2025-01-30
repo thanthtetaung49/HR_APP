@@ -7,19 +7,24 @@ use App\Models\Team;
 use App\Models\User;
 use App\Helper\Reply;
 use App\Models\Leave;
+use App\Models\Company;
 use App\Models\Holiday;
+use App\Models\Location;
 use Carbon\CarbonPeriod;
 use App\Models\Attendance;
+use App\Models\LogTimeFor;
 use Carbon\CarbonInterval;
 use App\Models\Designation;
+use App\Scopes\ActiveScope;
 use App\Traits\ImportExcel;
-use App\Traits\EmployeeDashboard;
 use Illuminate\Http\Request;
+use App\Models\EmployeeShift;
 use App\Models\CompanyAddress;
 use App\Exports\AttendanceExport;
 use App\Imports\AttendanceImport;
 use App\Jobs\ImportAttendanceJob;
 use App\Models\AttendanceSetting;
+use App\Traits\EmployeeDashboard;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
@@ -30,10 +35,6 @@ use App\Http\Requests\Attendance\StoreAttendance;
 use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Attendance\StoreBulkAttendance;
 use App\Http\Requests\Admin\Employee\ImportProcessRequest;
-use App\Models\Company;
-use App\Models\LogTimeFor;
-use App\Models\EmployeeShift;
-use App\Scopes\ActiveScope;
 
 class AttendanceController extends AccountBaseController
 {
@@ -86,6 +87,7 @@ class AttendanceController extends AccountBaseController
         $this->month = $now->format('m');
         $this->departments = Team::all();
         $this->designations = Designation::all();
+        $this->locations = Location::all();
 
         return view('attendances.index', $this->data);
     }
@@ -96,6 +98,7 @@ class AttendanceController extends AccountBaseController
         $employees = User::with(
             [
                 'employeeDetail.designation:id,name',
+                'employeeDetail.department:id,team_name,location_id',
                 'attendance' => function ($query) use ($request) {
                     $startOfMonth = Carbon::createFromDate($request->year, $request->month, 1)->startOfMonth();
                     $officestartTimeDB = Carbon::createFromFormat('Y-m-d H:i:s', $startOfMonth, company()->timezone);
@@ -144,12 +147,26 @@ class AttendanceController extends AccountBaseController
             })
             ->groupBy('users.id');
 
-        if ($request->department != 'all') {
-            $employees = $employees->where('employee_details.department_id', $request->department);
+        $location_id = $request->location;
+        $department_id = $request->department;
+
+        if ($department_id != 'all' && is_null($department_id)) {
+            $employees = $employees->where('employee_details.department_id', $department_id);
+            $department_id = null;
+            dd('department');
         }
 
         if ($request->designation != 'all') {
+            dd('designation');
             $employees = $employees->where('employee_details.designation_id', $request->designation);
+        }
+
+        if ($location_id != 'all' && is_null($location_id)) {
+            $employees = $employees->whereHas('employeeDetail.department', function ($query) use ($location_id) {
+                $query->where('location_id', $location_id);
+            });
+            $location_id = null;
+            dd('location');
         }
 
         if ($request->userId != 'all') {

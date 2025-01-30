@@ -55,8 +55,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
         if ($this->viewShiftPermission == 'owned') {
             $this->employees = User::where('id', user()->id)->get();
-        }
-        else {
+        } else {
             $this->employees = User::allEmployees(null, false, ($this->viewShiftPermission == 'all' ? 'all' : null));
         }
 
@@ -78,6 +77,8 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
         $employees = User::with(
             [
+                'employeeDetail.designation:id,name',
+                'employeeDetail.department:id,team_name,location_id',
                 'shifts' => function ($query) {
                     $query->whereRaw('MONTH(employee_shift_schedules.date) = ?', [$this->month])
                         ->whereRaw('YEAR(employee_shift_schedules.date) = ?', [$this->year]);
@@ -92,26 +93,33 @@ class EmployeeShiftScheduleController extends AccountBaseController
         )->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
-            ->select('users.inactive_date','users.id', 'users.name','users.status', 'users.email', 'users.created_at', 'employee_details.department_id', 'users.image')
+            ->select('users.inactive_date', 'users.id', 'users.name', 'users.status', 'users.email', 'users.created_at', 'employee_details.department_id', 'users.image')
             ->onlyEmployee()
             ->withoutGlobalScope(ActiveScope::class)
             ->where(function ($query) {
                 // $query->whereNull('users.inactive_date')
-                $query->where('users.status','active')
-                      ->orWhere(function ($subQuery) {
-                          $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$this->year])
-                                ->whereRaw('MONTH(users.inactive_date) >= ?', [$this->month]);
-                      });
+                $query->where('users.status', 'active')
+                    ->orWhere(function ($subQuery) {
+                        $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$this->year])
+                            ->whereRaw('MONTH(users.inactive_date) >= ?', [$this->month]);
+                    });
             })
             ->groupBy('users.id');
+
+        $location_id = $request->location;
 
         if ($request->department != 'all') {
             $employees = $employees->where('employee_details.department_id', $request->department);
         }
 
+        if ($request->designation != 'all') {
+            $employees = $employees->where('employee_details.designation_id', $request->designation);
+        }
 
-        if ($request->userId != 'all') {
-            $employees = $employees->where('users.id', $request->userId);
+        if ($request->location != 'all') {
+            $employees = $employees->whereHas('employeeDetail.department', function ($query) use ($location_id) {
+                $query->where('location_id', $location_id);
+            });
         }
 
         $employees = $employees->get();
@@ -130,7 +138,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         foreach ($employees as $employee) {
             $isActive = '';
 
-            if($employee->status == 'deactive'){
+            if ($employee->status == 'deactive') {
                 $isActive = 'no';
                 $deactiveEmp[] = $employee->id;
             }
@@ -143,12 +151,10 @@ class EmployeeShiftScheduleController extends AccountBaseController
                 $dateTofill = ((int)$this->daysInMonth - (int)$now->copy()->format('d'));
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), (($dateTofill < 0) ? 0 : $dateTofill), 'EMPTY');
                 $shiftColorCode = array_fill(1, ((int)$this->daysInMonth), $this->attendanceSetting->color);
-            }
-            else if ($requestedDate->isPast() && ((int)$this->daysInMonth - (int)$now->copy()->format('d')) < 0) {
+            } else if ($requestedDate->isPast() && ((int)$this->daysInMonth - (int)$now->copy()->format('d')) < 0) {
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), 0, 'EMPTY');
                 $shiftColorCode = array_fill(1, ((int)$this->daysInMonth), $this->attendanceSetting->color);
-            }
-            else {
+            } else {
                 $dateTofill = ((int)$this->daysInMonth - (int)$now->copy()->format('d'));
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), (($dateTofill < 0) ? 0 : $dateTofill), 'EMPTY');
                 $shiftColorCode = array_fill(1, ((int)$this->daysInMonth), $this->attendanceSetting->color);
@@ -158,15 +164,12 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
             foreach ($employee->shifts as $shift) {
                 if ($shift->shift->shift_name == 'Day Off') {
-                    $final[$employee->id . '#' . $employee->name][Carbon::parse($shift->date)->day] = '<button type="button" class="change-shift'.$isActive.' badge badge-light border f-10 p-1" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $shift->date->day . '"  data-toggle="tooltip" data-original-title="' . __('modules.attendance.dayOff') . '" style="background-color: #E8EEF3">' . $shift->shift->shift_short_code . '</button>';
+                    $final[$employee->id . '#' . $employee->name][Carbon::parse($shift->date)->day] = '<button type="button" class="change-shift' . $isActive . ' badge badge-light border f-10 p-1" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $shift->date->day . '"  data-toggle="tooltip" data-original-title="' . __('modules.attendance.dayOff') . '" style="background-color: #E8EEF3">' . $shift->shift->shift_short_code . '</button>';
                     $shiftColorCode[Carbon::parse($shift->date)->day] = $shift->color;
-
-                }
-                else {
-                    $final[$employee->id . '#' . $employee->name][Carbon::parse($shift->date)->day] = '<button type="button" class="change-shift'.$isActive.' badge badge-info f-10 p-1" style="background-color: ' . $shift->shift->color . '" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $shift->date->day . '"  data-toggle="tooltip" data-original-title="' . $shift->shift->shift_name . '">' . $shift->shift->shift_short_code . '</button>';
+                } else {
+                    $final[$employee->id . '#' . $employee->name][Carbon::parse($shift->date)->day] = '<button type="button" class="change-shift' . $isActive . ' badge badge-info f-10 p-1" style="background-color: ' . $shift->shift->color . '" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $shift->date->day . '"  data-toggle="tooltip" data-original-title="' . $shift->shift->shift_name . '">' . $shift->shift->shift_short_code . '</button>';
                     $shiftColorCode[Carbon::parse($shift->date)->day] = $shift->color;
                 }
-
             }
 
             $employeeName = view('components.employee', [
@@ -180,8 +183,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
                     if ($employee->employeeDetail->joining_date->format('d') == '01') {
                         $dataBeforeJoin = array_fill(1, $employee->employeeDetail->joining_date->format('d'), '-');
                         $shiftColorCode = array_fill(1, $employee->employeeDetail->joining_date->format('d'), '');
-                    }
-                    else {
+                    } else {
                         $dataBeforeJoin = array_fill(1, $employee->employeeDetail->joining_date->subDay()->format('d'), '-');
                     }
                 }
@@ -249,39 +251,65 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $employees = User::with(
             [
                 'employeeDetail.designation:id,name',
+                'employeeDetail.department:id,team_name,location_id',
                 'shifts' => function ($query) {
                     $query->wherebetween('employee_shift_schedules.date', [$this->weekStartDate->toDateString(), $this->weekEndDate->toDateString()]);
                 },
                 'leaves' => function ($query) {
                     $query->wherebetween('leaves.leave_date', [$this->weekStartDate->toDateString(), $this->weekEndDate->toDateString()])
                         ->where('status', 'approved');
-                }, 'shifts.shift', 'leaves.type']
+                },
+                'shifts.shift',
+                'leaves.type'
+            ]
         )->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
-            ->select('users.id', 'users.name', 'users.inactive_date','users.status','users.email', 'users.created_at', 'employee_details.department_id', 'users.image')
+            ->select('users.id', 'users.name', 'users.inactive_date', 'users.status', 'users.email', 'users.created_at', 'employee_details.department_id', 'users.image')
             ->withoutGlobalScope(ActiveScope::class)
             ->where(function ($query) use ($request) {
                 // $query->whereNull('users.inactive_date')
-                $query->where('users.status','active')
-                      ->orWhere(function ($subQuery) use ($request) {
-                          $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$request->year])
-                                ->whereRaw('MONTH(users.inactive_date) >= ?', [$this->weekStartDate->month])
-                                ->orWhereRaw('MONTH(users.inactive_date) >= ?', [$this->weekEndDate->month]);
-                            });
-                        })
-            ->onlyEmployee()->groupBy('users.id');
+                $query->where('users.status', 'active')
+                    ->orWhere(function ($subQuery) use ($request) {
+                        $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$request->year])
+                            ->whereRaw('MONTH(users.inactive_date) >= ?', [$this->weekStartDate->month])
+                            ->orWhereRaw('MONTH(users.inactive_date) >= ?', [$this->weekEndDate->month]);
+                    });
+            })
+            ->onlyEmployee()
+            ->groupBy('users.id');
 
-        if ($request->department != 'all') {
-            $employees = $employees->where('employee_details.department_id', $request->department);
-        }
+        $location_id = $request->location;
+        $department_id = $request->department;
+        $user_id = $request->userId;
+        $designation_id = $request->designation;
 
+        $employees = $employees->where(function ($query) use ($user_id, $location_id, $department_id, $designation_id) {
+            if ($user_id != 'all') {
+                $query->where('users.id', $user_id);
+            }
 
-        if ($request->userId != 'all') {
-            $employees = $employees->where('users.id', $request->userId);
-        }
+            if ($location_id !== "all") {
+                $query->whereHas('employeeDetail.department', function ($subQuery) use ($location_id) {
+                    $subQuery->where('location_id', $location_id);
+                });
+            }
+
+            if ($department_id !== "all" && !is_null($department_id)) {
+                $query->whereHas('employeeDetail', function ($subQuery) use ($department_id) {
+                    $subQuery->where('department_id', $department_id);
+                });
+            }
+
+            if ($designation_id !== "all" && !is_null($designation_id)) {
+                $query->whereHas('employeeDetail', function ($subQuery) use ($designation_id) {
+                    $subQuery->where('designation_id', $designation_id);
+                });
+            }
+        });
 
         $employees = $employees->get();
+
 
         $this->holidays = Holiday::whereBetween('holidays.date', [$this->weekStartDate->toDateString(), $this->weekEndDate->toDateString()])->get();
 
@@ -299,7 +327,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
             $dataBeforeJoin = null;
             $isActive = '';
 
-            if($employee->status == 'deactive'){
+            if ($employee->status == 'deactive') {
                 $isActive = 'no';
                 $deactiveEmp[] = $employee->id;
             }
@@ -312,18 +340,15 @@ class EmployeeShiftScheduleController extends AccountBaseController
                 $dateString = Carbon::parse($shift->date)->toDateString();
 
                 if ($shift->shift->shift_name == 'Day Off') {
-                    $final[$employee->id . '#' . $employee->name][$dateString] = '<button type="button" class="change-shift-week'.$isActive.' badge as badge-light f-10 p-1 border f-12 py-4 w-100" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $dateString . '" style="background-color: #E8EEF3"><div>' . __('modules.attendance.dayOff') . '<div></button>';
+                    $final[$employee->id . '#' . $employee->name][$dateString] = '<button type="button" class="change-shift-week' . $isActive . ' badge as badge-light f-10 p-1 border f-12 py-4 w-100" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $dateString . '" style="background-color: #E8EEF3"><div>' . __('modules.attendance.dayOff') . '<div></button>';
                     $shiftColorCode[$dateString] = $shift->color;
-
                 } else {
-                    $final[$employee->id . '#' . $employee->name][$dateString] = '<button type="button" class="change-shift-week'.$isActive.' badge ass badge-info text-left f-12 py-3 px-2 w-100" style="background-color: ' . $shift->shift->color . '" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $dateString . '"><div>' . $shift->shift->shift_name . '<div>';
+                    $final[$employee->id . '#' . $employee->name][$dateString] = '<button type="button" class="change-shift-week' . $isActive . ' badge ass badge-info text-left f-12 py-3 px-2 w-100" style="background-color: ' . $shift->shift->color . '" data-user-id="' . $shift->user_id . '" data-attendance-date="' . $dateString . '"><div>' . $shift->shift->shift_name . '<div>';
 
-                    if ($shift->shift->shift_type == 'strict')
-                    {
+                    if ($shift->shift->shift_type == 'strict') {
                         $final[$employee->id . '#' . $employee->name][$dateString] .= '<div class="mt-2 f-10">' . Carbon::parse($shift->shift->office_start_time)->format('H:i') . ' - ' . Carbon::parse($shift->shift->office_end_time)->format('H:i') . '</div>';
-
                     } else {
-                        $final[$employee->id . '#' . $employee->name][$dateString] .= '<div class="mt-2 f-10">' . $shift->shift->flexible_total_hours.' '.__('app.hrs') . '</div>';
+                        $final[$employee->id . '#' . $employee->name][$dateString] .= '<div class="mt-2 f-10">' . $shift->shift->flexible_total_hours . ' ' . __('app.hrs') . '</div>';
                     }
 
                     $final[$employee->id . '#' . $employee->name][$dateString] .= '</button>';
@@ -343,8 +368,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
                 foreach ($this->weekPeriod->toArray() as $date) {
                     $final[$employee->id . '#' . $employee->name][$date->toDateString()] = '-';
                 }
-            }
-            elseif ($joiningDate->greaterThan($this->weekStartDate) && $joiningDate->lessThan($this->weekEndDate)) {
+            } elseif ($joiningDate->greaterThan($this->weekStartDate) && $joiningDate->lessThan($this->weekEndDate)) {
                 foreach ($this->weekPeriod->toArray() as $date) {
                     if ($date->lessThan($joiningDate)) {
                         $final[$employee->id . '#' . $employee->name][$date->toDateString()] = '-';
@@ -381,7 +405,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
                     }
                 }
             }
-
         }
 
         $this->employeeAttendence = $final;
@@ -390,7 +413,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $this->leaveType = $leaveType;
         $this->shiftColorCode = $shiftColorCode;
         $this->weekMap = Holiday::weekMap('D');
-        
+
         $view = view('shift-rosters.ajax.week_summary_data', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'data' => $view]);
@@ -459,8 +482,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
             $now = Carbon::parse($startDate, company()->timezone);
             $startDate = $now->copy()->startOfWeek(attendance_setting()->week_start_from);
             $endDate = $startDate->copy()->addDays(6);
-        }
-        else {
+        } else {
             $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
             $endDate = $startDate->copy()->endOfMonth()->endOfDay();
         }
@@ -503,7 +525,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
             }
 
             return $eventData;
-
         }
     }
 
@@ -528,7 +549,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
         }
 
         return view('attendances.create', $this->data);
-
     }
 
     public function bulkShift(StoreBulkShift $request)
@@ -548,12 +568,32 @@ class EmployeeShiftScheduleController extends AccountBaseController
         // Function to convert full month names to abbreviations
         $convertMonthToAbbreviation = function ($dateString) {
             $fullMonths = [
-                'January', 'February', 'March', 'April', 'May', 'June',
-                'July', 'August', 'September', 'October', 'November', 'December'
+                'January',
+                'February',
+                'March',
+                'April',
+                'May',
+                'June',
+                'July',
+                'August',
+                'September',
+                'October',
+                'November',
+                'December'
             ];
             $abbreviatedMonths = [
-                'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+                'Jan',
+                'Feb',
+                'Mar',
+                'Apr',
+                'May',
+                'Jun',
+                'Jul',
+                'Aug',
+                'Sep',
+                'Oct',
+                'Nov',
+                'Dec'
             ];
 
             return str_replace($fullMonths, $abbreviatedMonths, $dateString);
@@ -564,8 +604,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
             $endDate = $startDate->copy()->endOfMonth();
 
             $multiDates = CarbonPeriod::create($startDate, $endDate);
-        }
-        else if ($request->assign_shift_by == 'date') {
+        } else if ($request->assign_shift_by == 'date') {
             $singleDate = Carbon::createFromFormat(company()->date_format, $request->single_date);
         } else {
             $dates = explode(',', $request->multi_date);
@@ -583,8 +622,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
             foreach ($dateRange as $dateData) {
                 $period[] = Carbon::parse($dateData);
             }
-        }
-        else {
+        } else {
             $period[] = Carbon::parse($singleDate);
         }
 
@@ -635,7 +673,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
                     continue;
                 }
 
-                if($officeOpenDays) {
+                if ($officeOpenDays) {
                     if (!in_array($date->dayOfWeek, $officeOpenDays)) {
                         $invalidShiftDays = true;
                         continue;
@@ -644,8 +682,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
                 if ($request->assign_shift_by != 'date') {
                     $this->bulkData($request, $date, $userData, $userId, $insertData, $officeOpenDays);
-                }
-                else {
+                } else {
                     $this->bulkData($request, $singleDate, $userData, $userId, $insertData, $officeOpenDays);
                 }
             }
@@ -700,5 +737,4 @@ class EmployeeShiftScheduleController extends AccountBaseController
             }
         }
     }
-
 }

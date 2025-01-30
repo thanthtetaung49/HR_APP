@@ -419,7 +419,7 @@ class EmployeesDataTable extends BaseDataTable
 
         $location_id = $request->location;
 
-        if ($location_id != 'all') {
+        if ($location_id != 'all' && $location_id != '') {
             $users = $users->whereHas('employeeDetails.department', function ($query) use ($location_id) {
                 $query->where('location_id', $location_id);
             });
