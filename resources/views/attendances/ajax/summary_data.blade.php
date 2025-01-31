@@ -62,7 +62,7 @@ $addAttendancePermission = user()->permission('add_attendance');
                                     @endphp
                                 @endif
 
-                                {!! $day !!}
+                                {!! $day !!} 
                             @endif
                         </td>
                     @endif

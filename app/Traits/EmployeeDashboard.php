@@ -50,7 +50,7 @@ trait EmployeeDashboard
         $completedTaskColumn = TaskboardColumn::completeColumn();
         $showClockIn = attendance_setting();
         $this->attendanceSettings = $this->attendanceShift($showClockIn);
-        
+
         $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $this->attendanceSettings->office_start_time;
 
         $endTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time;
@@ -308,7 +308,7 @@ trait EmployeeDashboard
             $this->cannotLogin = true;
         }
 
-        
+
 
         $currentDate = now(company()->timezone)->format('Y-m-d');
 
@@ -688,6 +688,8 @@ trait EmployeeDashboard
     {
         $now = now($this->company->timezone);
 
+        dd($now);
+
         $showClockIn = AttendanceSetting::first();
 
         $this->attendanceSettings = $this->attendanceShift($showClockIn);
@@ -926,6 +928,8 @@ trait EmployeeDashboard
             else {
                 $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time;
             }
+
+        // dd($attendance);
 
             $attendance->save();
 

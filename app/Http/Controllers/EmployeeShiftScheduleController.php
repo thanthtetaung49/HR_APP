@@ -107,19 +107,25 @@ class EmployeeShiftScheduleController extends AccountBaseController
             ->groupBy('users.id');
 
         $location_id = $request->location;
+        $department_id = $request->department;
+        $designation_id = $request->designation;
 
-        if ($request->department != 'all') {
-            $employees = $employees->where('employee_details.department_id', $request->department);
+        if ($department_id != 'all') {
+            $employees = $employees->where('employee_details.department_id', $department_id);
         }
 
-        if ($request->designation != 'all') {
-            $employees = $employees->where('employee_details.designation_id', $request->designation);
+        if ($designation_id != 'all') {
+            $employees = $employees->where('employee_details.designation_id', $designation_id);
         }
 
-        if ($request->location != 'all') {
+        if ($location_id != 'all') {
             $employees = $employees->whereHas('employeeDetail.department', function ($query) use ($location_id) {
                 $query->where('location_id', $location_id);
             });
+        }
+
+        if ($request->userId != 'all') {
+            $employees = $employees->where('users.id', $request->userId);
         }
 
         $employees = $employees->get();
@@ -281,32 +287,25 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
         $location_id = $request->location;
         $department_id = $request->department;
-        $user_id = $request->userId;
         $designation_id = $request->designation;
 
-        $employees = $employees->where(function ($query) use ($user_id, $location_id, $department_id, $designation_id) {
-            if ($user_id != 'all') {
-                $query->where('users.id', $user_id);
-            }
+        if ($department_id != 'all') {
+            $employees = $employees->where('employee_details.department_id', $department_id);
+        }
 
-            if ($location_id !== "all") {
-                $query->whereHas('employeeDetail.department', function ($subQuery) use ($location_id) {
-                    $subQuery->where('location_id', $location_id);
-                });
-            }
+        if ($designation_id != 'all') {
+            $employees = $employees->where('employee_details.designation_id', $designation_id);
+        }
 
-            if ($department_id !== "all" && !is_null($department_id)) {
-                $query->whereHas('employeeDetail', function ($subQuery) use ($department_id) {
-                    $subQuery->where('department_id', $department_id);
-                });
-            }
+        if ($location_id != 'all') {
+            $employees = $employees->whereHas('employeeDetail.department', function ($query) use ($location_id) {
+                $query->where('location_id', $location_id);
+            });
+        }
 
-            if ($designation_id !== "all" && !is_null($designation_id)) {
-                $query->whereHas('employeeDetail', function ($subQuery) use ($designation_id) {
-                    $subQuery->where('designation_id', $designation_id);
-                });
-            }
-        });
+        if ($request->userId != 'all') {
+            $employees = $employees->where('users.id', $request->userId);
+        }
 
         $employees = $employees->get();
 

@@ -167,7 +167,7 @@
 
 
                 @endphp
-            
+
                 @if (in_array('attendance', user_modules()))
                     @if (is_null($currentClockIn) && $checkJoiningDate == true || (is_null($currentClockIn) && $flagbtn == false))
                         <button type="button" class="btn-primary rounded f-15 ml-4" id="clock-in"

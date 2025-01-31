@@ -240,21 +240,31 @@
 
             let url = "{{ route('location.select') }}";
 
+            // location and department has value
             if (department_id != "all" && designation_id != "all") {
                 $("#department").html(department_html);
+                $("#department").val('all');
                 $("#department").selectpicker('refresh');
 
                 $("#designation").html(designation_html);
+                $("#designation").val('all');
                 $("#designation").selectpicker('refresh');
 
-            } else if (designation_id != "all") {
+                showTable();
+
+            } else if (designation_id != "all") { // designation has value
                 $("#designation").html(designation_html);
+                $("#designation").val('all');
                 $("#designation").selectpicker('refresh');
-            } else {
+
+                showTable();
+            } else { // location has value
                 $("#department").html(department_html);
+                $("#department").val('all');
                 $("#department").selectpicker('refresh');
-            }
 
+                showTable();
+            }
 
             $.ajax({
                 type: "POST",
@@ -292,7 +302,10 @@
 
             if (designation_id != "all") {
                 $("#designation").html(designation_html);
+                $("#designation").val('all');
                 $("#designation").selectpicker('refresh');
+
+                showTable();
             }
 
             $.ajax({

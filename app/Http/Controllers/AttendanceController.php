@@ -149,24 +149,20 @@ class AttendanceController extends AccountBaseController
 
         $location_id = $request->location;
         $department_id = $request->department;
+        $designation_id = $request->designation;
 
-        if ($department_id != 'all' && is_null($department_id)) {
+        if ($department_id != 'all') {
             $employees = $employees->where('employee_details.department_id', $department_id);
-            $department_id = null;
-            dd('department');
         }
 
-        if ($request->designation != 'all') {
-            dd('designation');
-            $employees = $employees->where('employee_details.designation_id', $request->designation);
+        if ($designation_id != 'all') {
+            $employees = $employees->where('employee_details.designation_id', $designation_id);
         }
 
-        if ($location_id != 'all' && is_null($location_id)) {
+        if ($location_id != 'all') {
             $employees = $employees->whereHas('employeeDetail.department', function ($query) use ($location_id) {
                 $query->where('location_id', $location_id);
             });
-            $location_id = null;
-            dd('location');
         }
 
         if ($request->userId != 'all') {
@@ -353,6 +349,7 @@ class AttendanceController extends AccountBaseController
         }
 
         $this->employeeAttendence = $final;
+        // dd($this->employeeAttendence);
         $this->holidayOccasions = $holidayOccasions;
         $this->leaveReasons = $leaveReasons;
 
