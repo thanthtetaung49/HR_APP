@@ -56,6 +56,7 @@
                 file: true,
                 data: $('#import-attendance-data-form').serialize(),
                 success: function (response) {
+                    console.log(response);
                     if (response.status === 'success') {
                         $('#import_table').html(response.view);
                     }

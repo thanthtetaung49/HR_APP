@@ -4,7 +4,7 @@ $addAttendancePermission = user()->permission('add_attendance');
 <div class="table-responsive">
     <x-table class="table-bordered mt-3 table-hover" headType="thead-light">
         <x-slot name="thead">
-            <th class="px-2" style="vertical-align: middle;">@lang('app.employee')</th>
+            <th class="px-2" style="vertical-align: middle;">@lang('app.employee') erwwerew</th>
             @for ($i = 1; $i <= $daysInMonth; $i++)
             <th class="pr-2 pl-1 f-11">{{ $i }}
                 <br>
@@ -62,7 +62,7 @@ $addAttendancePermission = user()->permission('add_attendance');
                                     @endphp
                                 @endif
 
-                                {!! $day !!} 
+                                {!! $day !!}
                             @endif
                         </td>
                     @endif

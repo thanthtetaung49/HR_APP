@@ -65,8 +65,7 @@ class AttendanceController extends AccountBaseController
                 || ($this->viewAttendancePermission == 'added' && $attendance->added_by == user()->id)
                 || ($this->viewAttendancePermission == 'owned' && $attendance->user_id == user()->id)
                 || ($this->viewAttendancePermission == 'both' && ($attendance->added_by == user()->id || $attendance->user_id == user()->id))));
-        }
-        else {
+        } else {
             abort_403(!in_array($this->viewAttendancePermission, ['all', 'added', 'owned', 'both']));
         }
 
@@ -76,9 +75,7 @@ class AttendanceController extends AccountBaseController
 
         if ($this->viewAttendancePermission == 'owned') {
             $this->employees = User::where('id', user()->id)->get();
-
-        }
-        else {
+        } else {
             $this->employees = User::allEmployees(null, false, ($this->viewAttendancePermission == 'all' ? 'all' : null));
         }
 
@@ -111,13 +108,11 @@ class AttendanceController extends AccountBaseController
                     $query->whereBetween('attendances.clock_in_time', [$startOfMonth, $endOfMonth]);
 
                     // $query->orwhereRaw('MONTH(attendances.clock_in_time) = ?', [$request->month])
-                        // ->orwhereRaw('YEAR(attendances.clock_in_time) = ?', [$request->year]);
+                    // ->orwhereRaw('YEAR(attendances.clock_in_time) = ?', [$request->year]);
 
                     if ($this->viewAttendancePermission == 'added') {
                         $query->where('attendances.added_by', user()->id);
-
-                    }
-                    elseif ($this->viewAttendancePermission == 'owned') {
+                    } elseif ($this->viewAttendancePermission == 'owned') {
                         $query->where('attendances.user_id', user()->id);
                     }
                 },
@@ -130,20 +125,23 @@ class AttendanceController extends AccountBaseController
                     $query->whereRaw('MONTH(employee_shift_schedules.date) = ?', [$request->month])
                         ->whereRaw('YEAR(employee_shift_schedules.date) = ?', [$request->year]);
                 },
-                'leaves.type', 'shifts.shift', 'attendance.shift']
+                'leaves.type',
+                'shifts.shift',
+                'attendance.shift'
+            ]
         )->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
-            ->select('users.id', 'users.name','users.inactive_date', 'users.email', 'users.created_at', 'employee_details.department_id', 'employee_details.user_id', 'employee_details.added_by', 'users.image')
+            ->select('users.id', 'users.name', 'users.inactive_date', 'users.email', 'users.created_at', 'employee_details.department_id', 'employee_details.user_id', 'employee_details.added_by', 'users.image')
             ->onlyEmployee()
             ->withoutGlobalScope(ActiveScope::class)
             ->where(function ($query) use ($request) {
                 // $query->whereNull('users.inactive_date')
-                $query->where('users.status','active')
-                      ->orWhere(function ($subQuery) use ($request) {
-                          $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$request->year])
-                                ->whereRaw('MONTH(users.inactive_date) >= ?', [$request->month]);
-                      });
+                $query->where('users.status', 'active')
+                    ->orWhere(function ($subQuery) use ($request) {
+                        $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$request->year])
+                            ->whereRaw('MONTH(users.inactive_date) >= ?', [$request->month]);
+                    });
             })
             ->groupBy('users.id');
 
@@ -171,12 +169,10 @@ class AttendanceController extends AccountBaseController
 
         if ($viewEmployeePermission == 'owned') {
             $employees = $employees->where('users.id', user()->id);
-        }
-        elseif ($viewEmployeePermission == 'both') {
+        } elseif ($viewEmployeePermission == 'both') {
             $employees = $employees->where('employee_details.user_id', user()->id)
-                                ->orWhere('employee_details.added_by', user()->id);
-        }
-        elseif ($viewEmployeePermission == 'added') {
+                ->orWhere('employee_details.added_by', user()->id);
+        } elseif ($viewEmployeePermission == 'added') {
             $employees = $employees->where('employee_details.added_by', user()->id);
         }
 
@@ -202,16 +198,13 @@ class AttendanceController extends AccountBaseController
 
             if (($now->copy()->format('d') != $this->daysInMonth) && !$requestedDate->isPast()) {
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), (($daysTofill >= 0 ? $daysTofill : 0)), '-');
-            }
-            else {
+            } else {
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), (($daysTofill >= 0 ? $daysTofill : 0)), 'Absent');
             }
 
             if (!$requestedDate->isPast()) {
                 $final[$employee->id . '#' . $employee->name] = array_replace($dataTillToday, $dataFromTomorrow);
-
-            }
-            else {
+            } else {
                 $final[$employee->id . '#' . $employee->name] = array_replace($dataTillRequestedDate, $dataFromTomorrow);
             }
 
@@ -222,7 +215,6 @@ class AttendanceController extends AccountBaseController
                 if ($shifts->shift->shift_name == 'Day Off') {
                     $final[$employee->id . '#' . $employee->name][$shifts->date->day] = 'Day Off';
                 }
-
             }
 
             $firstAttendanceProcessed = [];
@@ -243,9 +235,7 @@ class AttendanceController extends AccountBaseController
                     $isWithinShift = $clockInTime->between($shiftStartTime, $shiftEndTime);
                     $isPreviousShift = $clockInTime->betweenIncluded($shiftStartTime->subDay(), $shiftEndTime->subDay());
                     $isAssignedShift = $attendance->employee_shift_id == $shift->id;
-
-                }
-                else {
+                } else {
                     $isWithinShift = $isPreviousShift = $isAssignedShift = false;
                 }
 
@@ -260,7 +250,6 @@ class AttendanceController extends AccountBaseController
                     // Apply "half day" or "late" logic only if it's the first attendance
                     $isHalfDay[$employee->id][$startOfDayKey] = $attendance->half_day == 'yes';
                     $isLate[$employee->id][$startOfDayKey] = $attendance->late == 'yes';
-
                 }
 
                 $iconClassKey = $isHalfDay[$employee->id][$startOfDayKey] ? 'star-half-alt text-red' : ($isLate[$employee->id][$startOfDayKey] ? 'exclamation-circle text-warning' : 'check text-success');
@@ -275,9 +264,7 @@ class AttendanceController extends AccountBaseController
                 if ($isWithinShift || $isAssignedShift || $isPreviousShift) {
                     $dayToAssign = $isPreviousShift ? $clockInTime->copy()->subDay()->day : $clockInTime->day;
                     $final[$employee->id . '#' . $employee->name][$dayToAssign] = $attendanceHtml;
-
-                }
-                else {
+                } else {
                     $final[$employee->id . '#' . $employee->name][$clockInTime->day] = $attendanceHtml;
                 }
             }
@@ -292,8 +279,7 @@ class AttendanceController extends AccountBaseController
                 if ($request->month == $employee->employeeDetail->joining_date->format('m') && $request->year == $employee->employeeDetail->joining_date->format('Y')) {
                     if ($employee->employeeDetail->joining_date->format('d') == '01') {
                         $dataBeforeJoin = array_fill(1, $employee->employeeDetail->joining_date->format('d'), '-');
-                    }
-                    else {
+                    } else {
                         $dataBeforeJoin = array_fill(1, $employee->employeeDetail->joining_date->subDay()->format('d'), '-');
                     }
                 }
@@ -316,12 +302,10 @@ class AttendanceController extends AccountBaseController
                     if ($final[$employee->id . '#' . $employee->name][$leave->leave_date->day] == '-' || $final[$employee->id . '#' . $employee->name][$leave->leave_date->day] == 'Absent') {
                         $final[$employee->id . '#' . $employee->name][$leave->leave_date->day] = 'Half Day';
                     }
-                }
-                else {
+                } else {
                     $final[$employee->id . '#' . $employee->name][$leave->leave_date->day] = 'Leave';
                     $leaveReasons[$employee->id][$leave->leave_date->day] = $leave->type->type_name . ': ' . $leave->reason;
                 }
-
             }
 
             foreach ($this->holidays as $holiday) {
@@ -336,8 +320,7 @@ class AttendanceController extends AccountBaseController
 
                 if (((in_array($departmentId, $holidayDepartment) || $holiday->department_id_json == null) &&
                     (in_array($designationId, $holidayDesignation) || $holiday->designation_id_json == null) &&
-                    (in_array($employmentType, $holidayEmploymentType) || $holiday->employment_type_json == null))
-                ) {
+                    (in_array($employmentType, $holidayEmploymentType) || $holiday->employment_type_json == null))) {
 
 
                     if ($final[$employee->id . '#' . $employee->name][$holiday->date->day] == 'Absent' || $final[$employee->id . '#' . $employee->name][$holiday->date->day] == '-') {
@@ -349,7 +332,6 @@ class AttendanceController extends AccountBaseController
         }
 
         $this->employeeAttendence = $final;
-        // dd($this->employeeAttendence);
         $this->holidayOccasions = $holidayOccasions;
         $this->leaveReasons = $leaveReasons;
 
@@ -379,17 +361,17 @@ class AttendanceController extends AccountBaseController
 
         if ($attendanceSettings) {
             $this->attendanceSettings = $attendanceSettings->shift;
-
         } else {
             $this->attendanceSettings = AttendanceSetting::first()->shift; // Do not get this from session here
         }
 
-        abort_403(!(
-            $viewPermission == 'all'
-            || ($viewPermission == 'added' && $attendance->added_by == user()->id)
-            || ($viewPermission == 'owned' && $attendance->user->id == user()->id)
-            || ($viewPermission == 'both' && ($attendance->added_by == user()->id || $attendance->user->id == user()->id))
-        )
+        abort_403(
+            !(
+                $viewPermission == 'all'
+                || ($viewPermission == 'added' && $attendance->added_by == user()->id)
+                || ($viewPermission == 'owned' && $attendance->user->id == user()->id)
+                || ($viewPermission == 'both' && ($attendance->added_by == user()->id || $attendance->user->id == user()->id))
+            )
         );
 
         $this->attendanceActivity = Attendance::userAttendanceByDate($attendance->clock_in_time, $attendance->clock_in_time, $attendance->user_id);
@@ -424,9 +406,7 @@ class AttendanceController extends AccountBaseController
 
             if (!is_null($this->lastClockOut->clock_out_time)) {
                 $this->endTime = Carbon::parse($this->lastClockOut->clock_out_time)->timezone($this->company->timezone);
-
-            }
-            elseif (($this->lastClockOut->clock_in_time->timezone($this->company->timezone)->format('Y-m-d') != now()->timezone($this->company->timezone)->format('Y-m-d')) && is_null($this->lastClockOut->clock_out_time)) { // When date changed like night shift
+            } elseif (($this->lastClockOut->clock_in_time->timezone($this->company->timezone)->format('Y-m-d') != now()->timezone($this->company->timezone)->format('Y-m-d')) && is_null($this->lastClockOut->clock_out_time)) { // When date changed like night shift
                 $this->endTime = Carbon::parse($this->startTime->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time, $this->company->timezone);
 
                 if ($this->startTime->gt($this->endTime)) {
@@ -434,9 +414,7 @@ class AttendanceController extends AccountBaseController
                 }
 
                 $this->notClockedOut = true;
-
-            }
-            else {
+            } else {
                 $this->endTime = $defaultEndTime;
 
                 if ($this->startTime->gt($this->endTime)) {
@@ -456,7 +434,6 @@ class AttendanceController extends AccountBaseController
         $this->attendance = $attendance;
 
         return view('attendances.ajax.show', $this->data);
-
     }
 
     public function edit($id)
@@ -469,9 +446,7 @@ class AttendanceController extends AccountBaseController
 
         if ($attendanceSettings) {
             $this->attendanceSettings = $attendanceSettings->shift;
-
-        }
-        else {
+        } else {
 
             $this->attendanceSettings = attendance_setting()->shift; // Do not get this from session here
         }
@@ -507,8 +482,7 @@ class AttendanceController extends AccountBaseController
             if ($clockIn->gt($clockOut) && !is_null($clockOut)) {
                 $clockOut = $clockOut->addDay();
             }
-        }
-        else {
+        } else {
             $clockOut = null;
         }
 
@@ -560,9 +534,7 @@ class AttendanceController extends AccountBaseController
 
         if ($attendanceSettings) {
             $this->attendanceSettings = $attendanceSettings->shift;
-
-        }
-        else {
+        } else {
             $this->attendanceSettings = attendance_setting()->shift; // Do not get this from session here
         }
 
@@ -591,9 +563,7 @@ class AttendanceController extends AccountBaseController
 
         if ($attendanceSettings) {
             $this->attendanceSettings = $attendanceSettings->shift;
-
-        }
-        else {
+        } else {
             $this->attendanceSettings = AttendanceSetting::first()->shift; // Do not get this from session here
         }
 
@@ -603,8 +573,7 @@ class AttendanceController extends AccountBaseController
             if ($clockIn->gt($clockOut) && !is_null($clockOut)) {
                 $clockOut = $clockOut->addDay();
             }
-        }
-        else {
+        } else {
             $clockOut = null;
         }
 
@@ -624,11 +593,10 @@ class AttendanceController extends AccountBaseController
 
         if ($this->attendanceSettings->shift_type == 'strict') {
             $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $request->user_id);
-
         } else {
             $clockInCount = Attendance::whereDate('clock_in_time', $officeStartTime->copy()->toDateString())
-            ->where('user_id', $request->user_id)
-            ->count();
+                ->where('user_id', $request->user_id)
+                ->count();
         }
 
         $employeeShiftId = $this->attendanceSettings->id;
@@ -637,15 +605,13 @@ class AttendanceController extends AccountBaseController
 
         if (Carbon::parse($this->attendanceSettings->office_start_time)->gt(Carbon::parse($this->attendanceSettings->office_end_time))) {
             $shiftEndTime = $clockIn->addDay()->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time;
-        }
-        else {
+        } else {
             $shiftEndTime = $clockIn->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time;
         }
 
         if ($attendance && $request->user_id) {
             return Reply::error(__('messages.attendanceMarked'));
-        }
-        else {
+        } else {
             $attendances = Attendance::where('user_id', $request->user_id)
                 ->whereBetween('clock_in_time', [$carbonDate->copy()->subDay(), $carbonDate->copy()->addDay()])
                 ->get();
@@ -680,8 +646,7 @@ class AttendanceController extends AccountBaseController
                 'half_day' => ($request->has('halfday')) ? 'yes' : 'no',
                 'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null
             ]);
-        }
-        else {
+        } else {
             $leave = Leave::where([
                 ['user_id', $request->user_id],
                 ['leave_date', $request->attendance_date]
@@ -712,8 +677,7 @@ class AttendanceController extends AccountBaseController
                     'half_day' => ($request->has('halfday')) ? 'yes' : 'no',
                     'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null
                 ]);
-            }
-            else {
+            } else {
                 return Reply::error(__('messages.maxClockin'));
             }
         }
@@ -734,9 +698,7 @@ class AttendanceController extends AccountBaseController
 
         if ($this->viewAttendancePermission == 'owned') {
             $this->employees = User::where('id', user()->id)->get();
-
-        }
-        else {
+        } else {
             $this->employees = User::allEmployees(null, false, ($this->viewAttendancePermission == 'all' ? 'all' : null));
         }
 
@@ -798,16 +760,13 @@ class AttendanceController extends AccountBaseController
                 if (($shiftSchedule && $attand->employee_shift_id == $shiftSchedule->shift->id) || is_null($shiftSchedule)) {
                     $ant[$clockInTime->copy()->toDateString()][] = $attand; // Set attendance Data indexed by similar date
 
-                }
-                elseif ($clockInTime->betweenIncluded($shiftStartTime, $shiftEndTime)) {
+                } elseif ($clockInTime->betweenIncluded($shiftStartTime, $shiftEndTime)) {
                     $ant[$clockInTime->copy()->toDateString()][] = $attand; // Set attendance Data indexed by similar date
 
-                }
-                elseif ($clockInTime->betweenIncluded($shiftStartTime->copy()->subDay(), $shiftEndTime->copy()->subDay())) {
+                } elseif ($clockInTime->betweenIncluded($shiftStartTime->copy()->subDay(), $shiftEndTime->copy()->subDay())) {
                     $ant[$clockInTime->copy()->subDay()->toDateString()][] = $attand; // Set attendance Data indexed by previous date
                 }
-            }
-            else {
+            } else {
                 $ant[$attand->clock_in_date][] = $attand; // Set attendance Data indexed by similar date
             }
         }
@@ -841,9 +800,7 @@ class AttendanceController extends AccountBaseController
                 if (array_key_exists($date->toDateString(), $leavesDates)) {
                     $dateWiseData[$date->toDateString()]['leave'] = $leavesDates[$date->toDateString()];
                 }
-
             }
-
         }
 
         if ($startDate->isPast() || $startDate->isToday()) {
@@ -927,7 +884,6 @@ class AttendanceController extends AccountBaseController
             if ($clockIn->gt($clockOut) && !is_null($clockOut)) {
                 $clockOut = $clockOut->addDay();
             }
-
         }
 
         $period = [];
@@ -935,10 +891,9 @@ class AttendanceController extends AccountBaseController
         if ($request->mark_attendance_by == 'month') {
             $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year, $this->company->timezone)->startOfMonth();
             $endDate = $startDate->copy()->endOfMonth();
-        }
-        else {
+        } else {
             $dates = explode(',', $request->multi_date);
-            if($this->company->date_format == 'd F, Y'){
+            if ($this->company->date_format == 'd F, Y') {
                 $data = preg_match_all('/\d{1,2}\s\w+,\s\d{4}/', $request->multi_date, $dates);
                 $dates = $dates[0];
             }
@@ -1024,7 +979,8 @@ class AttendanceController extends AccountBaseController
                     ->where(DB::raw('DATE(`clock_in_time`)'), $date->format('Y-m-d'))
                     ->first();
 
-                if (is_null($attendance)
+                if (
+                    is_null($attendance)
                     && $date->greaterThanOrEqualTo($userData->employeeDetail->joining_date)
                     && $date->lessThanOrEqualTo($currentDate)
                     && !$holiday
@@ -1124,14 +1080,13 @@ class AttendanceController extends AccountBaseController
                 }
             }
 
-             return reply::dataOnly($this->data);
-        }
-        else {
+            return reply::dataOnly($this->data);
+        } else {
             $leave = Leave::where([
                 ['user_id', $request->user_id],
                 ['leave_date', $request->attendance_date]
             ])->where('status', '!=', 'rejected')
-            ->whereIn('duration', ['half day', 'single', 'multiple'])->first();
+                ->whereIn('duration', ['half day', 'single', 'multiple'])->first();
 
             if (isset($leave)) {
 
@@ -1154,15 +1109,14 @@ class AttendanceController extends AccountBaseController
                 $this->requestedFullDay = $fullDay;
 
                 $this->user = $leave->user->name;
-
             }
 
             return reply::dataOnly($this->data);
         }
-
     }
 
-    public function halfDayShiftCheck($leave, $shiftFound, $userShifts = null) {
+    public function halfDayShiftCheck($leave, $shiftFound, $userShifts = null)
+    {
 
         if ($shiftFound) {
             foreach ($userShifts as $userShift) {
@@ -1172,15 +1126,12 @@ class AttendanceController extends AccountBaseController
                 $currentTimeCarbon = Carbon::createFromFormat('H:i:s', $currentTime, $this->company->timezone);
 
                 if ($leave->half_day_type == 'first_half') {
-                    $halfDayDurationEnded = ($currentTimeCarbon->greaterThan($halfMarkTime)) ? 'yes' : 'no' ;
-
+                    $halfDayDurationEnded = ($currentTimeCarbon->greaterThan($halfMarkTime)) ? 'yes' : 'no';
                 } elseif ($leave->half_day_type == 'second_half') {
-                    $halfDayDurationEnded = ($currentTimeCarbon->lessThan($halfMarkTime)) ? 'yes' : 'no' ;
-
+                    $halfDayDurationEnded = ($currentTimeCarbon->lessThan($halfMarkTime)) ? 'yes' : 'no';
                 }
             }
-
-        }else{
+        } else {
             $attendanceSetting = AttendanceSetting::first();
             $defaultShiftId = $attendanceSetting->default_employee_shift;
             $defaultShift = EmployeeShift::findOrFail($defaultShiftId);
@@ -1190,9 +1141,9 @@ class AttendanceController extends AccountBaseController
             $currentTimeCarbon = Carbon::createFromFormat('H:i:s', $currentTime, $this->company->timezone);
 
             if ($leave->half_day_type == 'first_half') {
-                $halfDayDurationEnded = ($currentTimeCarbon->greaterThan($halfMarkTime)) ? 'yes' : 'no' ;
+                $halfDayDurationEnded = ($currentTimeCarbon->greaterThan($halfMarkTime)) ? 'yes' : 'no';
             } elseif ($leave->half_day_type == 'second_half' && $currentTimeCarbon->lessThan($halfMarkTime)) {
-                $halfDayDurationEnded = ($currentTimeCarbon->lessThan($halfMarkTime)) ? 'yes' : 'no' ;
+                $halfDayDurationEnded = ($currentTimeCarbon->lessThan($halfMarkTime)) ? 'yes' : 'no';
             }
         }
 
@@ -1234,7 +1185,7 @@ class AttendanceController extends AccountBaseController
     {
         $rvalue = $this->importFileProcess($request, AttendanceImport::class);
 
-        if($rvalue == 'abort'){
+        if ($rvalue == 'abort') {
             return Reply::error(__('messages.abortAction'));
         }
 
@@ -1288,21 +1239,18 @@ class AttendanceController extends AccountBaseController
 
         if ($this->viewAttendancePermission == 'owned') {
             $this->employees = $users->where(function ($query) {
-                                    $query->where('employee_details.user_id', user()->id);
-                                })->get();
-        }
-        elseif ($this->viewAttendancePermission == 'added') {
+                $query->where('employee_details.user_id', user()->id);
+            })->get();
+        } elseif ($this->viewAttendancePermission == 'added') {
             $this->employees = $users->where(function ($query) {
-                                        $query->where('employee_details.added_by', user()->id);
-                                    })->get();
-        }
-        elseif ($this->viewAttendancePermission == 'both') {
+                $query->where('employee_details.added_by', user()->id);
+            })->get();
+        } elseif ($this->viewAttendancePermission == 'both') {
             $this->employees = $users->where(function ($query) {
-                                    $query->where('employee_details.user_id', user()->id)
-                                        ->orWhere('employee_details.added_by', user()->id);
-                                    })->get();
-        }
-        elseif ($this->viewAttendancePermission == 'all') {
+                $query->where('employee_details.user_id', user()->id)
+                    ->orWhere('employee_details.added_by', user()->id);
+            })->get();
+        } elseif ($this->viewAttendancePermission == 'all') {
             $this->employees = User::allEmployees(null, false, ($this->viewAttendancePermission == 'all' ? 'all' : null));
         }
 
@@ -1326,9 +1274,7 @@ class AttendanceController extends AccountBaseController
 
                     if ($this->viewAttendancePermission == 'added') {
                         $query->where('attendances.added_by', user()->id);
-
-                    }
-                    elseif ($this->viewAttendancePermission == 'owned') {
+                    } elseif ($this->viewAttendancePermission == 'owned') {
                         $query->where('attendances.user_id', user()->id);
                     }
                 },
@@ -1341,18 +1287,20 @@ class AttendanceController extends AccountBaseController
                     $query->whereRaw('MONTH(employee_shift_schedules.date) = ?', [$request->month])
                         ->whereRaw('YEAR(employee_shift_schedules.date) = ?', [$request->year]);
                 },
-                'leaves.type', 'shifts.shift']
+                'leaves.type',
+                'shifts.shift'
+            ]
         )->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
-            ->select('users.id', 'users.name','users.inactive_date', 'users.email', 'users.created_at', 'employee_details.department_id', 'users.image')
+            ->select('users.id', 'users.name', 'users.inactive_date', 'users.email', 'users.created_at', 'employee_details.department_id', 'users.image')
             ->onlyEmployee()->withoutGlobalScope(ActiveScope::class)
             ->where(function ($query) use ($request) {
                 $query->whereNull('users.inactive_date')
-                      ->orWhere(function ($subQuery) use ($request) {
-                          $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$request->year])
-                                ->whereRaw('MONTH(users.inactive_date) >= ?', [$request->month]);
-                      });
+                    ->orWhere(function ($subQuery) use ($request) {
+                        $subQuery->whereRaw('YEAR(users.inactive_date) >= ?', [$request->year])
+                            ->whereRaw('MONTH(users.inactive_date) >= ?', [$request->month]);
+                    });
             })
             ->groupBy('users.id');
 
@@ -1370,12 +1318,10 @@ class AttendanceController extends AccountBaseController
 
         if ($this->viewAttendancePermission == 'owned') {
             $employees = $employees->where('users.id', user()->id);
-        }
-        elseif ($this->viewAttendancePermission == 'both') {
+        } elseif ($this->viewAttendancePermission == 'both') {
             $employees = $employees->where('employee_details.user_id', user()->id)
-                                ->orWhere('employee_details.added_by', user()->id);
-        }
-        elseif ($this->viewAttendancePermission == 'added') {
+                ->orWhere('employee_details.added_by', user()->id);
+        } elseif ($this->viewAttendancePermission == 'added') {
             $employees = $employees->where('employee_details.added_by', user()->id);
         }
 
@@ -1402,16 +1348,13 @@ class AttendanceController extends AccountBaseController
 
             if (($now->copy()->format('d') != $this->daysInMonth) && !$requestedDate->isPast()) {
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), (($daysTofill >= 0 ? $daysTofill : 0)), '-');
-            }
-            else {
+            } else {
                 $dataFromTomorrow = array_fill($now->copy()->addDay()->format('d'), (($daysTofill >= 0 ? $daysTofill : 0)), 'Absent');
             }
 
             if (!$requestedDate->isPast()) {
                 $final[$employee->id . '#' . $employee->name] = array_replace($dataTillToday, $dataFromTomorrow);
-
-            }
-            else {
+            } else {
                 $final[$employee->id . '#' . $employee->name] = array_replace($dataTillRequestedDate, $dataFromTomorrow);
             }
 
@@ -1423,7 +1366,6 @@ class AttendanceController extends AccountBaseController
                 if ($shifts->shift->shift_name == 'Day Off') {
                     $final[$employee->id . '#' . $employee->name][$shifts->date->day] = 'Day Off';
                 }
-
             }
 
             foreach ($employee->attendance as $index => $attendance) {
@@ -1441,16 +1383,14 @@ class AttendanceController extends AccountBaseController
                 if ($index == 0) {
                     $previousdate = $from->format('Y-m-d');
                     $totalMinutes += $diffInMins;
-
-                }
-                elseif ($previousdate != $from->format('Y-m-d')) {
+                } elseif ($previousdate != $from->format('Y-m-d')) {
                     $totalMinutes += $diffInMins;
                     $previousdate = $from->format('Y-m-d');
                 }
 
-                if($diffInMins === 0){
+                if ($diffInMins === 0) {
                     $mins = $totalMinutes;
-                }else{
+                } else {
                     $mins = $diffInMins;
                 }
                 $final[$employee->id . '#' . $employee->name][Carbon::parse($attendance->clock_in_time)->timezone($this->company->timezone)->day] = '<a href="javascript:;" class="view-attendance" data-attendance-id="' . $attendance->id . '">' . intdiv($mins, 60) . ':' . ($mins % 60) . '</a>';
@@ -1472,8 +1412,7 @@ class AttendanceController extends AccountBaseController
                 if ($request->month == $employee->employeeDetail->joining_date->format('m') && $request->year == $employee->employeeDetail->joining_date->format('Y')) {
                     if ($employee->employeeDetail->joining_date->format('d') == '01') {
                         $dataBeforeJoin = array_fill(1, $employee->employeeDetail->joining_date->format('d'), '-');
-                    }
-                    else {
+                    } else {
                         $dataBeforeJoin = array_fill(1, $employee->employeeDetail->joining_date->subDay()->format('d'), '-');
                     }
                 }
@@ -1496,19 +1435,16 @@ class AttendanceController extends AccountBaseController
                     if ($final[$employee->id . '#' . $employee->name][$leave->leave_date->day] == '-' || $final[$employee->id . '#' . $employee->name][$leave->leave_date->day] == 'Absent') {
                         $final[$employee->id . '#' . $employee->name][$leave->leave_date->day] = 'Half Day';
                     }
-                }
-                else {
+                } else {
                     $final[$employee->id . '#' . $employee->name][$leave->leave_date->day] = 'Leave';
                     $leaveReasons[$employee->id][$leave->leave_date->day] = $leave->type->type_name . ': ' . $leave->reason;
                 }
-
             }
 
             foreach ($employee->shifts as $shifts) {
                 if ($shifts->shift->shift_name == 'Day Off') {
                     $final[$employee->id . '#' . $employee->name][$shifts->date->day] = 'Day Off';
                 }
-
             }
 
             foreach ($this->holidays as $holiday) {
@@ -1523,8 +1459,7 @@ class AttendanceController extends AccountBaseController
 
                 if (((in_array($departmentId, $holidayDepartment) || $holiday->department_id_json == null) &&
                     (in_array($designationId, $holidayDesignation) || $holiday->designation_id_json == null) &&
-                    (in_array($employmentType, $holidayEmploymentType) || $holiday->employment_type_json == null))
-                ) {
+                    (in_array($employmentType, $holidayEmploymentType) || $holiday->employment_type_json == null))) {
 
 
                     if ($final[$employee->id . '#' . $employee->name][$holiday->date->day] == 'Absent' || $final[$employee->id . '#' . $employee->name][$holiday->date->day] == '-') {
@@ -1618,28 +1553,20 @@ class AttendanceController extends AccountBaseController
 
         if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
             $attendanceSettings = $checkPreviousDayShift;
-
-        }
-        else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
+        } else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
             $attendanceSettings = $defaultAttendanceSettings;
-
-        }
-        else if ($checkTodayShift &&
+        } else if (
+            $checkTodayShift &&
             ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) || $nowTime->gt($checkTodayShift->shift_end_time))
         ) {
             $attendanceSettings = $checkTodayShift;
-
-        }
-        else if ($checkTodayShift && $checkTodayShift->shift->shift_type == 'flexible')
-        {
+        } else if ($checkTodayShift && $checkTodayShift->shift->shift_type == 'flexible') {
             $attendanceSettings = $checkTodayShift;
-        }
-        else {
+        } else {
             $attendanceSettings = $defaultAttendanceSettings;
         }
 
         return $attendanceSettings->shift;
-
     }
 
     public function addAttendance($userID, $day, $month, $year)
@@ -1651,9 +1578,7 @@ class AttendanceController extends AccountBaseController
 
         if ($attendanceSettings) {
             $this->attendanceSettings = $attendanceSettings->shift;
-
-        }
-        else {
+        } else {
             $this->attendanceSettings = attendance_setting(); // Do not get this from session here
 
         }
@@ -1690,9 +1615,9 @@ class AttendanceController extends AccountBaseController
         $user = user();
 
         $leaveApplied = Leave::where('user_id', $user->id)
-        ->whereDate('leave_date', now()->format('Y-m-d'))
-        ->where('status', 'approved')
-        ->first();
+            ->whereDate('leave_date', now()->format('Y-m-d'))
+            ->where('status', 'approved')
+            ->first();
 
         $checkTodayHoliday = Holiday::where('date', now()->format('Y-m-d'))
             ->where(function ($query) use ($user) {
@@ -1727,13 +1652,13 @@ class AttendanceController extends AccountBaseController
         }
 
         if ($startTime->gt($endTime)) { // check if shift end time is less then current time then shift not ended yet
-            if(
+            if (
                 now(company()->timezone)->lessThan($endTime)
                 || (now(company()->timezone)->greaterThan($endTime) && now(company()->timezone)->lessThan($startTime))
-            ){
+            ) {
                 $startTime->subDay();
                 $midTime->subDay();
-            }else{
+            } else {
                 $midTime->addDay();
                 $endTime->addDay();
             }
@@ -1756,21 +1681,16 @@ class AttendanceController extends AccountBaseController
         if ($showClockIn->employee_clock_in_out == 'no' || $attendanceSettings->shift_name == 'Day Off') {
 
             $cannotLogin = true;
-        }
-        elseif (is_null($attendanceSettings->early_clock_in) && !now($this->company->timezone)->between($startTime, $endTime) && $showClockIn->show_clock_in_button == 'no' && $attendanceSettings->shift_type == 'strict') {
+        } elseif (is_null($attendanceSettings->early_clock_in) && !now($this->company->timezone)->between($startTime, $endTime) && $showClockIn->show_clock_in_button == 'no' && $attendanceSettings->shift_type == 'strict') {
             $cannotLogin = true;
-
-        }
-        elseif($attendanceSettings->shift_type == 'strict') {
+        } elseif ($attendanceSettings->shift_type == 'strict') {
             $earlyClockIn = now($this->company->timezone)->addMinutes($attendanceSettings->early_clock_in)->setTimezone('UTC');
 
             if (!$earlyClockIn->gte($startTime) && $showClockIn->show_clock_in_button == 'no') {
 
                 $cannotLogin = true;
-            }
-            elseif ($cannotLogin && now()->betweenIncluded($startTime->copy()->subDay(), $endTime->copy()->subDay())) {
+            } elseif ($cannotLogin && now()->betweenIncluded($startTime->copy()->subDay(), $endTime->copy()->subDay())) {
                 $cannotLogin = false;
-
             }
         }
         $isAttendanceApplied = true;
@@ -1784,8 +1704,7 @@ class AttendanceController extends AccountBaseController
             $leave = true;
             $isAttendanceApplied = false;
             return view('attendance-settings.ajax.qrview', compact('message', 'leave'));
-
-        }elseif ($leaveApplied != null  && ($leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'first_half' && $currentTime->lt($midTime) && $currentTime->between($startTime, $midTime))) {
+        } elseif ($leaveApplied != null  && ($leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'first_half' && $currentTime->lt($midTime) && $currentTime->between($startTime, $midTime))) {
 
             $message = __('messages.leaveForFirstHalf');
             $clockInTime = null;
@@ -1794,8 +1713,7 @@ class AttendanceController extends AccountBaseController
             $leave = true;
             $isAttendanceApplied = false;
             return view('attendance-settings.ajax.qrview', compact('message', 'leave'));
-
-        }elseif ($leaveApplied != null  && ($leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'second_half' && $currentTime->gt($midTime) && $currentTime->between($midTime, $endTime))) {
+        } elseif ($leaveApplied != null  && ($leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'second_half' && $currentTime->gt($midTime) && $currentTime->between($midTime, $endTime))) {
 
             $message = __('messages.leaveForSecondHalf');
             $clockInTime = null;
@@ -1804,8 +1722,7 @@ class AttendanceController extends AccountBaseController
             $leave = true;
             $isAttendanceApplied = false;
             return view('attendance-settings.ajax.qrview', compact('message', 'leave'));
-
-        }elseif(!is_null($checkTodayHoliday) && $checkTodayHoliday->exists){
+        } elseif (!is_null($checkTodayHoliday) && $checkTodayHoliday->exists) {
 
             $message = __('messages.todayHoliday');
             $clockInTime = null;
@@ -1814,8 +1731,7 @@ class AttendanceController extends AccountBaseController
             $holiday = true;
             $isAttendanceApplied = false;
             return view('attendance-settings.ajax.qrview', compact('message', 'holiday'));
-
-        } elseif($cannotLogin == true){
+        } elseif ($cannotLogin == true) {
 
             $message = __('messages.notInOfficeHours');
             $clockInTime = null;
@@ -1824,7 +1740,6 @@ class AttendanceController extends AccountBaseController
             $outOfShiftHours = true;
             $isAttendanceApplied = false;
             return view('attendance-settings.ajax.qrview', compact('message', 'outOfShiftHours'));
-
         }
 
         // Check if the user is already clocked in for today
@@ -1858,13 +1773,12 @@ class AttendanceController extends AccountBaseController
             $totalWorkingTime = $workingintime->diff($workingouttime)->format('%h hours %i minutes');
             $notAuthorize = false;
             $qrClockIn = false;
-        }
-        else {
+        } else {
             $attendanceSetting = AttendanceSetting::first();
             // Check if attendance setting status is enabled
             if ($attendanceSetting->qr_enable == 1) {
                 // User is not clocked in for today, so clock them in
-                if($isAttendanceApplied = true){
+                if ($isAttendanceApplied = true) {
                     $res = $this->clockInUser($user, $request);
                 }
                 if (isset($res['status']) && $res['status'] == 'success') {
@@ -1875,8 +1789,7 @@ class AttendanceController extends AccountBaseController
                     $totalWorkingTime = null;
                     $notAuthorize = false;
                     $qrClockIn = false;
-                }
-                elseif (isset($res['type']) && $res['type'] == 'error') {
+                } elseif (isset($res['type']) && $res['type'] == 'error') {
                     // Clock in successful, set success message
                     $message = $res['message'] ?? __('messages.attendanceClockInFailed');
                     $clockInTime = null;
@@ -1885,8 +1798,7 @@ class AttendanceController extends AccountBaseController
                     $notAuthorize = true;
                     $qrClockIn = true;
                     $time = null;
-                }
-                else {
+                } else {
                     // Clock in failed, set error message
                     $message = $res['message'] ?? __('messages.attendanceClockInFailed');
                     $clockInTime = null;
@@ -1896,8 +1808,7 @@ class AttendanceController extends AccountBaseController
                     $notAuthorize = false;
                     $qrClockIn = false;
                 }
-            }
-            else {
+            } else {
                 // Attendance feature is not enabled, prevent user from clocking in
                 return redirect()->route('dashboard')->with('error', __('Attendance feature is currently disabled.'));
             }
@@ -1905,7 +1816,6 @@ class AttendanceController extends AccountBaseController
 
         // Pass the message and other details to the view and return the view
         return view('attendance-settings.ajax.qrview', compact('message', 'intimeDate', 'outtimeDate', 'totalWorkingTime', 'todayAttendance', 'time', 'notAuthorize', 'qrClockIn'));
-
     }
 
     private function clockInUser($user, $request)
@@ -1951,15 +1861,13 @@ class AttendanceController extends AccountBaseController
             // Check if it's too early to clock in
             if (is_null($this->attendanceSettings->early_clock_in) && !$now->between($officeStartTime, $officeEndTime) && $showClockIn->show_clock_in_button == 'no' && $this->attendanceSettings->shift_type == 'strict') {
                 $this->cannotLogin = true;
-            }
-            elseif($this->attendanceSettings->shift_type == 'strict') {
+            } elseif ($this->attendanceSettings->shift_type == 'strict') {
                 $earlyClockIn = now(company()->timezone)->addMinutes($this->attendanceSettings->early_clock_in);
                 $earlyClockIn = $earlyClockIn->setTimezone('UTC');
 
                 if ($earlyClockIn->gte($officeStartTime) || $showClockIn->show_clock_in_button == 'yes') {
                     $this->cannotLogin = false;
-                }
-                else {
+                } else {
                     $this->cannotLogin = true;
                 }
             }
@@ -1968,10 +1876,8 @@ class AttendanceController extends AccountBaseController
             if ($this->cannotLogin && now()->betweenIncluded($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay())) {
                 $this->cannotLogin = false;
                 $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime->copy()->subDay(), $officeEndTime->copy()->subDay(), $this->user->id);
-
             }
-        }
-        else {
+        } else {
             $this->cannotLogin = true;
         }
 
@@ -1983,7 +1889,7 @@ class AttendanceController extends AccountBaseController
             $ips = (array)json_decode(attendance_setting()->ip_address);
             if (!in_array($request->ip(), $ips)) {
                 return ['type' => 'error', 'message' => __('messages.notAnAuthorisedDevice'), 'notAuthorize' => $notAuthorize, 'time' => null];
-            }else{
+            } else {
                 $notAuthorize = true;
             }
         }
@@ -1993,7 +1899,7 @@ class AttendanceController extends AccountBaseController
             $checkRadius = $this->isWithinRadius($request);
             if (!$checkRadius) {
                 return ['type' => 'error', 'message' => __('messages.notAnValidLocation'), 'qrClockIn' => $qrClockIn];
-            }else{
+            } else {
                 $qrClockIn = true;
             }
         }
@@ -2001,11 +1907,10 @@ class AttendanceController extends AccountBaseController
         // Check maximum attendance in a day
         if ($this->attendanceSettings->shift_type == 'strict') {
             $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);
-
         } else {
             $clockInCount = Attendance::whereDate('clock_in_time', $officeStartTime->copy()->toDateString())
-            ->where('user_id', $user->id)
-            ->count();
+                ->where('user_id', $user->id)
+                ->count();
         }
 
 
@@ -2049,8 +1954,7 @@ class AttendanceController extends AccountBaseController
 
         if (isset($leave) && !is_null($leave->half_day_type)) {
             $attendance->half_day = 'yes';
-        }
-        else {
+        } else {
             $attendance->half_day = 'no';
         }
 
@@ -2082,9 +1986,7 @@ class AttendanceController extends AccountBaseController
 
         if (Carbon::parse($this->attendanceSettings->office_start_time)->gt(Carbon::parse($this->attendanceSettings->office_end_time))) {
             $attendance->shift_end_time = $attendance->clock_in_time->addDay()->toDateString() . ' ' . $this->attendanceSettings->office_end_time;
-
-        }
-        else {
+        } else {
             $attendance->shift_end_time = $attendance->clock_in_time->toDateString() . ' ' . $this->attendanceSettings->office_end_time;
         }
 
@@ -2130,28 +2032,21 @@ class AttendanceController extends AccountBaseController
 
         if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
             $attendanceSettings = $checkPreviousDayShift;
-
-        }
-        else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
+        } else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
             $attendanceSettings = $defaultAttendanceSettings;
-
-        }
-        else if ($checkTodayShift &&
+        } else if (
+            $checkTodayShift &&
             ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time)
                 || $nowTime->gt($checkTodayShift->shift_end_time)
                 || (!$nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) && $defaultAttendanceSettings->show_clock_in_button == 'no'))
         ) {
             $attendanceSettings = $checkTodayShift;
-        }
-        else if ($checkTodayShift && !is_null($checkTodayShift->shift->early_clock_in)) {
+        } else if ($checkTodayShift && !is_null($checkTodayShift->shift->early_clock_in)) {
             $attendanceSettings = $checkTodayShift;
-        }
-        else {
+        } else {
             $attendanceSettings = $defaultAttendanceSettings;
         }
 
         return $attendanceSettings->shift;
-
     }
-
 }

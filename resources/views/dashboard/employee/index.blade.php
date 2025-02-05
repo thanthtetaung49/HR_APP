@@ -1,12 +1,12 @@
 @extends('layouts.app')
 
 @push('styles')
-    @if ((!is_null($viewEventPermission) && $viewEventPermission != 'none')
-        || (!is_null($viewHolidayPermission) && $viewHolidayPermission != 'none')
-        || (!is_null($viewTaskPermission) && $viewTaskPermission != 'none')
-        || (!is_null($viewTicketsPermission) && $viewTicketsPermission != 'none')
-        || (!is_null($viewLeavePermission) && $viewLeavePermission != 'none')
-        )
+    @if (
+        (!is_null($viewEventPermission) && $viewEventPermission != 'none') ||
+            (!is_null($viewHolidayPermission) && $viewHolidayPermission != 'none') ||
+            (!is_null($viewTaskPermission) && $viewTaskPermission != 'none') ||
+            (!is_null($viewTicketsPermission) && $viewTicketsPermission != 'none') ||
+            (!is_null($viewLeavePermission) && $viewLeavePermission != 'none'))
         <link rel="stylesheet" href="{{ asset('vendor/full-calendar/main.min.css') }}" defer="defer">
     @endif
     <style>
@@ -25,18 +25,20 @@
             }
         }
 
-        .fc-list-event-graphic{
+        .fc-list-event-graphic {
             display: none;
         }
 
-        .fc .fc-list-event:hover td{
+        .fc .fc-list-event:hover td {
             background-color: #fff !important;
-            color:#000 !important;
+            color: #000 !important;
         }
-        .left-3{
+
+        .left-3 {
             margin-right: -22px;
         }
-        .clockin-right{
+
+        .clockin-right {
             margin-right: -10px;
         }
 
@@ -44,6 +46,7 @@
             margin-right: 5px;
             z-index: 1;
         }
+
         .week-pagination li a {
             border-radius: 50%;
             padding: 2px 6px !important;
@@ -80,7 +83,8 @@
             <div class="row pt-4">
                 <div class="col-md-12">
                     <x-alert type="info" icon="info-circle">
-                        <a href="{{ route('holidays.show', $checkTodayHoliday->id) }}" class="openRightModal text-dark-grey">
+                        <a href="{{ route('holidays.show', $checkTodayHoliday->id) }}"
+                            class="openRightModal text-dark-grey">
                             <u>@lang('messages.holidayToday')</u>
                         </a>
                     </x-alert>
@@ -89,7 +93,7 @@
         @endif
 
 
-        @if(in_array('admin', user_roles()))
+        @if (in_array('admin', user_roles()))
             <div class="row">
                 @include('dashboard.update-message-dashboard')
                 @includeIf('dashboard.update-message-module-dashboard')
@@ -106,38 +110,53 @@
             <!-- WELOCOME NAME END -->
 
             <!-- CLOCK IN CLOCK OUT START -->
-            <div
-                class="ml-auto d-flex clock-in-out mb-3 mb-lg-0 mb-md-0 m mt-4 mt-lg-0 mt-md-0 justify-content-end">
-                <p
-                    class="mb-0 text-lg-right text-md-right f-18 font-weight-bold text-dark-grey d-grid align-items-center">
+            <div class="ml-auto d-flex clock-in-out mb-3 mb-lg-0 mb-md-0 m mt-4 mt-lg-0 mt-md-0 justify-content-end">
+                <p class="mb-0 text-lg-right text-md-right f-18 font-weight-bold text-dark-grey d-grid align-items-center">
                     <input type="hidden" id="current-latitude" name="current_latitude">
                     <input type="hidden" id="current-longitude" name="current_longitude">
 
-                    <span id="dashboard-clock">{!! now()->timezone(company()->timezone)->translatedFormat(company()->time_format) . '</span><span class="f-10 font-weight-normal">' . now()->timezone(company()->timezone)->translatedFormat('l') . '</span>' !!}
+                    <span id="dashboard-clock">{!! now()->timezone(company()->timezone)->translatedFormat(company()->time_format) .
+                        '</span><span class="f-10 font-weight-normal">' .
+                        now()->timezone(company()->timezone)->translatedFormat('l') .
+                        '</span>' !!}
 
-                    @if (!is_null($currentClockIn))
-                        <span class="f-11 font-weight-normal text-lightest">
-                            @lang('app.clockInAt') -
-                            {{ $currentClockIn->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
-                        </span>
-                    @endif
+                        @if (!is_null($currentClockIn))
+                            <span class="f-11 font-weight-normal text-lightest">
+                                @lang('app.clockInAt') -
+                                {{ $currentClockIn->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
+                            </span>
+                        @endif
                 </p>
 
                 @php
                     $currentDateTime = now()->timezone(company()->timezone);
                     $msg = null;
-                    $start_time = \Carbon\Carbon::createFromFormat('H:i:s', $attendanceSettings->office_start_time, company()->timezone);
-                    $mid_time = \Carbon\Carbon::createFromFormat('H:i:s', $attendanceSettings->halfday_mark_time, company()->timezone);
-                    $end_time = \Carbon\Carbon::createFromFormat('H:i:s', $attendanceSettings->office_end_time, company()->timezone);
+                    $start_time = \Carbon\Carbon::createFromFormat(
+                        'H:i:s',
+                        $attendanceSettings->office_start_time,
+                        company()->timezone,
+                    );
+                    $mid_time = \Carbon\Carbon::createFromFormat(
+                        'H:i:s',
+                        $attendanceSettings->halfday_mark_time,
+                        company()->timezone,
+                    );
+                    $end_time = \Carbon\Carbon::createFromFormat(
+                        'H:i:s',
+                        $attendanceSettings->office_end_time,
+                        company()->timezone,
+                    );
 
-                    if ($start_time->gt($end_time)) { // check if shift end time is less then current time then shift not ended yet
-                        if(
-                            now(company()->timezone)->lessThan($end_time)
-                            || (now(company()->timezone)->greaterThan($end_time) && now(company()->timezone)->lessThan($start_time))
-                        ){
+                    if ($start_time->gt($end_time)) {
+                        // check if shift end time is less then current time then shift not ended yet
+                        if (
+                            now(company()->timezone)->lessThan($end_time) ||
+                            (now(company()->timezone)->greaterThan($end_time) &&
+                                now(company()->timezone)->lessThan($start_time))
+                        ) {
                             $start_time->subDay();
                             $mid_time->subDay();
-                        }else{
+                        } else {
                             $mid_time->addDay();
                             $end_time->addDay();
                         }
@@ -147,40 +166,55 @@
                     $current_user_id = auth()->user()->id;
                     $leaveApplied = $leave->where('user_id', $current_user_id)->where('status', 'approved')->first();
 
-                    if($leaveApplied != null && ($leaveApplied->duration === 'single' || $leaveApplied->duration === 'multiple') && $currentDateTime->between($start_time, $end_time)){
+                    if (
+                        $leaveApplied != null &&
+                        ($leaveApplied->duration === 'single' || $leaveApplied->duration === 'multiple') &&
+                        $currentDateTime->between($start_time, $end_time)
+                    ) {
                         $msg = __('messages.leaveApplied');
-                    }elseif ($leaveApplied != null  && $leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'first_half' && $currentDateTime->lt($mid_time) && $currentDateTime->between($start_time, $mid_time)){
+                    } elseif (
+                        $leaveApplied != null &&
+                        $leaveApplied->duration === 'half day' &&
+                        $leaveApplied->half_day_type === 'first_half' &&
+                        $currentDateTime->lt($mid_time) &&
+                        $currentDateTime->between($start_time, $mid_time)
+                    ) {
                         $msg = __('messages.leaveForFirstHalf');
-                    }elseif ($leaveApplied != null  && $leaveApplied->duration === 'half day' && $leaveApplied->half_day_type === 'second_half' && $currentDateTime->gt($mid_time) && $currentDateTime->between($mid_time, $end_time)){
+                    } elseif (
+                        $leaveApplied != null &&
+                        $leaveApplied->duration === 'half day' &&
+                        $leaveApplied->half_day_type === 'second_half' &&
+                        $currentDateTime->gt($mid_time) &&
+                        $currentDateTime->between($mid_time, $end_time)
+                    ) {
                         $msg = __('messages.leaveForSecondHalf');
-                    }else if(!is_null($checkTodayHoliday) && $checkTodayHoliday->exists){
+                    } elseif (!is_null($checkTodayHoliday) && $checkTodayHoliday->exists) {
                         $msg = __('messages.todayHoliday');
-                    }else if($cannotLogin == true){
+                    } elseif ($cannotLogin == true) {
                         $msg = __('messages.notInOfficeHours');
                     }
                     /*
                         true means shift is near to cross with auto clock time adding clock out show
                         false means show clock in
                     */
-                    $flagbtn = now()->timezone(company()->timezone)->addHours($attendanceSettings->auto_clock_out_time)->gt($shiftEndDateTime);
-
-
-
+                    $flagbtn = now()
+                        ->timezone(company()->timezone)
+                        ->addHours($attendanceSettings->auto_clock_out_time)
+                        ->gt($shiftEndDateTime);
                 @endphp
 
                 @if (in_array('attendance', user_modules()))
-                    @if (is_null($currentClockIn) && $checkJoiningDate == true || (is_null($currentClockIn) && $flagbtn == false))
+                    @if ((is_null($currentClockIn) && $checkJoiningDate == true) || (is_null($currentClockIn) && $flagbtn == false))
                         <button type="button" class="btn-primary rounded f-15 ml-4" id="clock-in"
-                            @if (($cannotLogin || !is_null($msg)) && ($user->isAdmin($user->id) || $user->isEmployee($user->id)))
-                                disabled
-                                data-toggle="tooltip" data-placement="top" title="{{__($msg)}}"
-                            @endif
-                        ><i
-                        class="icons icon-login mr-2"></i>@lang('modules.attendance.clock_in')</button>
+                            @if (($cannotLogin || !is_null($msg)) && ($user->isAdmin($user->id) || $user->isEmployee($user->id))) disabled
+                                data-toggle="tooltip" data-placement="top" title="{{ __($msg) }}" @endif><i
+                                class="icons icon-login mr-2"></i>@lang('modules.attendance.clock_in')</button>
                     @endif
                 @endif
 
-                @if (!is_null($currentClockIn) && is_null($currentClockIn->clock_out_time) || (!is_null($currentClockIn) && $flagbtn == true))
+                @if (
+                    (!is_null($currentClockIn) && is_null($currentClockIn->clock_out_time)) ||
+                        (!is_null($currentClockIn) && $flagbtn == true))
                     <button type="button" class="btn-danger rounded f-15 ml-4" id="clock-out"><i
                             class="icons icon-login mr-2"></i>@lang('modules.attendance.clock_out')</button>
                 @endif
@@ -191,9 +225,10 @@
                             <div class="dropdown keep-open">
                                 <a class="d-flex align-items-center justify-content-center dropdown-toggle px-4 text-dark left-3"
                                     type="link" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true"
-
                                     aria-expanded="false">
-                                    <i class="fa fa-cog" data-original-title="{{__('modules.dashboard.dashboardWidgetsSettings')}}" data-toggle="tooltip"></i>
+                                    <i class="fa fa-cog"
+                                        data-original-title="{{ __('modules.dashboard.dashboardWidgetsSettings') }}"
+                                        data-toggle="tooltip"></i>
                                 </a>
                                 <!-- Dropdown - User Information -->
                                 <ul class="dropdown-menu dropdown-menu-right dashboard-settings p-20"
@@ -208,9 +243,9 @@
                                         <li class="mb-2 float-left w-50">
                                             <div class="checkbox checkbox-info ">
                                                 <input id="{{ $widget->widget_name }}" name="{{ $widget->widget_name }}"
-                                                    value="true" @if ($widget->status) checked @endif type="checkbox">
-                                                <label for="{{ $widget->widget_name }}">@lang('modules.dashboard.' .
-                                                    $wname)</label>
+                                                    value="true" @if ($widget->status) checked @endif
+                                                    type="checkbox">
+                                                <label for="{{ $widget->widget_name }}">@lang('modules.dashboard.' . $wname)</label>
                                             </div>
                                         </li>
                                     @endforeach
@@ -230,70 +265,71 @@
             <!-- CLOCK IN CLOCK OUT END -->
         </div>
         <!-- WELOCOME END -->
-         <!-- EMPLOYEE DASHBOARD DETAIL START -->
-         <div class="row emp-dash-detail">
+        <!-- EMPLOYEE DASHBOARD DETAIL START -->
+        <div class="row emp-dash-detail">
             <!-- EMP DASHBOARD INFO NOTICES START -->
-            @if(count(array_intersect(['profile', 'shift_schedule', 'birthday', 'notices'], $activeWidgets)) > 0)
+            @if (count(array_intersect(['profile', 'shift_schedule', 'birthday', 'notices'], $activeWidgets)) > 0)
                 <div class="col-xl-5 col-lg-12 col-md-12 e-d-info-notices">
                     <div class="row">
                         @if (in_array('profile', $activeWidgets))
-                        <!-- EMP DASHBOARD INFO START -->
-                        <div class="col-md-12">
-                            <div class="card border-0 b-shadow-4 mb-3 e-d-info">
-                                <a @if(!in_array('client', user_roles())) href="{{ route('employees.show', user()->id) }}" @endif >
-                                    <div class="card-horizontal align-items-center">
-                                        <div class="card-img">
-                                            <img class="" src=" {{ $user->image_url }}" alt="Card image">
+                            <!-- EMP DASHBOARD INFO START -->
+                            <div class="col-md-12">
+                                <div class="card border-0 b-shadow-4 mb-3 e-d-info">
+                                    <a
+                                        @if (!in_array('client', user_roles())) href="{{ route('employees.show', user()->id) }}" @endif>
+                                        <div class="card-horizontal align-items-center">
+                                            <div class="card-img">
+                                                <img class="" src=" {{ $user->image_url }}" alt="Card image">
+                                            </div>
+                                            <div class="card-body border-0 pl-0">
+                                                <h4 class="card-title text-dark f-18 f-w-500 mb-0">{{ $user->name }}</h4>
+                                                <p class="f-14 font-weight-normal text-dark-grey mb-2">
+                                                    {{ $user->employeeDetail->designation->name ?? '--' }}</p>
+                                                <p class="card-text f-12 text-lightest"> @lang('app.employeeId') :
+                                                    {{ $user->employeeDetail->employee_id }}</p>
+                                            </div>
                                         </div>
-                                        <div class="card-body border-0 pl-0">
-                                            <h4 class="card-title text-dark f-18 f-w-500 mb-0">{{ $user->name }}</h4>
-                                            <p class="f-14 font-weight-normal text-dark-grey mb-2">
-                                                {{ $user->employeeDetail->designation->name ?? '--' }}</p>
-                                            <p class="card-text f-12 text-lightest"> @lang('app.employeeId') :
-                                                {{ $user->employeeDetail->employee_id }}</p>
-                                        </div>
-                                    </div>
-                                </a>
+                                    </a>
 
-                                <div class="card-footer bg-white border-top-grey py-3">
-                                    <div class="d-flex flex-wrap justify-content-between">
-                                        @if(in_array('tasks', user_modules()))
-                                            <span>
-                                                <label class="f-12 text-dark-grey mb-12 " for="usr">
-                                                    @lang('app.openTasks') </label>
-                                                <p class="mb-0 f-18 f-w-500">
-                                                    <a href="{{ route('tasks.index') . '?assignee=me' }}"
-                                                        class="text-dark">
-                                                        {{ $inProcessTasks }}
-                                                    </a>
-                                                </p>
-                                            </span>
-                                        @endif
-                                        @if(in_array('projects', user_modules()))
-                                            <span>
-                                                <label class="f-12 text-dark-grey mb-12 " for="usr">
-                                                    @lang('app.menu.projects') </label>
-                                                <p class="mb-0 f-18 f-w-500">
-                                                    <a href="{{ route('projects.index') . '?assignee=me&status=all' }}"
-                                                        class="text-dark">{{ $totalProjects }}</a>
-                                                </p>
-                                            </span>
-                                        @endif
-                                        @if (isset($totalOpenTickets) && in_array('tickets', user_modules()))
-                                            <span>
-                                                <label class="f-12 text-dark-grey mb-12 " for="usr">
-                                                    @lang('modules.dashboard.totalOpenTickets') </label>
-                                                <p class="mb-0 f-18 f-w-500">
-                                                    <a href="{{ route('tickets.index') . '?agent=me&status=open' }}"
-                                                        class="text-dark">{{ $totalOpenTickets }}</a>
-                                                </p>
-                                            </span>
-                                        @endif
+                                    <div class="card-footer bg-white border-top-grey py-3">
+                                        <div class="d-flex flex-wrap justify-content-between">
+                                            @if (in_array('tasks', user_modules()))
+                                                <span>
+                                                    <label class="f-12 text-dark-grey mb-12 " for="usr">
+                                                        @lang('app.openTasks') </label>
+                                                    <p class="mb-0 f-18 f-w-500">
+                                                        <a href="{{ route('tasks.index') . '?assignee=me' }}"
+                                                            class="text-dark">
+                                                            {{ $inProcessTasks }}
+                                                        </a>
+                                                    </p>
+                                                </span>
+                                            @endif
+                                            @if (in_array('projects', user_modules()))
+                                                <span>
+                                                    <label class="f-12 text-dark-grey mb-12 " for="usr">
+                                                        @lang('app.menu.projects') </label>
+                                                    <p class="mb-0 f-18 f-w-500">
+                                                        <a href="{{ route('projects.index') . '?assignee=me&status=all' }}"
+                                                            class="text-dark">{{ $totalProjects }}</a>
+                                                    </p>
+                                                </span>
+                                            @endif
+                                            @if (isset($totalOpenTickets) && in_array('tickets', user_modules()))
+                                                <span>
+                                                    <label class="f-12 text-dark-grey mb-12 " for="usr">
+                                                        @lang('modules.dashboard.totalOpenTickets') </label>
+                                                    <p class="mb-0 f-18 f-w-500">
+                                                        <a href="{{ route('tickets.index') . '?agent=me&status=open' }}"
+                                                            class="text-dark">{{ $totalOpenTickets }}</a>
+                                                    </p>
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <!-- EMP DASHBOARD INFO END -->
+                            <!-- EMP DASHBOARD INFO END -->
                         @endif
 
                         @if (!is_null($myActiveTimer) && in_array('tasks', user_modules()))
@@ -325,7 +361,6 @@
                                                     <li
                                                         class="list-group-item d-flex justify-content-between align-items-center f-12 text-dark-grey">
                                                         @if (!is_null($item->end_time))
-
                                                             <span><i class="fa fa-mug-hot"></i>
                                                                 @lang('modules.timeLogs.break')
                                                                 ({{ \Carbon\CarbonInterval::formatHuman($item->end_time->diffInMinutes($item->start_time)) }})
@@ -342,16 +377,28 @@
 
                                         </div>
                                         <div class="col-sm-12 pt-3 text-right">
-                                            @if ($editTimelogPermission == 'all' || ($editTimelogPermission == 'added' && $myActiveTimer->added_by == user()->id) || ($editTimelogPermission == 'owned' && (($myActiveTimer->project && $myActiveTimer->project->client_id == user()->id) || $myActiveTimer->user_id == user()->id)) || ($editTimelogPermission == 'both' && (($myActiveTimer->project && $myActiveTimer->project->client_id == user()->id) || $myActiveTimer->user_id == user()->id || $myActiveTimer->added_by == user()->id)))
+                                            @if (
+                                                $editTimelogPermission == 'all' ||
+                                                    ($editTimelogPermission == 'added' && $myActiveTimer->added_by == user()->id) ||
+                                                    ($editTimelogPermission == 'owned' &&
+                                                        (($myActiveTimer->project && $myActiveTimer->project->client_id == user()->id) ||
+                                                            $myActiveTimer->user_id == user()->id)) ||
+                                                    ($editTimelogPermission == 'both' &&
+                                                        (($myActiveTimer->project && $myActiveTimer->project->client_id == user()->id) ||
+                                                            $myActiveTimer->user_id == user()->id ||
+                                                            $myActiveTimer->added_by == user()->id)))
                                                 @if (is_null($myActiveTimer->activeBreak))
                                                     <x-forms.button-secondary icon="pause-circle"
-                                                        data-time-id="{{ $myActiveTimer->id }}" id="pause-timer-btn" data-url="{{ url()->current() }}">
+                                                        data-time-id="{{ $myActiveTimer->id }}" id="pause-timer-btn"
+                                                        data-url="{{ url()->current() }}">
                                                         @lang('modules.timeLogs.pauseTimer')</x-forms.button-secondary>
-                                                    <x-forms.button-primary class="ml-3 stop-active-timer" data-url="{{ url()->current() }}"
+                                                    <x-forms.button-primary class="ml-3 stop-active-timer"
+                                                        data-url="{{ url()->current() }}"
                                                         data-time-id="{{ $myActiveTimer->id }}" icon="stop-circle">
                                                         @lang('modules.timeLogs.stopTimer')</x-forms.button-primary>
                                                 @else
-                                                    <x-forms.button-primary id="resume-timer-btn" icon="play-circle" data-url="{{ url()->current() }}"
+                                                    <x-forms.button-primary id="resume-timer-btn" icon="play-circle"
+                                                        data-url="{{ url()->current() }}"
                                                         data-time-id="{{ $myActiveTimer->activeBreak->id }}">
                                                         @lang('modules.timeLogs.resumeTimer')</x-forms.button-primary>
                                                 @endif
@@ -362,25 +409,25 @@
                             </div>
                         @endif
 
-                            @include('dashboard.employee.widgets.shift_schedule')
+                        @include('dashboard.employee.widgets.shift_schedule')
 
-                            @include('dashboard.employee.widgets.birthday')
+                        @include('dashboard.employee.widgets.birthday')
 
-                            @include('dashboard.employee.widgets.appreciation')
+                        @include('dashboard.employee.widgets.appreciation')
 
-                            @include('dashboard.employee.widgets.leave')
+                        @include('dashboard.employee.widgets.leave')
 
-                            @include('dashboard.employee.widgets.work_from_home')
+                        @include('dashboard.employee.widgets.work_from_home')
 
-                            @include('dashboard.employee.widgets.work_anniversary')
+                        @include('dashboard.employee.widgets.work_anniversary')
 
-                            @include('dashboard.employee.widgets.notice-period')
+                        @include('dashboard.employee.widgets.notice-period')
 
-                            @include('dashboard.employee.widgets.probation')
+                        @include('dashboard.employee.widgets.probation')
 
-                            @include('dashboard.employee.widgets.internship')
+                        @include('dashboard.employee.widgets.internship')
 
-                            @include('dashboard.employee.widgets.contract')
+                        @include('dashboard.employee.widgets.contract')
                     </div>
                 </div>
             @endif
@@ -389,7 +436,9 @@
             <div class="col-xl-7 col-lg-12 col-md-12 e-d-tasks-projects-events">
                 <!-- EMP DASHBOARD TASKS PROJECTS START -->
                 <div class="row mb-3 mt-xl-0 mt-lg-4 mt-md-4 mt-4">
-                    @if (in_array('tasks', $activeWidgets) && (!is_null($viewTaskPermission) && $viewTaskPermission != 'none') && in_array('tasks', user_modules()))
+                    @if (in_array('tasks', $activeWidgets) &&
+                            (!is_null($viewTaskPermission) && $viewTaskPermission != 'none') &&
+                            in_array('tasks', user_modules()))
                         <div class="col-md-6 mb-3">
                             <div
                                 class="bg-white p-20 rounded b-shadow-4 d-flex justify-content-between align-items-center mb-4 mb-md-0 mb-lg-0">
@@ -437,23 +486,23 @@
 @endsection
 
 @push('scripts')
-    @if ((!is_null($viewEventPermission) && $viewEventPermission != 'none')
-        || (!is_null($viewHolidayPermission) && $viewHolidayPermission != 'none')
-        || (!is_null($viewTaskPermission) && $viewTaskPermission != 'none')
-        || (!is_null($viewTicketsPermission) && $viewTicketsPermission != 'none')
-        || (!is_null($viewLeavePermission) && $viewLeavePermission != 'none')
-        )
-        <script src="{{ asset('vendor/full-calendar/main.min.js') }}"  defer="defer"></script>
-        <script src="{{ asset('vendor/full-calendar/locales-all.min.js') }}"  defer="defer"></script>
+    @if (
+        (!is_null($viewEventPermission) && $viewEventPermission != 'none') ||
+            (!is_null($viewHolidayPermission) && $viewHolidayPermission != 'none') ||
+            (!is_null($viewTaskPermission) && $viewTaskPermission != 'none') ||
+            (!is_null($viewTicketsPermission) && $viewTicketsPermission != 'none') ||
+            (!is_null($viewLeavePermission) && $viewLeavePermission != 'none'))
+        <script src="{{ asset('vendor/full-calendar/main.min.js') }}" defer="defer"></script>
+        <script src="{{ asset('vendor/full-calendar/locales-all.min.js') }}" defer="defer"></script>
         <script>
-
             var clockInButton = document.getElementById('clock-in');
 
             if (clockInButton) {
 
                 var cannotLogin = "{{ $cannotLogin }}";
                 var checkTodayHoliday = "{{ $checkTodayHoliday?->exists }}";
-                var leaveApplied = "{{ $leave->where('user_id', auth()->user()->id)->where('status', 'approved')->first()?->exists }}";
+                var leaveApplied =
+                    "{{ $leave->where('user_id', auth()->user()->id)->where('status', 'approved')->first()?->exists }}";
 
                 var currentDateTime = "{{ $currentDateTime }}";
                 var startTime = "{{ $start_time }}";
@@ -468,26 +517,29 @@
                     clockInButton.disabled = false;
                     $(clockInButton).tooltip();
 
-                } else if(leaveApplied == true){
+                } else if (leaveApplied == true) {
 
                     var leaveDuration = "{{ $leaveApplied?->duration }}";
                     var halfDayType = "{{ $leaveApplied?->half_day_type }}";
 
-                    if(
-                        ((leaveDuration === 'single' || leaveDuration === 'multiple') && currentDateTime >= startTime && currentDateTime <= endTime) ||
-                        (leaveDuration === 'half day' && halfDayType === 'first_half' && currentDateTime < midTime && currentDateTime >= startTime && currentDateTime <= midTime) ||
-                        (leaveDuration === 'half day' && halfDayType === 'second_half' && currentDateTime > midTime && currentDateTime >= midTime && currentDateTime <= endTime)
-                    ){
+                    if (
+                        ((leaveDuration === 'single' || leaveDuration === 'multiple') && currentDateTime >= startTime &&
+                            currentDateTime <= endTime) ||
+                        (leaveDuration === 'half day' && halfDayType === 'first_half' && currentDateTime < midTime &&
+                            currentDateTime >= startTime && currentDateTime <= midTime) ||
+                        (leaveDuration === 'half day' && halfDayType === 'second_half' && currentDateTime > midTime &&
+                            currentDateTime >= midTime && currentDateTime <= endTime)
+                    ) {
 
                         clockInButton.disabled = true;
                         $(clockInButton).tooltip('dispose');
                     }
-                }else if(checkTodayHoliday == true && currentDateTime >= startTime && currentDateTime <= midTime){
+                } else if (checkTodayHoliday == true && currentDateTime >= startTime && currentDateTime <= midTime) {
 
                     clockInButton.disabled = true;
                     $(clockInButton).tooltip('dispose');
 
-                }else {
+                } else {
 
                     clockInButton.disabled = true;
                     $(clockInButton).tooltip('dispose');
@@ -495,8 +547,7 @@
             }
         </script>
         <script>
-
-            $(document).ready(function () {
+            $(document).ready(function() {
                 var calendarEl = document.getElementById('calendar');
 
                 var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -517,7 +568,7 @@
                         calendar.unselect()
                     },
                     eventClick: function(arg) {
-                        getEventDetail(arg.event.id,arg.event.extendedProps.event_type);
+                        getEventDetail(arg.event.id, arg.event.extendedProps.event_type);
                     },
                     editable: false,
                     dayMaxEvents: true, // allow "more" link when too many events
@@ -525,18 +576,23 @@
                         url: "{{ route('dashboard.private_calendar') }}",
                     },
                     eventDidMount: function(info) {
-                            $(info.el).css('background-color', info.event.extendedProps.bg_color);
-                            $(info.el).css('color', info.event.extendedProps.color);
-                            $(info.el).find('td.fc-list-event-title').prepend('<i class="fa '+info.event.extendedProps.icon+'"></i>&nbsp;&nbsp;');
-                            // tooltip for leaves
-                            if(info.event.extendedProps.event_type == 'leave'){
-                                $(info.el).find('td.fc-list-event-title > a').css('cursor','default'); // list view cursor for leave
-                                $(info.el).css('cursor','default')
-                                $(info.el).tooltip({
-                                    title: info.event.extendedProps.name,
-                                    container: 'body',
-                                    delay: { "show": 50, "hide": 50 }
-                                });
+                        $(info.el).css('background-color', info.event.extendedProps.bg_color);
+                        $(info.el).css('color', info.event.extendedProps.color);
+                        $(info.el).find('td.fc-list-event-title').prepend('<i class="fa ' + info.event
+                            .extendedProps.icon + '"></i>&nbsp;&nbsp;');
+                        // tooltip for leaves
+                        if (info.event.extendedProps.event_type == 'leave') {
+                            $(info.el).find('td.fc-list-event-title > a').css('cursor',
+                                'default'); // list view cursor for leave
+                            $(info.el).css('cursor', 'default')
+                            $(info.el).tooltip({
+                                title: info.event.extendedProps.name,
+                                container: 'body',
+                                delay: {
+                                    "show": 50,
+                                    "hide": 50
+                                }
+                            });
                         }
                     },
                     eventTimeFormat: { // like '14:30:00'
@@ -559,7 +615,7 @@
                         filter.push($(this).val());
                     });
 
-                    if(filter.length < 1){
+                    if (filter.length < 1) {
                         filter.push('None');
                     }
 
@@ -580,17 +636,15 @@
             var initialLocaleCode = '{{ user()->locale }}';
 
             // Task Detail show in sidebar
-            var getEventDetail = function(id,type) {
-                if(type == 'ticket')
-                {
+            var getEventDetail = function(id, type) {
+                if (type == 'ticket') {
                     var url = "{{ route('tickets.show', ':id') }}";
-                        url = url.replace(':id', id);
-                        window.location = url;
-                        return true;
+                    url = url.replace(':id', id);
+                    window.location = url;
+                    return true;
                 }
 
-                if(type == 'leave')
-                {
+                if (type == 'leave') {
                     return true;
                 }
 
@@ -649,14 +703,11 @@
             // calendar filter
             var hideDropdown = false;
 
-            $('#event-btn').click(function(){
-                if(hideDropdown == true)
-                {
+            $('#event-btn').click(function() {
+                if (hideDropdown == true) {
                     $('#cal-drop').hide();
                     hideDropdown = false;
-                }
-                else
-                {
+                } else {
                     $('#cal-drop').toggle();
                     hideDropdown = true;
                 }
@@ -667,18 +718,16 @@
 
                 const $menu = $('.calendar-action');
 
-                if (!$menu.is(e.target) && $menu.has(e.target).length === 0)
-                {
+                if (!$menu.is(e.target) && $menu.has(e.target).length === 0) {
                     hideDropdown = false;
                     $('#cal-drop').hide();
                 }
             });
-
         </script>
     @endif
 
     <script>
-        window.setInterval(function () {
+        window.setInterval(function() {
             let date = new Date();
             $('#dashboard-clock').html(moment.tz(date, "{{ company()->timezone }}").format(MOMENTJS_TIME_FORMAT))
         }, 1000);
@@ -707,7 +756,7 @@
             var id = $(this).data('shift-schedule-id');
             var date = $(this).data('shift-schedule-date');
             var shiftId = $(this).data('shift-id');
-            var url = "{{ route('shifts-change.edit', ':id') }}?date="+date+"&shift_id="+shiftId;
+            var url = "{{ route('shifts-change.edit', ':id') }}?date=" + date + "&shift_id=" + shiftId;
             url = url.replace(':id', id);
 
             $(MODAL_DEFAULT + ' ' + MODAL_HEADING).html('...');
@@ -729,8 +778,7 @@
 
             });
 
-            function clockOut()
-            {
+            function clockOut() {
 
                 var token = "{{ csrf_token() }}";
                 var currentLatitude = document.getElementById("current-latitude").value;
@@ -823,27 +871,29 @@
     </script>
 
     @if (attendance_setting()->radius_check == 'yes' || attendance_setting()->save_current_location)
-    <script>
-        function setCurrentLocation() {
-            const currentLatitude = document.getElementById("current-latitude");
-            const currentLongitude = document.getElementById("current-longitude");
+        <script>
+            function setCurrentLocation() {
+                const currentLatitude = document.getElementById("current-latitude");
+                const currentLongitude = document.getElementById("current-longitude");
 
-            function getLocation() {
-                if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition(showPosition);
+                console.log("currentLatitude" + currentLatitude)
+                console.log("currentLongitude" + currentLongitude)
+
+                function getLocation() {
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(showPosition);
+                    }
                 }
+
+                function showPosition(position) {
+                    currentLatitude.value = position.coords.latitude;
+                    currentLongitude.value = position.coords.longitude;
+                }
+                getLocation();
+
             }
 
-            function showPosition(position) {
-                currentLatitude.value = position.coords.latitude;
-                currentLongitude.value = position.coords.longitude;
-            }
-            getLocation();
-
-        }
-
-        setCurrentLocation();
-    </script>
-
+            setCurrentLocation();
+        </script>
     @endif
 @endpush

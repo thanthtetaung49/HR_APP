@@ -43,15 +43,13 @@ class DashboardController extends AccountBaseController
         $this->middleware(function ($request, $next) {
             return $next($request);
         });
-
     }
 
     /**
      * @return array|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\Response|mixed|void
      */
-    public function index()
+    public function index(Request $request)
     {
-
         $this->isCheckScript();
 
         if (in_array('employee', user_roles())) {
@@ -63,7 +61,27 @@ class DashboardController extends AccountBaseController
             $this->viewTicketDashboard = user()->permission('view_ticket_dashboard');
             $this->viewFinanceDashboard = user()->permission('view_finance_dashboard');
 
-            return $this->employeeDashboard();
+            $latitude = $request->query('latitude');
+            $longitude = $request->query('longitude');
+
+            if ($latitude != 0 && $longitude != 0) {
+                $geolocationData = [
+                    'latitude' => $latitude,
+                    'longitude' => $longitude
+                ];
+
+                // return $this->employeeDashboard($geolocationData);
+            } else  {
+                $latitude = 0;
+                $longitude = 0;
+
+                $geolocationData = [
+                    'latitude' => $latitude,
+                    'longitude' => $longitude
+                ];
+
+            }
+            return $this->employeeDashboard($geolocationData);
         }
 
         if (in_array('client', user_roles())) {
@@ -112,63 +130,55 @@ class DashboardController extends AccountBaseController
     public function advancedDashboard()
     {
 
-        if (in_array('admin', user_roles()) || $this->sidebarUserPermissions['view_overview_dashboard'] == 4
+        if (
+            in_array('admin', user_roles()) || $this->sidebarUserPermissions['view_overview_dashboard'] == 4
             || $this->sidebarUserPermissions['view_project_dashboard'] == 4
             || $this->sidebarUserPermissions['view_client_dashboard'] == 4
             || $this->sidebarUserPermissions['view_hr_dashboard'] == 4
             || $this->sidebarUserPermissions['view_ticket_dashboard'] == 4
-            || $this->sidebarUserPermissions['view_finance_dashboard'] == 4) {
+            || $this->sidebarUserPermissions['view_finance_dashboard'] == 4
+        ) {
 
             $tab = request('tab');
 
             switch ($tab) {
-            case 'project':
-                $this->projectDashboard();
-                break;
-            case 'client':
-                $this->clientDashboard();
-                break;
-            case 'hr':
-                $this->hrDashboard();
-                break;
-            case 'ticket':
-                $this->ticketDashboard();
-                break;
-            case 'finance':
-                $this->financeDashboard();
-                break;
-            default:
-                if (in_array('admin', user_roles()) || $this->sidebarUserPermissions['view_overview_dashboard'] == 4) {
-                    $this->activeTab = $tab ?: 'overview';
-                    $this->overviewDashboard();
-
-                }
-                elseif ($this->sidebarUserPermissions['view_project_dashboard'] == 4) {
-                    $this->activeTab = $tab ?: 'project';
+                case 'project':
                     $this->projectDashboard();
-
-                }
-                elseif ($this->sidebarUserPermissions['view_client_dashboard'] == 4) {
-                    $this->activeTab = $tab ?: 'client';
+                    break;
+                case 'client':
                     $this->clientDashboard();
-
-                }
-                elseif ($this->sidebarUserPermissions['view_hr_dashboard'] == 4) {
-                    $this->activeTab = $tab ?: 'hr';
+                    break;
+                case 'hr':
                     $this->hrDashboard();
-
-                }
-                elseif ($this->sidebarUserPermissions['view_finance_dashboard'] == 4) {
-                    $this->activeTab = $tab ?: 'finance';
+                    break;
+                case 'ticket':
                     $this->ticketDashboard();
-
-                }
-                else if ($this->sidebarUserPermissions['view_ticket_dashboard'] == 4) {
-                    $this->activeTab = $tab ?: 'finance';
+                    break;
+                case 'finance':
                     $this->financeDashboard();
-                }
+                    break;
+                default:
+                    if (in_array('admin', user_roles()) || $this->sidebarUserPermissions['view_overview_dashboard'] == 4) {
+                        $this->activeTab = $tab ?: 'overview';
+                        $this->overviewDashboard();
+                    } elseif ($this->sidebarUserPermissions['view_project_dashboard'] == 4) {
+                        $this->activeTab = $tab ?: 'project';
+                        $this->projectDashboard();
+                    } elseif ($this->sidebarUserPermissions['view_client_dashboard'] == 4) {
+                        $this->activeTab = $tab ?: 'client';
+                        $this->clientDashboard();
+                    } elseif ($this->sidebarUserPermissions['view_hr_dashboard'] == 4) {
+                        $this->activeTab = $tab ?: 'hr';
+                        $this->hrDashboard();
+                    } elseif ($this->sidebarUserPermissions['view_finance_dashboard'] == 4) {
+                        $this->activeTab = $tab ?: 'finance';
+                        $this->ticketDashboard();
+                    } else if ($this->sidebarUserPermissions['view_ticket_dashboard'] == 4) {
+                        $this->activeTab = $tab ?: 'finance';
+                        $this->financeDashboard();
+                    }
 
-                break;
+                    break;
             }
 
             if (request()->ajax()) {
@@ -273,7 +283,6 @@ class DashboardController extends AccountBaseController
                     ];
                 }
             }
-
         }
         $user = user();
         $viewHolidayPerm = user()->permission('view_holiday');
@@ -284,18 +293,18 @@ class DashboardController extends AccountBaseController
                 $holidays = Holiday::whereBetween('date', [$startDate->toDateString(), $endDate->toDateString()])
                     ->where(function ($query) use ($user) {
                         $query->where(function ($subquery) use ($user) {
-                                $subquery->where(function ($q) use ($user) {
-                                    $q->where('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
-                                        ->orWhereNull('department_id_json');
-                                });
-                                $subquery->where(function ($q) use ($user) {
-                                    $q->where('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
-                                        ->orWhereNull('designation_id_json');
-                                });
-                                $subquery->where(function ($q) use ($user) {
-                                    $q->where('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
-                                        ->orWhereNull('employment_type_json');
-                                });
+                            $subquery->where(function ($q) use ($user) {
+                                $q->where('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
+                                    ->orWhereNull('department_id_json');
+                            });
+                            $subquery->where(function ($q) use ($user) {
+                                $q->where('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
+                                    ->orWhereNull('designation_id_json');
+                            });
+                            $subquery->where(function ($q) use ($user) {
+                                $q->where('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
+                                    ->orWhereNull('employment_type_json');
+                            });
                         });
                     });
                 $holidays = $holidays->get();
@@ -311,7 +320,6 @@ class DashboardController extends AccountBaseController
                     ];
                 }
             }
-
         }
 
         $viewTaskPerm = user()->permission('view_tasks');
@@ -366,7 +374,6 @@ class DashboardController extends AccountBaseController
                     ];
                 }
             }
-
         }
 
         $viewleavePerm = user()->permission('view_leave');
@@ -405,7 +412,7 @@ class DashboardController extends AccountBaseController
             if (in_array('follow_ups', $calendar_filter_array)) {
                 // follow ups
                 $followUps = DealFollowUp::with('lead')->whereHas('lead.leadAgent', function ($query) {
-                        $query->where('user_id', user()->id);
+                    $query->where('user_id', user()->id);
                 })
                     ->whereBetween(DB::raw('DATE(next_follow_up_date)'), [$startDate->startOfDay()->toDateTimeString(), $endDate->endOfDay()->toDateTimeString()])
                     ->get();
@@ -422,7 +429,6 @@ class DashboardController extends AccountBaseController
                     ];
                 }
             }
-
         }
 
         return $eventData;
@@ -440,7 +446,5 @@ class DashboardController extends AccountBaseController
         $this->leadStatusChart = $this->leadStatusChart($startDate, $endDate, $pipelineId);
 
         return $this->returnAjax('dashboard.ajax.lead-by-pipeline');
-
     }
-
 }

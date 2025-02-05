@@ -2,15 +2,18 @@
 
 namespace App\Providers;
 
+use DateTimeZone;
+use Carbon\Carbon;
 use App\Models\Company;
-use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 use Carbon\CarbonInterval;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\URL;
-use Illuminate\Support\ServiceProvider;
 use Laravel\Cashier\Cashier;
 use Laravel\Sanctum\Sanctum;
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\ServiceProvider;
+use Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -56,8 +59,7 @@ class AppServiceProvider extends ServiceProvider
             /** @phpstan-ignore-line */
         });
 
-            //    Model::preventLazyLoading(app()->environment('development'));
+        //    Model::preventLazyLoading(app()->environment('development'));
 
     }
-
 }

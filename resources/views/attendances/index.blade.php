@@ -123,7 +123,6 @@
 @section('content')
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper px-4">
-
         <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 @if ($addAttendancePermission == 'all' || $addAttendancePermission == 'added')
