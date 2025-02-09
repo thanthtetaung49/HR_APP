@@ -3,6 +3,7 @@
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Models\Team;
+use App\Models\Location;
 use App\Models\User;
 use App\Helper\Reply;
 use App\Models\Designation;
@@ -47,6 +48,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         if (!request()->ajax()) {
             $this->departments = Team::all();
             $this->designations = Designation::allDesignations();
+            $this->locations = Location::all();
         }
 
         return $dataTable->render('payroll::employee-salary.index', $this->data);

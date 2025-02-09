@@ -5,36 +5,45 @@
 @endpush
 
 @section('filter-section')
-
     <x-filters.filter-box>
 
-        <!-- DESIGNATION START -->
-        <div class="select-box d-flex py-2 px-lg-3 px-md-3 px-0 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.designation')</p>
+        <!-- LOCATION START -->
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="designation" id="designation">
+                <select class="form-control select-picker" name="location" id="locationSearch">
                     <option value="all">@lang('app.all')</option>
-                    @foreach ($designations as $designation)
-                        <option value="{{ $designation->id }}">{{ ($designation->name) }}</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->location_name }}</option>
                     @endforeach
                 </select>
             </div>
         </div>
-        <!-- DESIGNATION END -->
+        <!-- LOCATION END -->
 
         <!-- DEPARTMENT START -->
-        <div class="select-box d-flex py-2 px-lg-3 px-md-3 px-0 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.department')</p>
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.departments')</p>
             <div class="select-status">
                 <select class="form-control select-picker" name="department" id="department">
                     <option value="all">@lang('app.all')</option>
-                    @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ ($department->team_name) }}</option>
-                    @endforeach
+                    {{-- department display here --}}
                 </select>
             </div>
         </div>
         <!-- DEPARTMENT END -->
+
+        <!-- DESIGNATION START -->
+        <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.designation')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="designation" id="designation">
+                    <option value="all">@lang('app.all')</option>
+                    {{-- designation display here  --}}
+                </select>
+            </div>
+        </div>
+        <!-- DESIGNATION END -->
 
 
         <!-- SEARCH BY TASK START -->
@@ -47,7 +56,7 @@
                         </span>
                     </div>
                     <input type="text" class="form-control f-14 p-1 border-additional-grey" id="search-text-field"
-                           placeholder="@lang('app.startTyping')">
+                        placeholder="@lang('app.startTyping')">
                 </div>
             </form>
         </div>
@@ -61,7 +70,6 @@
         </div>
         <!-- RESET END -->
     </x-filters.filter-box>
-
 @endsection
 
 @section('content')
@@ -81,29 +89,130 @@
         <!-- Task Box End -->
     </div>
     <!-- CONTENT WRAPPER END -->
-
 @endsection
 
 @push('scripts')
     @include('sections.datatable_js')
 
     <script>
-        $('#employee-salary-table').on('preXhr.dt', function (e, settings, data) {
+        $('#employee-salary-table').on('preXhr.dt', function(e, settings, data) {
 
             const designation = $('#designation').val();
+            const location = $("#locationSearch").val();
             const department = $('#department').val();
+            // const designation = $("#designation").val();
             const searchText = $('#search-text-field').val();
+
             data['designation'] = designation;
+            data['location'] = location;
             data['department'] = department;
             data['searchText'] = searchText;
+
+            console.log(location);
         });
+
         const showTable = () => {
             window.LaravelDataTables["employee-salary-table"].draw(true);
         }
 
-        $('#designation, #department, #search-text-field').on('change keyup',
-            function () {
+        $("#locationSearch").on('change', function() {
+            console.log('hello');
+            let location_id = $(this).val();
+            let designation_id = $("#designation").val();
+            let department_id = $("#department").val();
+
+            let department_html = `<option value="all">--</option>`;
+            let designation_html = `<option value="all">--</option>`;
+
+            let url = "{{ route('location.select') }}";
+
+            if (department_id != "all" && designation_id != "all") {
+                $("#department").html(department_html);
+                $("#department").selectpicker('refresh');
+
+                $("#designation").html(designation_html);
+                $("#designation").selectpicker('refresh');
+
+            } else if (designation_id != "all") {
+                $("#designation").html(designation_html);
+                $("#designation").selectpicker('refresh');
+            } else {
+                $("#department").html(department_html);
+                $("#department").selectpicker('refresh');
+            }
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': location_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    let teams = response.data;
+                    let html = department_html;
+
+                    teams.forEach((team) => {
+                        html += `
+                            <option value="${team.id}">${team.team_name}</option>
+                        `
+                    });
+
+                    $("#department").html(html);
+                    $("#department").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+
+            });
+
+            showTable();
+        });
+
+        $("#department").on('change', function() {
+            let department_id = $(this).val();
+            let location_id = $("#locationSearch").val();
+            let designation_id = $("#designation").val();
+
+            let url = "{{ route('department.select') }}";
+
+            let designation_html = `<option value="all">--</option>`;
+
+            if (designation_id != "all") {
+                $("#designation").html(designation_html);
+                $("#designation").selectpicker('refresh');
+            }
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': department_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    let designations = response.data;
+                    let html = designation_html;
+
+                    designations.forEach((designation) => {
+                        html += `
+                            <option value="${designation.id}">${designation.name}</option>
+                        `
+                    });
+
+                    $("#designation").html(html);
+                    $("#designation").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+            });
+
+            showTable();
+        });
+
+        $('#locationSearch, #designation, #department, #search-text-field').on('change keyup',
+            function() {
                 if ($('#designation').val() !== "all") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($('#locationSearch').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#department').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -116,7 +225,7 @@
                 showTable();
             });
 
-        $('#reset-filters').click(function () {
+        $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
 
             $('.filter-box .select-picker').selectpicker("refresh");
@@ -124,7 +233,7 @@
             showTable();
         });
 
-        $('body').on('click', '.save-initial-salary', function () {
+        $('body').on('click', '.save-initial-salary', function() {
             const id = $(this).data('user-id');
             const amount = $('#initial-salary-' + id).val();
             const token = "{{ csrf_token() }}";
@@ -136,8 +245,13 @@
                 blockUI: true,
                 disableButton: true,
                 buttonSelector: "#save-initial-salary",
-                data: {user_id: id, amount: amount, _token: token, type: 'initial'},
-                success: function (response) {
+                data: {
+                    user_id: id,
+                    amount: amount,
+                    _token: token,
+                    type: 'initial'
+                },
+                success: function(response) {
                     if (response.status === "success") {
                         showTable();
                     }
@@ -146,34 +260,38 @@
 
         });
 
-        $('body').on('click', '.salary-history', function () {
+        $('body').on('click', '.salary-history', function() {
             const userId = $(this).data('user-id');
-            let url = '{{ route("employee-salary.show", ":id")}}';
+            let url = '{{ route('employee-salary.show', ':id') }}';
             url = url.replace(':id', userId);
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('body').on('click', '.update-salary', function () {
+        $('body').on('click', '.update-salary', function() {
             const userId = $(this).data('user-id');
-            let url = '{{ route("employee-salary.edit", ":id")}}';
+            let url = '{{ route('employee-salary.edit', ':id') }}';
             url = url.replace(':id', userId);
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('body').on('change', '.salary-cycle', function () {
+        $('body').on('change', '.salary-cycle', function() {
             const id = $(this).data('user-id');
             const cycle = $(this).val();
             const token = "{{ csrf_token() }}";
             if (id !== undefined && id !== '') {
                 $.easyAjax({
-                    url: '{{route("employee-salary.payroll-cycle")}}',
+                    url: '{{ route('employee-salary.payroll-cycle') }}',
                     type: "POST",
-                    data: {user_id: id, cycle: cycle, _token: token},
-                    success: function (response) {
+                    data: {
+                        user_id: id,
+                        cycle: cycle,
+                        _token: token
+                    },
+                    success: function(response) {
                         if (response.status == "success") {
                             showTable();
                         }
@@ -184,16 +302,20 @@
 
         });
 
-        $('body').on('change', '.payroll-status', function () {
+        $('body').on('change', '.payroll-status', function() {
             const id = $(this).data('user-id');
             const status = $(this).val();
             const token = "{{ csrf_token() }}";
             if (id !== undefined && id != '') {
                 $.easyAjax({
-                    url: '{{route("employee-salary.payroll-status")}}',
+                    url: '{{ route('employee-salary.payroll-status') }}',
                     type: "POST",
-                    data: {user_id: id, status: status, _token: token},
-                    success: function (response) {
+                    data: {
+                        user_id: id,
+                        status: status,
+                        _token: token
+                    },
+                    success: function(response) {
                         if (response.status === "success") {
                             showTable();
                         }
@@ -202,6 +324,5 @@
             }
 
         });
-
     </script>
 @endpush

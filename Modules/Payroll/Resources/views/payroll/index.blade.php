@@ -242,6 +242,7 @@
             data['searchText'] = searchText;
             data['cycle'] = cycle;
         });
+        
         const showTable = () => {
             window.LaravelDataTables["payroll-table"].draw(true);
         }

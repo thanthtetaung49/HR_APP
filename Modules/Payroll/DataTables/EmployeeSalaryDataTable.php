@@ -32,8 +32,8 @@ class EmployeeSalaryDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addColumn('action', function ($row) {
-                    $salary = EmployeeMonthlySalary::employeeNetSalary($row->id);
-                    $action = '<div class="task_view">
+                $salary = EmployeeMonthlySalary::employeeNetSalary($row->id);
+                $action = '<div class="task_view">
                         <div class="dropdown">
                             <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
                                 id="dropdownMenuLink-' . $row->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -47,17 +47,16 @@ class EmployeeSalaryDataTable extends BaseDataTable
                                         ' . trans('app.edit') . '
                                     </a>';
                     $action .= '<a href="javascript:;" data-user-id="' . $row->id . '" class="dropdown-item update-salary" ><i class="fa fa-plus"></i> ' .  __('payroll::modules.payroll.increment') . '</a>';
-                    $action .= '<a href="javascript:;" data-user-id="' . $row->id . '" class="dropdown-item salary-history" ><i class="fa fa-eye"></i> ' .__('payroll::modules.payroll.salaryHistory'). '</a>';
-                }
-                else{
-                    $action = '<a href="' . route('employee-salary.make-salary', [$row->id]) . '" data-user-id="' . $row->id . '" class="dropdown-item add-salary openRightModal float-left" ><i class="fa fa-plus"></i> ' .__('payroll::modules.payroll.addSalary'). '</a>';
+                    $action .= '<a href="javascript:;" data-user-id="' . $row->id . '" class="dropdown-item salary-history" ><i class="fa fa-eye"></i> ' . __('payroll::modules.payroll.salaryHistory') . '</a>';
+                } else {
+                    $action = '<a href="' . route('employee-salary.make-salary', [$row->id]) . '" data-user-id="' . $row->id . '" class="dropdown-item add-salary openRightModal float-left" ><i class="fa fa-plus"></i> ' . __('payroll::modules.payroll.addSalary') . '</a>';
                 }
 
-                    $action .= '</div>
+                $action .= '</div>
                         </div>
                     </div>';
 
-                    return $action;
+                return $action;
             })
             ->editColumn(
                 'group_name',
@@ -154,13 +153,22 @@ class EmployeeSalaryDataTable extends BaseDataTable
             ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_groups.group_name', 'employee_payroll_cycles.payroll_cycle_id', 'employee_monthly_salaries.allow_generate_payroll', 'payroll_cycles.cycle')
             ->where('roles.name', '<>', 'client');
 
-        if ($request->designation != 'all' && $request->designation != '') {
-            $users = $users->where('employee_details.designation_id', $request->designation);
+        $location = $request->location;
+
+        if ($location != 'all' && $location != '') {
+            $users = $users->whereHas('employeeDetails.department', function ($query) use ($location) {
+                $query->where('location_id', $location);
+            });
         }
 
         if ($request->department != 'all' && $request->department != '') {
             $users = $users->where('employee_details.department_id', $request->department);
         }
+
+        if ($request->designation != 'all' && $request->designation != '') {
+            $users = $users->where('employee_details.designation_id', $request->designation);
+        }
+
 
         if ($this->viewEmployeePermission == 'added') {
             $users = $users->where('employee_details.added_by', user()->id);
@@ -209,7 +217,7 @@ class EmployeeSalaryDataTable extends BaseDataTable
             __('app.name') => ['data' => 'name', 'name' => 'name', 'exportable' => false, 'title' => __('app.name')],
             __('app.employee') => ['data' => 'user_name', 'name' => 'name', 'visible' => false, 'title' => __('app.employee')],
             __('payroll::modules.payroll.salaryCycle') => ['data' => 'salary_cycle_export', 'name' => 'salary_cycle', 'visible' => false, 'title' => __('payroll::modules.payroll.salaryCycle')],
-            __('app.employee') .'  '.__('payroll::modules.payroll.salaryCycle') => ['data' => 'salary_cycle', 'name' => 'salary_cycle', 'exportable' => false, 'title' => __('app.employee') .'  '.__('payroll::modules.payroll.salaryCycle')],
+            __('app.employee') . '  ' . __('payroll::modules.payroll.salaryCycle') => ['data' => 'salary_cycle', 'name' => 'salary_cycle', 'exportable' => false, 'title' => __('app.employee') . '  ' . __('payroll::modules.payroll.salaryCycle')],
             __('payroll::modules.payroll.salaryGroup') => ['data' => 'group_name', 'name' => 'group_name', 'title' => __('payroll::modules.payroll.salaryGroup')],
             __('app.employee') . ' ' . __('payroll::modules.payroll.allow_generate_payroll') => ['data' => 'allow_generate_payroll_export', 'name' => 'allow_generate_payroll', 'visible' => false, 'title' => __('app.employee') . ' ' . __('payroll::modules.payroll.allow_generate_payroll')],
             __('payroll::modules.payroll.allow_generate_payroll') => ['data' => 'allow_generate_payroll', 'name' => 'allow_generate_payroll', 'exportable' => false, 'title' => __('payroll::modules.payroll.allow_generate_payroll')],
@@ -223,5 +231,4 @@ class EmployeeSalaryDataTable extends BaseDataTable
                 ->addClass('text-right pr-20')
         ];
     }
-
 }

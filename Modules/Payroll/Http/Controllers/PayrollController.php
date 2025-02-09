@@ -513,12 +513,9 @@ class PayrollController extends AccountBaseController
             else{
                 $users = $users->whereIn('users.id', $request->employee_id);
             }
-
             $users = $users->get();
-        }
 
-        else if($request->department)
-        {
+        } else if($request->department) {
             $users = User::with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
                 ->join('employee_monthly_salaries', 'employee_monthly_salaries.user_id', '=', 'users.id')
@@ -527,9 +524,7 @@ class PayrollController extends AccountBaseController
                 ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
                 ->where('employee_details.department_id', $request->department)->get();
-        }
-
-        else {
+        } else {
             $users = User::leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->join('role_user', 'role_user.user_id', '=', 'users.id')
                 ->join('roles', 'roles.id', '=', 'role_user.role_id')

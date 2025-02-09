@@ -8,6 +8,7 @@ use App\Scopes\ActiveScope;
 use Carbon\Carbon;
 use Modules\Payroll\Entities\PayrollSetting;
 use Yajra\DataTables\Html\Column;
+use Carbon\CarbonImmutable;
 
 class PayrollDataTable extends BaseDataTable
 {
@@ -142,9 +143,12 @@ class PayrollDataTable extends BaseDataTable
         $endDate = null;
 
         if (!is_null($request->month) && $request->month != 'null' && $request->month != '') {
-            $explode = explode(' ', $request->month);
-            $startDate = trim($explode[0]);
-            $endDate = trim($explode[1]);
+            $month = explode(' ', $request->month);
+            // $prevDate = trim($explode[0]);
+            // $todayDate = trim($explode[1]);
+
+            $startDate = CarbonImmutable::parse($month[0])->subMonth()->setDay(26);
+            $endDate = CarbonImmutable::parse($month[1])->setDay(26);
         }
 
         $users = User::withoutGlobalScope(ActiveScope::class)
@@ -159,6 +163,8 @@ class PayrollDataTable extends BaseDataTable
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $request->cycle)
             ->where('salary_slips.year', $request->year);
+        
+        // dd($users->get()->toArray(), $startDate, $endDate);
 
         if (!is_null($startDate) && !is_null($endDate)) {
             $users = $users->whereRaw('Date(salary_slips.salary_from) = ?', [$startDate]);
