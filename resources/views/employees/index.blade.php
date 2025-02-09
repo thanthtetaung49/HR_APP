@@ -39,7 +39,7 @@
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.departments')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="department" id="department">
+                <select class="form-control select-picker" name="department" id="employee-department">
                     <option value="all">@lang('app.all')</option>
                     {{-- department display here --}}
                 </select>
@@ -251,9 +251,20 @@
             const skill = $('#skill').val();
             const location = $("#location").val();
             const designation = $('#designation').val();
-            const department = $('#department').val();
+            // const department = $('#department').val();
             const employmentType = $('#employmentType').val();
             const searchText = $('#search-text-field').val();
+
+            let department;
+
+            if ($("#employee-department").val() != '') {
+                department = $("#employee-department").val();
+            }
+
+            if ($("#department").val() != '') {
+                department = $("#department").val();
+            }
+
             data['status'] = status;
             data['employee'] = employee;
             data['role'] = role;
@@ -264,6 +275,8 @@
             data['department'] = department;
             data['employmentType'] = employmentType;
             data['searchText'] = searchText;
+
+
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
             if (status == "all" || employee == "all" || role == "all" || location == "all" || designation == "all" || department == "all" ||
@@ -283,7 +296,7 @@
         $("#location").on('change', function() {
             let location_id = $(this).val();
             let designation_id = $("#designation").val();
-            let department_id = $("#department").val();
+            let department_id = $("#employee-department").val();
 
             let department_html = `<option value="all">--</option>`;
             let designation_html = `<option value="all">--</option>`;
@@ -291,8 +304,8 @@
             let url = "{{ route('location.select') }}";
 
             if (department_id != "all" && designation_id != "all") {
-                $("#department").html(department_html);
-                $("#department").selectpicker('refresh');
+                $("#employee-department").html(department_html);
+                $("#employee-department").selectpicker('refresh');
 
                 $("#designation").html(designation_html);
                 $("#designation").selectpicker('refresh');
@@ -301,8 +314,8 @@
                 $("#designation").html(designation_html);
                 $("#designation").selectpicker('refresh');
             } else {
-                $("#department").html(department_html);
-                $("#department").selectpicker('refresh');
+                $("#employee-department").html(department_html);
+                $("#employee-department").selectpicker('refresh');
             }
 
 
@@ -323,14 +336,16 @@
                         `
                     });
 
-                    $("#department").html(html);
-                    $("#department").selectpicker('refresh'); // refresh the bootstrap select ui
+                    $("#employee-department").html(html);
+                    $("#employee-department").selectpicker('refresh'); // refresh the bootstrap select ui
                 }
 
             });
+
+            showTable();
         });
 
-        $("#department").on('change', function() {
+        $("#employee-department").on('change', function() {
             let department_id = $(this).val();
             let location_id = $("#location").val();
             let designation_id = $("#designation").val();
@@ -353,7 +368,6 @@
                     _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
-                    console.log(response.data);
                     let designations = response.data;
                     let html = designation_html;
 
@@ -367,6 +381,8 @@
                     $("#designation").selectpicker('refresh'); // refresh the bootstrap select ui
                 }
             });
+
+            showTable();
         });
 
         $('#employee, #status, #role, #gender, #skill, #designation, #location, #department, #employmentType').on(

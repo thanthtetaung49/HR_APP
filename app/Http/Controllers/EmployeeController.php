@@ -250,6 +250,9 @@ class EmployeeController extends AccountBaseController
             $user->country_phonecode = $request->country_phonecode;
             $user->gender = $request->gender;
             $user->locale = $request->locale;
+            $user->location_id = $request->location;
+            $user->department_id = $request->department;
+            $user->designation_id = $request->designation;
 
             if ($request->has('login')) {
                 $user->login = $request->login;
@@ -431,6 +434,7 @@ class EmployeeController extends AccountBaseController
         $this->userRoles = $this->employee->roles->pluck('name')->toArray();
         $this->salutations = Salutation::cases();
         $this->companyAddresses = CompanyAddress::all();
+        $this->locations = Location::all();
 
         /** @phpstan-ignore-next-line */
         if (count($this->employee->reportingTeam) > 0) {
@@ -470,7 +474,6 @@ class EmployeeController extends AccountBaseController
      */
     public function update(UpdateRequest $request, $id)
     {
-
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
         $user->name = $request->name;
         $user->email = $request->email;
@@ -485,6 +488,9 @@ class EmployeeController extends AccountBaseController
         $user->country_phonecode = $request->country_phonecode;
         $user->gender = $request->gender;
         $user->locale = $request->locale;
+        $user->location_id = $request->location;
+        $user->department_id = $request->department;
+        $user->designation_id = $request->designation;
 
         if ($request->status) {
             $lastDate = $request->last_date ? Carbon::createFromFormat($this->company->date_format, $request->last_date, $this->company->timezone) : null;

@@ -8,7 +8,6 @@
 <div class="row">
     <div class="col-sm-12">
         <x-form id="save-employee-data-form">
-
             <div class="bg-white rounded add-client">
                 <h4 class="p-20 mb-0 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.employees.accountDetails')</h4>
@@ -62,11 +61,11 @@
                             </div>
 
                             <div class="col-lg-3 col-md-6">
-                                <x-forms.label class="my-3" fieldId="location_id" :fieldLabel="__('app.location')"
+                                <x-forms.label class="my-3" fieldId="location" :fieldLabel="__('app.location')"
                                     fieldRequired="true">
                                 </x-forms.label>
                                 <x-forms.input-group>
-                                    <select class="form-control select-picker" name="location" id="location"
+                                    <select class="form-control select-picker" name="location" id="locationSearch"
                                         data-live-search="true">
                                         <option value="">--</option>
 
@@ -92,9 +91,6 @@
                                     <select class="form-control select-picker" name="department"
                                         id="employee_department" data-live-search="true">
                                         <option value="">--</option>
-                                        {{-- @foreach ($teams as $team)
-                                            <option value="{{ $team->id }}">{{ $team->team_name }}</option>
-                                        @endforeach --}}
                                     </select>
 
                                     @if ($addDepartmentPermission == 'all')
@@ -113,9 +109,7 @@
                                     <select class="form-control select-picker" name="designation"
                                         id="employee_designation" data-live-search="true">
                                         <option value="">--</option>
-                                        {{-- @foreach ($designations as $designation)
-                                            <option value="{{ $designation->id }}">{{ $designation->name }}</option>
-                                        @endforeach --}}
+                                       
                                     </select>
 
                                     @if ($addDesignationPermission == 'all')
@@ -554,7 +548,8 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('#location').change(function() {
+        $('#locationSearch').change(function() {
+            console.log('hello');
             let location_id = $(this).val();
             let url = "{{ route('location.select') }}";
 
@@ -567,6 +562,7 @@
                 },
                 success: function(response) {
                     let teams = response.data;
+                    console.log(teams);
                     let html = `<option value="">--</option>`;
 
                     teams.forEach((team) => {

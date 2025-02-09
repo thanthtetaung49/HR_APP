@@ -9,7 +9,9 @@ use App\Helper\Reply;
 use App\Models\Leave;
 use App\Models\Expense;
 use App\Models\Holiday;
+use App\Models\Attendance;
 use App\Models\Designation;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\ProjectTimeLog;
@@ -20,15 +22,14 @@ use Modules\Payroll\Entities\SalaryTds;
 use Modules\Payroll\Entities\SalarySlip;
 use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
+use Modules\Payroll\Entities\OvertimeRequest;
 use App\Http\Controllers\AccountBaseController;
-use App\Models\Attendance;
 use Modules\Payroll\DataTables\PayrollDataTable;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
 use Modules\Payroll\Entities\EmployeeMonthlySalary;
-use Modules\Payroll\Entities\EmployeeVariableComponent;
-use Modules\Payroll\Entities\OvertimeRequest;
 use Modules\Payroll\Notifications\SalaryStatusEmail;
+use Modules\Payroll\Entities\EmployeeVariableComponent;
 
 class PayrollController extends AccountBaseController
 {
@@ -488,10 +489,14 @@ class PayrollController extends AccountBaseController
         $includeExpenseClaims = $request->includeExpenseClaims;
         $addTimelogs = $request->addTimelogs;
         $payrollCycleData = PayrollCycle::find($payrollCycle);
-        $startDate = Carbon::parse($month[0]);
-        $endDate = Carbon::parse($month[1]);
-        $lastDayCheck = Carbon::parse($month[1]);
-        $daysInMonth = $startDate->diffInDays($lastDayCheck->addDay()); // Days by start and end date
+        $startDate = CarbonImmutable::parse($month[0])->subMonth()->setDay(26);
+        $endDate = CarbonImmutable::parse($month[1])->setDay(26);
+
+        $lastDayCheck = $endDate;
+        // $daysInMonth = $startDate->diffInDays($lastDayCheck->addDay()); // Days by start and end date
+
+        $lastDayOfMonth = $startDate->lastOfMonth();
+        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 26);
 
         if ($request->userIds || $request->employee_id)
         {
@@ -550,8 +555,9 @@ class PayrollController extends AccountBaseController
             $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date)->setTimezone($this->company->timezone) : null;
             $payDays = $daysInMonth;
 
+
             if ($endDate->greaterThan($joiningDate)) {
-                $payDays = $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
+                $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
 
                 // Check Joining date of the employee
                 if(!$useAttendance && $joiningDate->greaterThan($startDate))
@@ -568,17 +574,20 @@ class PayrollController extends AccountBaseController
                 }
 
                 $monthCur = $endDate->month;
-                $curMonthDays = Carbon::parse('01-' . $monthCur . '-' . $year)->daysInMonth;
+                $curMonthDays = Carbon::parse('01-' . $monthCur . '-' . $year);
                 $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId, $endDate);
 
-                $curMonthDays = ($curMonthDays != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $curMonthDays;
+                $daysInMonth = ($daysInMonth != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $daysInMonth;
 
-                $perDaySalary = $monthlySalary['netSalary'] / $curMonthDays;
+                $perDaySalary = $monthlySalary['netSalary'] / $daysInMonth;
                 $payableSalary = $perDaySalary * $payDays;
 
                 $basicSalary = $payableSalary;
 
-                $salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $userId)->first();
+                $salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')
+                ->where('user_id', $userId)
+                ->first();
+
                 $totalBasicSalary = [];
                 $employeeBasicSalary = EmployeeMonthlySalary::where('user_id', $userId)->where('type', 'initial')->first();
 
@@ -586,7 +595,8 @@ class PayrollController extends AccountBaseController
                     $totalBasicSalary[] = $employeeBasicSalary->basic_salary;
                 }
                 else {
-                    $totalBasicSalary[] = $employeeBasicSalary->effective_monthly_salary / 100 * $employeeBasicSalary->basic_salary;
+                    $totalBasicSalary[] = $employeeBasicSalary->effective_monthly_salary / 100 *
+                    $employeeBasicSalary->basic_salary;
                 }
 
                 $totalBasicSalary = array_sum($totalBasicSalary);
@@ -596,6 +606,7 @@ class PayrollController extends AccountBaseController
                 $deductionsTotal = 0;
 
                 if (!is_null($salaryGroup)) {
+
                     $earnings = [];
                     $deductions = [];
 
@@ -603,12 +614,14 @@ class PayrollController extends AccountBaseController
                         $componentValueAmount = ($payrollCycleData->cycle != 'monthly') ? $components->component->{$payrollCycleData->cycle . '_value'} : $components->component->component_value;
 
                         $componentCalculation = $this->componentCalculation($components, $basicSalary, $componentValueAmount, $payableSalary, $totalBasicSalary, $earningsTotal, $deductionsTotal, $earnings, $deductions, $user->salary_id);
+
                         $earningsTotal = $componentCalculation['earningsTotal'];
                         $deductionsTotal = $componentCalculation['deductionsTotal'];
                         $earnings = $componentCalculation['earnings'];
                         $deductions = $componentCalculation['deductions'];
 
                     }
+
                 }
 
                 $salaryTdsTotal = 0;
@@ -620,6 +633,8 @@ class PayrollController extends AccountBaseController
 
                 $financialyearStart = Carbon::parse($year . '-' . $payrollSetting->finance_month . '-01')->setTimezone($this->company->timezone);
                 $financialyearEnd = Carbon::parse($today->year . '-' . $payrollSetting->finance_month . '-01')->addYear()->subDays(1)->setTimezone($this->company->timezone);
+
+                // dd($startDate->format('m'), $payrollSetting->finance_month);
 
                 if($startDate->format('m') < $payrollSetting->finance_month){
                     $startPayrollDate = clone $startDate;
@@ -635,6 +650,7 @@ class PayrollController extends AccountBaseController
                                 ->orWhereBetween('salary_to', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
                     })
                         ->where('year', $year)->first();
+
 
                 if ($payrollSetting->tds_status) {
                     $deductions['TDS'] = 0;
@@ -758,7 +774,6 @@ class PayrollController extends AccountBaseController
                 if (is_null($userSlip) || (!is_null($userSlip) && $userSlip->status != 'paid')) {
                     SalarySlip::create($data);
                 }
-
             }
         }
 
