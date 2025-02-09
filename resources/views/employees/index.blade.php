@@ -25,7 +25,7 @@
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="location" id="location">
+                <select class="form-control select-picker" name="location" id="locationSearch">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($locations as $location)
                         <option value="{{ $location->id }}">{{ $location->location_name }}</option>
@@ -86,7 +86,7 @@
 
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
-            <div class="more-filter-items">
+            {{-- <div class="more-filter-items">
                 <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.department')</label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
@@ -98,7 +98,7 @@
                         </select>
                     </div>
                 </div>
-            </div>
+            </div> --}}
 
             <div class="more-filter-items">
                 <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.employees.role')</label>
@@ -249,21 +249,11 @@
             const role = $('#role').val();
             const gender = $('#gender').val();
             const skill = $('#skill').val();
-            const location = $("#location").val();
+            const location = $("#locationSearch").val();
             const designation = $('#designation').val();
-            // const department = $('#department').val();
+            const department = $('#employee-department').val();
             const employmentType = $('#employmentType').val();
             const searchText = $('#search-text-field').val();
-
-            let department;
-
-            if ($("#employee-department").val() != '') {
-                department = $("#employee-department").val();
-            }
-
-            if ($("#department").val() != '') {
-                department = $("#department").val();
-            }
 
             data['status'] = status;
             data['employee'] = employee;
@@ -275,8 +265,6 @@
             data['department'] = department;
             data['employmentType'] = employmentType;
             data['searchText'] = searchText;
-
-
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
             if (status == "all" || employee == "all" || role == "all" || location == "all" || designation == "all" || department == "all" ||
@@ -293,7 +281,7 @@
             window.LaravelDataTables["employees-table"].draw(true);
         }
 
-        $("#location").on('change', function() {
+        $("#locationSearch").on('change', function() {
             let location_id = $(this).val();
             let designation_id = $("#designation").val();
             let department_id = $("#employee-department").val();
@@ -347,7 +335,7 @@
 
         $("#employee-department").on('change', function() {
             let department_id = $(this).val();
-            let location_id = $("#location").val();
+            let location_id = $("#locationSearch").val();
             let designation_id = $("#designation").val();
 
             let url = "{{ route('department.select') }}";
@@ -385,7 +373,7 @@
             showTable();
         });
 
-        $('#employee, #status, #role, #gender, #skill, #designation, #location, #department, #employmentType').on(
+        $('#employee, #status, #role, #gender, #skill, #designation, #locationSearch, #department, #employmentType').on(
             'change keyup',
             function() {
                 if ($('#status').val() != "all") {
@@ -400,7 +388,7 @@
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#designation').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
-                } else if ($('#location').val() != 'all') {
+                } else if ($('#locationSearch').val() != 'all') {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#department').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
