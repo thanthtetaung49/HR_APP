@@ -53,7 +53,7 @@
                             <select class="form-control select-picker mt" name="designation_id[]" id="designation_id" multiple
                                 data-live-search="true">
                                 <option value="">--</option>
-                                @foreach($designations as $designation)
+                            @foreach($designations as $designation)
                                     <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                                 @endforeach
                             </select>

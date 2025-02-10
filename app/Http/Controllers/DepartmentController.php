@@ -108,6 +108,9 @@ class DepartmentController extends AccountBaseController
     {
         $this->department = Team::findOrFail($id);
         $departments = Team::where('id', '!=', $this->department->id)->get();
+        $this->selectedDesignations = json_decode($this->department->designation_ids);
+        $this->locations = Location::all();
+        $this->designations = Designation::all();
 
         $childDepartments = $departments->where('parent_id', $this->department->id)->pluck('id')->toArray();
 
@@ -141,6 +144,8 @@ class DepartmentController extends AccountBaseController
         $group = Team::findOrFail($id);
         $group->team_name = strip_tags($request->team_name);
         $group->parent_id = $request->parent_id ?? null;
+        $group->location_id = $request->location;
+        $group->designation_ids = json_encode($request->designation_id);
         $group->save();
 
         $redirectUrl = route('departments.index');

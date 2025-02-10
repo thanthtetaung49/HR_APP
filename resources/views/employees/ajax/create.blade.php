@@ -65,7 +65,7 @@
                                     fieldRequired="true">
                                 </x-forms.label>
                                 <x-forms.input-group>
-                                    <select class="form-control select-picker" name="location" id="locationSearch"
+                                    <select class="form-control select-picker" name="location" id="location"
                                         data-live-search="true">
                                         <option value="">--</option>
 
@@ -109,7 +109,7 @@
                                     <select class="form-control select-picker" name="designation"
                                         id="employee_designation" data-live-search="true">
                                         <option value="">--</option>
-                                       
+
                                     </select>
 
                                     @if ($addDesignationPermission == 'all')
@@ -548,7 +548,7 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('#locationSearch').change(function() {
+        $('#location').change(function() {
             console.log('hello');
             let location_id = $(this).val();
             let url = "{{ route('location.select') }}";
