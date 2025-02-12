@@ -44,15 +44,8 @@ trait EmployeeDashboard
 
     /**
      */
-    public function employeeDashboard($geolocationData)
+    public function employeeDashboard()
     {
-        $client = new Client();
-        $response = $client->get('https://ipinfo.io/37.111.44.30?token=c01ccdceb6f137');
-        $data = json_decode($response->getBody(), true);
-
-        $latitude = $data['loc'] ? explode(',', $data['loc'])[0] : 0;
-        $longitude = $data['loc'] ? explode(',', $data['loc'])[1] : 0;
-
         $user = user();
 
         $completedTaskColumn = TaskboardColumn::completeColumn();

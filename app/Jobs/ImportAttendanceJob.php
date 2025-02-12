@@ -64,15 +64,16 @@ class ImportAttendanceJob implements ShouldQueue
                 try {
                     $now = now($this->company->timezone);
 
-                    $clock_in_time = Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_in_time'), $this->company?->timezone)->timezone('UTC')->format('Y-m-d H:i:s');
+                    $clock_in_time = Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_in_time'))->timezone('UTC')->format('Y-m-d H:i:s');
                     $clock_in_ip = $this->isColumnExists('clock_in_ip') ? $this->getColumnValue('clock_in_ip') : '127.0.0.1';
-                    $clock_out_time = $this->isColumnExists('clock_out_time') ? Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_out_time'), $this->company?->timezone)->timezone('UTC')->format('Y-m-d H:i:s') : null;
+                    $clock_out_time = $this->isColumnExists('clock_out_time') ? Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_out_time'))->timezone('UTC')->format('Y-m-d H:i:s') : null;
                     $clock_out_ip = $this->isColumnExists('clock_out_ip') ? $this->getColumnValue('clock_out_ip') : null;
                     $working_from = $this->isColumnExists('working_from') ? $this->getColumnValue('working_from') : 'office';
                     // $late = $this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes' ? 'yes' : 'no';
                     $half_day = $this->isColumnExists('half_day') && str($this->getColumnValue('half_day'))->lower() == 'yes' ? 'yes' : 'no';
 
                     $showClockIn = AttendanceSetting::first();
+
                     $attendanceSettings = $this->attendanceShift($showClockIn);
 
                     $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
@@ -82,15 +83,22 @@ class ImportAttendanceJob implements ShouldQueue
 
 
                     $clockInCount = Attendance::where('user_id', $user->id)
-                    ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
-                    ->count();
+                        ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
+                        ->count();
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
+
+                        if ($attendanceSettings->halfday_mark_time) {
+                            $halfDayTimes = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time, $this->company->timezone);
+                        }
 
                         // Check maximum attendance in a day
                         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time, $this->company->timezone);
 
                         $lateTime = $officeStartTime->addMinutes($attendanceSettings->late_mark_duration);
+
+                        $checkTodayAttendance = Attendance::where('user_id', $user->id)
+                            ->where(DB::raw('DATE(attendances.clock_in_time)'), '=', Carbon::parse($clock_in_time)->format('Y-m-d'))->first();
 
                         $attendance = new Attendance();
                         $attendance->user_id = $user->id;
@@ -102,10 +110,12 @@ class ImportAttendanceJob implements ShouldQueue
                         $attendance->working_from = $working_from;
                         $attendance->location_id = $user->employeeDetail->company_address_id;
 
+                    //    dd( Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone));
+
                         if ($this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes') {
                             $attendance->late = 'yes';
                         } else {
-                            if ($attendance->clock_in_time->greaterThan($lateTime)) {
+                            if (Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone)->greaterThan($lateTime)) {
                                 $attendance->late = 'yes';
                             } else {
                                 $attendance->late = 'no';
@@ -113,6 +123,17 @@ class ImportAttendanceJob implements ShouldQueue
                         }
 
                         $attendance->half_day = $half_day;
+
+                        // if ($this->isColumnExists('half_day') && str($this->getColumnValue('half_day'))->lower() == 'yes') {
+                        //     $attendance->half_day = "yes";
+                        // } else {
+                        //     if (Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone)->greaterThan($halfDayTimes)
+                        //     && is_null($checkTodayAttendance)) {
+                        //         $attendance->half_day = "yes";
+                        //     } else {
+                        //         $attendance->half_day = "no";
+                        //     }
+                        // }
 
                         $attendance->save();
                     }

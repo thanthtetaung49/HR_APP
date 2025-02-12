@@ -84,7 +84,9 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                     </p>
                                     <p class="res-activity-time">
                                         <i class="fa fa-clock"></i>
-                                        {{ $item->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }}
+                                        {{-- {{ $item->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }} --}}
+
+                                         {{ \Carbon\Carbon::parse($item->clock_in_time, company()->timezone)->format('Y-m-d H:m:i a')   }}
 
                                         @if ($item->work_from_type != '')
                                             @if ($item->work_from_type == 'other')
@@ -96,9 +98,13 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                             @endif
                                         @endif
 
-                                        @if ($item->late == 'yes')
+                                        @if ($item->late == 'yes' && $loop->iteration == 1)
                                             <i class="fa fa-exclamation-triangle ml-2"></i>
                                             @lang('modules.attendance.late')
+                                        @else
+                                            @if ($item->half_day == 'yes' && $loop->iteration != 1)
+                                                <span>Half day late</span>
+                                            @endif
                                         @endif
 
                                         @if ($item->half_day == 'yes')

@@ -48,7 +48,7 @@ class DashboardController extends AccountBaseController
     /**
      * @return array|\Illuminate\Contracts\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View|\Illuminate\Http\Response|mixed|void
      */
-    public function index(Request $request)
+    public function index()
     {
         $this->isCheckScript();
 
@@ -61,27 +61,7 @@ class DashboardController extends AccountBaseController
             $this->viewTicketDashboard = user()->permission('view_ticket_dashboard');
             $this->viewFinanceDashboard = user()->permission('view_finance_dashboard');
 
-            $latitude = $request->query('latitude');
-            $longitude = $request->query('longitude');
-
-            if ($latitude != 0 && $longitude != 0) {
-                $geolocationData = [
-                    'latitude' => $latitude,
-                    'longitude' => $longitude
-                ];
-
-                // return $this->employeeDashboard($geolocationData);
-            } else  {
-                $latitude = 0;
-                $longitude = 0;
-
-                $geolocationData = [
-                    'latitude' => $latitude,
-                    'longitude' => $longitude
-                ];
-
-            }
-            return $this->employeeDashboard($geolocationData);
+            return $this->employeeDashboard();
         }
 
         if (in_array('client', user_roles())) {

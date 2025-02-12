@@ -355,6 +355,8 @@ class AttendanceController extends AccountBaseController
         $viewPermission = user()->permission('view_attendance');
         $attendance = Attendance::with('user', 'user.employeeDetail', 'location')->findOrFail($id);
 
+        // dd($attendance);
+
         $attendanceSettings = EmployeeShiftSchedule::with('shift')->where('user_id', $attendance->user_id)
             ->whereDate('date', Carbon::parse($attendance->clock_in_time)->toDateString())
             ->first();
@@ -432,6 +434,8 @@ class AttendanceController extends AccountBaseController
         $this->totalTime = CarbonInterval::formatHuman($this->totalTime, true);
 
         $this->attendance = $attendance;
+
+        // dd($attendanceActivity->reverse());
 
         return view('attendances.ajax.show', $this->data);
     }
