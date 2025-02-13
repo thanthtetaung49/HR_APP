@@ -73,7 +73,7 @@
                                     fieldRequired="true">
                                 </x-forms.label>
                                 <x-forms.input-group>
-                                    <select class="form-control select-picker" name="location" id="locationSearch"
+                                    <select class="form-control select-picker" name="location" id="editLocation"
                                         data-live-search="true">
                                         <option value="">--</option>
 
@@ -719,7 +719,7 @@
             $.ajaxModal(MODAL_LG, url);
         });
 
-        $('#locationSearch').change(function() {
+        $('#editLocation').change(function() {
             let location_id = $(this).val();
             let url = "{{ route('location.select') }}";
 

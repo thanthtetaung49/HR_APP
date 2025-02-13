@@ -34,7 +34,7 @@ class PayrollDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-
+        // dd($query);
         return datatables()
             ->eloquent($query)
             ->addColumn('check', function ($row) {
@@ -74,7 +74,6 @@ class PayrollDataTable extends BaseDataTable
                 return ucwords($row->salary_status);
             })
             ->editColumn('salary_from', function ($row) {
-
                 if (!is_null($row->salary_from) && !is_null($row->salary_to)) {
                     $start = Carbon::parse($row->salary_from)->translatedFormat($this->company->date_format);
                     $end = Carbon::parse($row->salary_to)->translatedFormat($this->company->date_format);
@@ -148,7 +147,7 @@ class PayrollDataTable extends BaseDataTable
             // $todayDate = trim($explode[1]);
 
             $startDate = CarbonImmutable::parse($month[0])->subMonth()->setDay(26);
-            $endDate = CarbonImmutable::parse($month[1])->setDay(26);
+            $endDate = CarbonImmutable::parse($month[1])->setDay(25);
         }
 
         $users = User::withoutGlobalScope(ActiveScope::class)
@@ -159,11 +158,11 @@ class PayrollDataTable extends BaseDataTable
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
             ->join('payroll_cycles', 'payroll_cycles.id', '=', 'employee_payroll_cycles.payroll_cycle_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id')
+            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to')
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $request->cycle)
             ->where('salary_slips.year', $request->year);
-        
+
         // dd($users->get()->toArray(), $startDate, $endDate);
 
         if (!is_null($startDate) && !is_null($endDate)) {

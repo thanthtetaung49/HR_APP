@@ -15,7 +15,7 @@ class SalarySlip extends BaseModel
 
     protected $guarded = ['id'];
 
-    protected $dates = ['paid_on', 'salary_from', 'salary_to'];
+    public $dates = ['paid_on', 'salary_from', 'salary_to'];
 
     protected $appends = ['duration'];
 

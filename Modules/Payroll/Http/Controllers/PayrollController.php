@@ -490,7 +490,7 @@ class PayrollController extends AccountBaseController
         $addTimelogs = $request->addTimelogs;
         $payrollCycleData = PayrollCycle::find($payrollCycle);
         $startDate = CarbonImmutable::parse($month[0])->subMonth()->setDay(26);
-        $endDate = CarbonImmutable::parse($month[1])->setDay(26);
+        $endDate = CarbonImmutable::parse($month[1])->setDay(25);
 
         $lastDayCheck = $endDate;
         // $daysInMonth = $startDate->diffInDays($lastDayCheck->addDay()); // Days by start and end date
