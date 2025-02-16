@@ -93,6 +93,18 @@ class EmployeeController extends AccountBaseController
             $this->designations = Designation::allDesignations();
             $this->totalEmployees = count($this->employees);
             $this->roles = Role::where('name', '<>', 'client')->orderBy('id')->get();
+            $employee = new EmployeeDetails();
+            $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+            if ($getCustomFieldGroupsWithFields) {
+                foreach ($getCustomFieldGroupsWithFields->fields as $field) {
+                    if ($field->type == 'select' && $field->label == "Rank") {
+                        $this->field = $field;
+                    }
+                }
+            }
+
+
         }
 
         return $dataTable->render('employees.index', $this->data);
@@ -146,6 +158,8 @@ class EmployeeController extends AccountBaseController
 
             return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        // dd($this->fields->toArray());
 
         return view('employees.create', $this->data);
     }
@@ -1173,6 +1187,7 @@ class EmployeeController extends AccountBaseController
         $employee->slack_username = $request->slack_username;
         $employee->department_id = $request->department;
         $employee->designation_id = $request->designation;
+        $employee->rank = $request->custom_fields_data["rank-1_12"];
         $employee->company_address_id = $request->company_address;
         $employee->reporting_to = $request->reporting_to;
         $employee->about_me = $request->about_me;

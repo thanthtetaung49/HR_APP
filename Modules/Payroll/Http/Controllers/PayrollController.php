@@ -496,7 +496,7 @@ class PayrollController extends AccountBaseController
         // $daysInMonth = $startDate->diffInDays($lastDayCheck->addDay()); // Days by start and end date
 
         $lastDayOfMonth = $startDate->lastOfMonth();
-        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 26);
+        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 25);
 
         if ($request->userIds || $request->employee_id)
         {

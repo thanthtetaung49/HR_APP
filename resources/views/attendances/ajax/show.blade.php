@@ -96,7 +96,7 @@
                                         <i class="fa fa-clock"></i>
                                         {{-- {{ $item->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }} --}}
 
-                                        {{ \Carbon\Carbon::parse($item->clock_in_time, company()->timezone)->format('Y-m-d g:m:i a') }}
+                                        {{ \Carbon\Carbon::parse($item->clock_in_time, company()->timezone)->format('Y-m-d g:i a') }}
 
                                         @if ($item->work_from_type != '')
                                             @if ($item->work_from_type == 'other')
@@ -147,7 +147,7 @@
                                         @if (!is_null($item->clock_out_time))
                                             {{-- {{ $item->clock_out_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }} --}}
 
-                                            {{ \Carbon\Carbon::parse($item->clock_out_time, company()->timezone)->format('Y-m-d g:m:i a') }}
+                                            {{ \Carbon\Carbon::parse($item->clock_out_time, company()->timezone)->format('Y-m-d g:i a') }}
 
                                             @if ($item->auto_clock_out)
                                                 <i class="fa fa-sign-out-alt ml-2"></i>

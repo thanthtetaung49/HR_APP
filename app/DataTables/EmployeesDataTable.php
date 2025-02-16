@@ -418,12 +418,21 @@ class EmployeesDataTable extends BaseDataTable
         }
 
         $location_id = $request->location;
+        $rank = $request->rank;
 
         if ($location_id != 'all' && $location_id != '') {
             $users = $users->whereHas('employeeDetails.department', function ($query) use ($location_id) {
                 $query->where('location_id', $location_id);
             });
         }
+
+        if ($rank != 'all' && $rank != '') {
+            $users = $users->whereHas('employeeDetails', function ($query) use ($rank) {
+                $query->where('rank', $rank);
+            });
+        }
+
+        // dd($user )
 
         return $users->groupBy('users.id');
     }

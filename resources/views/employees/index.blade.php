@@ -159,6 +159,22 @@
                 </div>
             </div>
 
+            <div class="more-filter-items">
+                <label class="f-14 text-dark-grey mb-12 " for="{{ $field->name . '_' . $field->id }}">{{ $field->label }}</label>
+                <div class="select-filter mb-4">
+                    <div class="select-others">
+                        <select class="form-control select-picker" name="{{ $field->name }}" id="{{ $field->name . '_' . $field->id }}"
+                            data-container="body">
+                            <option value="all">@lang('app.all')</option>
+
+                            @foreach ($field->values as $value)
+                                 <option value="{{explode(" ", $value)[1] - 1}}">{{ $value }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+
         </x-filters.more-filter-box>
         <!-- MORE FILTERS END -->
     </x-filters.filter-box>
@@ -175,7 +191,6 @@
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex justify-content-between action-bar">
-
             <div id="table-actions" class="d-block d-lg-flex align-items-center">
                 @if ($addEmployeePermission == 'all')
                     <x-forms.link-primary :link="route('employees.create')" class="mr-3 openRightModal" icon="plus">
@@ -254,6 +269,8 @@
             const department = $('#employee-department').val();
             const employmentType = $('#employmentType').val();
             const searchText = $('#search-text-field').val();
+            const rank = $(`#{{ $field->name . '_' . $field->id }}`).val();
+            // console.log(rank);
 
             data['status'] = status;
             data['employee'] = employee;
@@ -265,10 +282,11 @@
             data['department'] = department;
             data['employmentType'] = employmentType;
             data['searchText'] = searchText;
+            data['rank'] = rank;
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
             if (status == "all" || employee == "all" || role == "all" || location == "all" || designation == "all" || department == "all" ||
-                designation == "all" || searchText == "") {
+                designation == "all" || searchText == "" || rank == "") {
                 data['startDate'] = startDate;
                 data['endDate'] = endDate;
                 data['lastStartDate'] = lastStartDate;
@@ -373,9 +391,12 @@
             showTable();
         });
 
-        $('#employee, #status, #role, #gender, #skill, #designation, #locationSearch, #department, #employmentType').on(
+        $(`#employee, #status, #role, #gender, #skill, #designation, #locationSearch, #department, #employmentType, #{{ $field->name . '_' . $field->id }}`).on(
             'change keyup',
             function() {
+
+                console.log($(`#{{ $field->name . '_' . $field->id }}`).val());
+
                 if ($('#status').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#employee').val() != "all") {
@@ -393,6 +414,8 @@
                 } else if ($('#department').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#employmentType').val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($(`#{{ $field->name . '_' . $field->id }}`).val() =! "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');
