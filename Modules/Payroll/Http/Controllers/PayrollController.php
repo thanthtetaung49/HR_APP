@@ -629,7 +629,6 @@ class PayrollController extends AccountBaseController
                 $financialyearStart = Carbon::parse($year . '-' . $payrollSetting->finance_month . '-01')->setTimezone($this->company->timezone);
                 $financialyearEnd = Carbon::parse($today->year . '-' . $payrollSetting->finance_month . '-01')->addYear()->subDays(1)->setTimezone($this->company->timezone);
 
-                // dd($startDate->format('m'), $payrollSetting->finance_month);
 
                 if($startDate->format('m') < $payrollSetting->finance_month){
                     $startPayrollDate = clone $startDate;
