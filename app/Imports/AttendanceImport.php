@@ -23,7 +23,6 @@ class AttendanceImport implements ToArray
 
     public function array(array $array): array
     {
-        dd($array);
         return $array;
     }
 

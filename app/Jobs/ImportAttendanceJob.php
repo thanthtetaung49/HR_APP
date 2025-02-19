@@ -81,10 +81,14 @@ class ImportAttendanceJob implements ShouldQueue
                     $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
                     $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $endTimestamp, $this->company->timezone);
 
-
-                    $clockInCount = Attendance::where('user_id', $user->id)
+                    if ($attendanceSettings->shift_type == 'strict') {
+                        $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);
+                    } else {
+                        $clockInCount = Attendance::where('user_id', $user->id)
                         ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
                         ->count();
+                    }
+                   
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
 
@@ -126,6 +130,18 @@ class ImportAttendanceJob implements ShouldQueue
                             Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone)->greaterThan($halfDayTimes)
                         ) {
                             $attendance->half_day_late = 'yes';
+                        }
+
+                        $attendanceSettings = $this->attendanceShift($showClockIn);
+
+                        $attendance->employee_shift_id = $attendanceSettings->id;
+
+                        $attendance->shift_start_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+
+                        if (Carbon::parse($attendanceSettings->office_start_time, $this->company->timezone)->gt(Carbon::parse($attendanceSettings->office_end_time, $this->company->timezone))) {
+                            $attendance->shift_end_time = $attendance->clock_in_time->addDay()->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
+                        } else {
+                            $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
                         }
 
                         $attendance->save();

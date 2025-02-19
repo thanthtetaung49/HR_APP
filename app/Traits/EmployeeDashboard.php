@@ -768,7 +768,6 @@ trait EmployeeDashboard
             $checkTodayAttendance = Attendance::where('user_id', $this->user->id)
                 ->where(DB::raw('DATE(attendances.clock_in_time)'), '=', $now->format('Y-m-d'))->first();
 
-            // dd($now->copy()->timezone(config('app.timezone')));
 
             $attendance = new Attendance();
             $attendance->user_id = $this->user->id;
@@ -891,8 +890,6 @@ trait EmployeeDashboard
             } else {
                 $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $this->attendanceSettings->office_end_time;
             }
-
-            // dd($attendance);
 
             $attendance->save();
 

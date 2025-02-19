@@ -126,13 +126,13 @@ class PayrollController extends AccountBaseController
         $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
 
         if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
-            $this->basicSalary = (float)$this->salarySlip->basic_salary;
+            $this->basicSalary = (float) $this->salarySlip->basic_salary;
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = ((float)$this->salarySlip->basic_salary / 4);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = ((float)$this->salarySlip->basic_salary / 2);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = ((float)$this->salarySlip->basic_salary / 30);
+            $perday = ((float) $this->salarySlip->basic_salary / 30);
             $this->basicSalary = $perday * 14;
         }
 
@@ -265,11 +265,11 @@ class PayrollController extends AccountBaseController
         if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
             $this->basicSalary = $this->salarySlip->basic_salary;
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = ((float)$this->salarySlip->basic_salary / 4);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = ((float)$this->salarySlip->basic_salary / 2);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = (float)$this->salarySlip->basic_salary / 30;
+            $perday = (float) $this->salarySlip->basic_salary / 30;
             $this->basicSalary = $perday * 14;
         }
 
@@ -414,8 +414,8 @@ class PayrollController extends AccountBaseController
             $salarySlip->salary_payment_method_id = $request->salary_payment_method_id;
         }
 
-        $grossEarning   = $grossEarning + $request->fixed_allowance_input + $additionalEarningTotal;
-        $netSalary      = $netSalary + $request->fixed_allowance_input;
+        $grossEarning = $grossEarning + $request->fixed_allowance_input + $additionalEarningTotal;
+        $netSalary = $netSalary + $request->fixed_allowance_input;
 
         // dd(round(($grossEarning), 2), $netSalary, $request->fixed_allowance_input);
         $salarySlip->status = $request->status;
@@ -541,6 +541,8 @@ class PayrollController extends AccountBaseController
 
             $holidayPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
 
+            $eveningShiftPresentCout = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+
             if ($endDate->greaterThan($joiningDate)) {
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
 
@@ -560,6 +562,9 @@ class PayrollController extends AccountBaseController
                 $curMonthDays = Carbon::parse('01-' . $monthCur . '-' . $year);
                 // $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId, $endDate);
                 $monthlySalary = Allowance::where('user_id', $userId)->first();
+                $technicalAllowance = $monthlySalary->technical_allowance;
+                $livingCostAllowance = $monthlySalary->living_cost_allowance;
+                $specialAllowance = $monthlySalary->special_allowance;
 
                 $daysInMonth = ($daysInMonth != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $daysInMonth;
 
@@ -576,7 +581,11 @@ class PayrollController extends AccountBaseController
                     $basicSalary = $basicSalary + ($holidayPresentCount * 3000);
                 }
 
-                // $totalBasicSalary = $basicSalary + 
+                if ($eveningShiftPresentCout > 0) {
+                    $basicSalary = $basicSalary + ($eveningShiftPresentCout * 500);
+                }
+
+                $totalBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance + $specialAllowance; // allowance calculation
 
                 $salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')
                     ->where('user_id', $userId)
@@ -1449,35 +1458,37 @@ class PayrollController extends AccountBaseController
 
     public function countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData)
     {
-        $holiday = Holiday::select(DB::raw('DATE_FORMAT(date, "%Y-%m-%d") as holiday_date'), 'occassion')
-            ->where('date', '>=', $startDate)
-            ->where('date', '<=', $endDate)
-            ->get();
+        $totalPresent = Attendance::select(
+            DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
+        )
+        ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+        ->where('attendances.half_day', 'no')
+        ->where('attendances.user_id', $userId)
+        ->whereExists(function ($query) {
+            $query->select(DB::raw(1))
+                ->from('holidays')
+                ->whereRaw('DATE(holidays.date) = DATE(attendances.clock_in_time)');
+        })
+        ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+        ->first();
 
-        $attendanceDates = Attendance::select(
-            DB::raw('DISTINCT DATE(attendances.clock_in_time) as clockInDate'),
+        return $totalPresent->presentCount;
+    }
+
+    public function countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData)
+    {
+        $totalPresent = Attendance::select(
+            DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
         )
             ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
             ->where('half_day', 'no')
             ->where('user_id', $userId)
+            ->whereNotNull('employee_shift_id')
             ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
-            ->get()
-            ->toArray();
+            ->groupBy(DB::raw('DATE(attendances.clock_in_time)'))
+            ->get();
 
-
-        $holidayCount = 0;
-
-        foreach ($attendanceDates as $attendanceDate) {
-            $holiday = Holiday::select(DB::raw('DATE_FORMAT(date, "%Y-%m-%d") as holiday_date'), 'occassion')
-                ->where('date', '>=', $startDate)
-                ->where('date', '<=', $endDate)
-                ->where('date', $attendanceDate['clockInDate'])
-                ->get();
-
-            $holidayCount = $holiday->count();
-        }
-
-        return $holidayCount;
+        return $totalPresent[0]->presentCount;
     }
 
     public function byDepartment($payrollCycle = null, $departmentId = null)
