@@ -15,11 +15,12 @@ return new class extends Migration
 
         Schema::create('detections', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('users_id')
+            $table->unsignedInteger('user_id')
                     ->index('detections_users_id_foreign');
-            $table->foreign('users_id')->references('id')->on('users')
+            $table->foreign('user_id')->references('id')->on('users')
                     ->cascadeOnDelete()
                     ->cascadeOnUpdate();
+            $table->integer('other_detection');
             $table->timestamps();
         });
     }

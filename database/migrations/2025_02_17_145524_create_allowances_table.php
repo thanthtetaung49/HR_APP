@@ -15,9 +15,9 @@ return new class extends Migration
 
         Schema::create('allowances', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('users_id')
+            $table->unsignedInteger('user_id')
                     ->index('allowances_users_id_foreign');
-            $table->foreign('users_id')
+            $table->foreign('user_id')
                     ->references('id')
                     ->on('users')
                     ->cascadeOnDelete()
