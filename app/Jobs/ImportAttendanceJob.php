@@ -28,19 +28,19 @@ class ImportAttendanceJob implements ShouldQueue
     private $row;
     private $columns;
     private $company;
+    private $half_day_late;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($row, $columns, $company = null)
+    public function __construct($row, $columns, $company = null, $half_day_late = null)
     {
         $this->row = $row;
         $this->columns = $columns;
         $this->company = $company;
-
-        // dd($this->row, $this->columns, $this->company);
+        $this->half_day_late = $half_day_late;
     }
 
     /**
@@ -83,14 +83,16 @@ class ImportAttendanceJob implements ShouldQueue
 
                     if ($attendanceSettings->shift_type == 'strict') {
                         $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);
+                        // dd($attendanceSettings->shift_type, $clockInCount);
                     } else {
                         $clockInCount = Attendance::where('user_id', $user->id)
-                        ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
-                        ->count();
+                            ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
+                            ->count();
+                        // dd('not strict', $clockInCount);
                     }
-                   
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
+                        // dd($attendanceSettings->clockin_in_day, $clockInCount, $this->half_day_late);
 
                         if ($attendanceSettings->halfday_mark_time) {
                             $halfDayTimes = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time, $this->company->timezone);
@@ -126,12 +128,6 @@ class ImportAttendanceJob implements ShouldQueue
 
                         $attendance->half_day = $half_day;
 
-                        if (
-                            Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone)->greaterThan($halfDayTimes)
-                        ) {
-                            $attendance->half_day_late = 'yes';
-                        }
-
                         $attendanceSettings = $this->attendanceShift($showClockIn);
 
                         $attendance->employee_shift_id = $attendanceSettings->id;
@@ -144,7 +140,10 @@ class ImportAttendanceJob implements ShouldQueue
                             $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
                         }
 
+                        $attendance->half_day_late = $this->half_day_late;
+
                         $attendance->save();
+
                     }
 
                     DB::commit();

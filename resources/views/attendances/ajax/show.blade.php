@@ -113,7 +113,7 @@
                                             <i class="fa fa-exclamation-triangle ml-2"></i>
                                             @lang('modules.attendance.late')
                                         @else
-                                            @if ($item->half_day_late == 'yes' && !$loop->first)
+                                            @if ($item->half_day_late == 'yes' && $loop->iteration == 2)
                                                 <i class="fa fa-exclamation-triangle ml-2"></i>
                                                 @lang('modules.attendance.late')
                                             @endif

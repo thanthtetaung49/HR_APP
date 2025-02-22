@@ -2,6 +2,8 @@
 
 namespace App\Traits;
 
+use Carbon\Carbon;
+use ReflectionClass;
 use App\Helper\Files;
 use Illuminate\Support\Facades\Bus;
 use Maatwebsite\Excel\Facades\Excel;
@@ -9,7 +11,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Session;
 use Maatwebsite\Excel\HeadingRowImport;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
-use ReflectionClass;
+use function Psl\Type\nullable;
 
 trait ImportExcel
 {
@@ -25,20 +27,20 @@ trait ImportExcel
         if ($request->has('heading')) {
             array_shift($excelData);
         }
-        
-        $isDataNull = true; 
-        
+
+        $isDataNull = true;
+
         foreach ($excelData as $rowitem) {
             if (array_filter($rowitem)) {
                 $isDataNull = false;
                 break;
             }
         }
-        
+
         if ($isDataNull) {
-            return 'abort'; 
+            return 'abort';
         }
-        
+
 
         $this->hasHeading = $request->has('heading');
         $this->heading = array();
@@ -91,12 +93,46 @@ trait ImportExcel
 
         $jobs = [];
 
-        Session::put('leads_count', count($excelData));
+        $groupedData = [];
 
         foreach ($excelData as $row) {
+            $mappedRow = array_combine($columns, $row);
+            $date = Carbon::parse($mappedRow["clock_in_time"])->format('Y-m-d');
 
-            $jobs[] = (new $importJobClass($row, $columns, company()));
+            $groupedData[$date][] = $mappedRow;
         }
+
+        $formattedData = [];
+
+        foreach ($groupedData as $date => $records) {
+            if (key($records) == 0 || key($records) == 1) {
+                $formattedData[$date] = [
+                    "clock_in_time" => $records[1]["clock_in_time"],
+                    "clock_out_time" => $records[0]["clock_out_time"],
+                ];
+            }
+        }
+
+
+        Session::put('leads_count', count($excelData));
+
+        foreach ($excelData as $index => $row) {
+            $date = Carbon::parse($row[1])->format('Y-m-d');
+
+            $clockIn = Carbon::parse($formattedData[$date]['clock_in_time']);
+            $clockOut = Carbon::parse($formattedData[$date]['clock_out_time'])->clone()->addMinutes(45);
+
+            $half_day_date = "";
+
+            if ($clockIn->greaterThan($clockOut)) {
+                $half_day_date = "yes";
+            } else {
+                $half_day_date = "no";
+            }
+
+            $jobs[] = (new $importJobClass($row, $columns, company(), $half_day_date));
+        }
+
 
         $batch = Bus::batch($jobs)->onConnection('database')->onQueue($importClassName)->name($importClassName)->dispatch();
 

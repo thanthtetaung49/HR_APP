@@ -2,7 +2,6 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use App\Models\Allowance;
 use Carbon\Carbon;
 use App\Models\Team;
 use App\Models\User;
@@ -10,6 +9,7 @@ use App\Helper\Reply;
 use App\Models\Leave;
 use App\Models\Expense;
 use App\Models\Holiday;
+use App\Models\Allowance;
 use App\Models\Attendance;
 use App\Models\Designation;
 use Carbon\CarbonImmutable;
@@ -18,6 +18,7 @@ use Illuminate\Http\Response;
 use App\Models\ProjectTimeLog;
 use App\Models\EmployeeDetails;
 use App\Models\ExpensesCategory;
+use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\DB;
 use Modules\Payroll\Entities\SalaryTds;
 use Modules\Payroll\Entities\SalarySlip;
@@ -522,7 +523,76 @@ class PayrollController extends AccountBaseController
                 ->get();
         }
 
+        $subQuery = Attendance::select(
+            'clock_in_time',
+            DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(clock_in_time) ORDER BY clock_in_time ASC) as row_num')
+        )
+            ->whereIn('user_id', $request->employee_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate);
 
+        $attendanceLateInMonth = Attendance::select(
+            DB::raw("DATE(clock_in_time) as presentDate"),
+            "late",
+            "clock_in_time"
+        )
+            ->whereIn('user_id', $request->employee_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate)
+            ->whereIn('clock_in_time', function ($query) use ($subQuery) {
+                $query->select('clock_in_time')
+                    ->fromSub($subQuery, 'ranked')
+                    ->where('row_num', 1);
+            })
+            ->get();
+
+        $breakTimeLateMonth = Attendance::select(
+            DB::raw("DATE(clock_in_time) as presentDate"),
+            "half_day_late",
+            "clock_in_time"
+        )
+            ->whereIn('user_id', $request->employee_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate)
+            ->whereIn('clock_in_time', function ($query) use ($subQuery) {
+                $query->select('clock_in_time')
+                    ->fromSub($subQuery, 'ranked')
+                    ->where('row_num', 2);
+            })
+            ->where('half_day_late', 'yes')
+            ->get();
+
+        $leaveInMonth = Leave::where('user_id', $request->employee_id)
+        ->whereDate('leave_date', '>=', $startDate)
+        ->whereDate('leave_date', '<=', $endDate)
+        ->get();
+
+        $totalLeaveWithoutPay = 0;
+
+        $attendanceSetting = AttendanceSetting::first();
+        $attLateBeforeFifteenMinutes = 0;
+        $attLateAfterFifteenMinutes = 0;
+        $attBreakTime = $breakTimeLateMonth->count();
+        $leaveWithoutPayInMonth = $leaveInMonth->count();
+
+        foreach ($attendanceLateInMonth as $key => $attendanceLate) {
+            $clock_in_time = $attendanceLate->clock_in_time;
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+
+
+            $lateTime = $officeStartTime->clone()->addMinutes(15);
+
+            if ($clock_in_time->greaterThan($officeStartTime) && $clock_in_time->lessThan($lateTime)) {
+                $attLateBeforeFifteenMinutes += 1;
+            }
+
+            if ($clock_in_time->greaterThan($lateTime)) {
+                $attLateAfterFifteenMinutes += 1;
+            }
+        }
+
+        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes / 3) + ($attLateAfterFifteenMinutes / 2) + $attBreakTime + $leaveWithoutPayInMonth);
 
         foreach ($users as $user) {
             $userId = $user->id;
@@ -571,7 +641,7 @@ class PayrollController extends AccountBaseController
                 $perDaySalary = $monthlySalary->basic_salary / $daysInMonth;
                 $payableSalary = $perDaySalary * $payDays;
 
-                $basicSalary = $payableSalary; // 133333
+                $basicSalary = $payableSalary;
 
                 if ($gazattedPresentCount > 0) {
                     $basicSalary = $basicSalary + ($gazattedPresentCount * 3000);
@@ -585,193 +655,235 @@ class PayrollController extends AccountBaseController
                     $basicSalary = $basicSalary + ($eveningShiftPresentCout * 500);
                 }
 
+                $totalDetection = $totalLeaveWithoutPay * $perDaySalary;
                 $totalBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance + $specialAllowance; // allowance calculation
+                $netSalary = $totalBasicSalary - $totalDetection;
 
-                $salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')
-                    ->where('user_id', $userId)
-                    ->first();
-
-                $totalBasicSalary = [];
-                $employeeBasicSalary = EmployeeMonthlySalary::where('user_id', $userId)->where('type', 'initial')->first();
-
-                if ($employeeBasicSalary->basic_value_type == 'fixed') {
-                    $totalBasicSalary[] = $employeeBasicSalary->basic_salary;
-                } else {
-                    $totalBasicSalary[] = $employeeBasicSalary->effective_monthly_salary / 100 *
-                        $employeeBasicSalary->basic_salary;
-                }
-
-                $totalBasicSalary = array_sum($totalBasicSalary);
-                $earnings = array();
-                $earningsTotal = 0;
-                $deductions = array();
-                $deductionsTotal = 0;
-
-                if (!is_null($salaryGroup)) {
-
-                    $earnings = [];
-                    $deductions = [];
-
-                    foreach ($salaryGroup->salary_group->components as $key => $components) {
-                        $componentValueAmount = ($payrollCycleData->cycle != 'monthly') ? $components->component->{$payrollCycleData->cycle . '_value'} : $components->component->component_value;
-
-                        $componentCalculation = $this->componentCalculation($components, $basicSalary, $componentValueAmount, $payableSalary, $totalBasicSalary, $earningsTotal, $deductionsTotal, $earnings, $deductions, $user->salary_id);
-
-                        $earningsTotal = $componentCalculation['earningsTotal'];
-                        $deductionsTotal = $componentCalculation['deductionsTotal'];
-                        $earnings = $componentCalculation['earnings'];
-                        $deductions = $componentCalculation['deductions'];
-                    }
-                }
-
-                $salaryTdsTotal = 0;
                 $payrollSetting = PayrollSetting::first();
-
-                $today = now()->timezone($this->company->timezone);
-
-                $year = $today->year;
-
-                $financialyearStart = Carbon::parse($year . '-' . $payrollSetting->finance_month . '-01')->setTimezone($this->company->timezone);
-                $financialyearEnd = Carbon::parse($today->year . '-' . $payrollSetting->finance_month . '-01')->addYear()->subDays(1)->setTimezone($this->company->timezone);
-
-
-                if ($startDate->format('m') < $payrollSetting->finance_month) {
-                    $startPayrollDate = clone $startDate;
-                    $financialYear = $startPayrollDate->subYear()->year;
-
-                    $financialyearStart = Carbon::parse($financialYear . '-' . $payrollSetting->finance_month . '-01')->setTimezone($this->company->timezone);
-                    $financialyearEnd = Carbon::parse($today->year . '-' . $payrollSetting->finance_month . '-01')->subDays(1)->setTimezone($this->company->timezone);
-                }
-
-                $userSlip = SalarySlip::where('user_id', $userId)
-                    ->where(function ($query) use ($startDate, $endDate) {
-                        $query->whereBetween('salary_from', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-                            ->orWhereBetween('salary_to', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-                    })
-                    ->where('year', $year)->first();
-
-
-                if ($payrollSetting->tds_status) {
-                    $deductions['TDS'] = 0;
-
-                    $annualSalary = $this->calculateTdsSalary($userId, $joiningDate, $financialyearStart, $financialyearEnd, $endDate, $startDate);
-
-                    if ($payrollSetting->tds_salary < $annualSalary) {
-
-                        $salaryTds = SalaryTds::orderBy('salary_from', 'asc')->get();
-
-                        $taxableSalary = $annualSalary;
-
-                        $previousLimit = 0;
-                        $salaryTdsTotal = $this->calculateTds($taxableSalary, $salaryTds, $previousLimit, $annualSalary, $salaryTdsTotal);
-
-
-                        $tdsAlreadyPaid = SalarySlip::where('user_id', $userId)->sum('tds');
-
-                        if (!is_null($userSlip)) {
-                            $tdsAlreadyPaid = ($tdsAlreadyPaid - $userSlip->tds);
-                        }
-
-                        $tdsToBePaid = $salaryTdsTotal - $tdsAlreadyPaid;
-
-                        $monthDiffFromFinYrEnd = $financialyearEnd->diffInMonths($startDate, true) + 1;
-
-                        $deductions['TDS'] = floatval($tdsToBePaid) / $monthDiffFromFinYrEnd;
-
-                        $deductionsTotal = $deductionsTotal + $deductions['TDS'];
-                        $deductions['TDS'] = round($deductions['TDS'], 2);
-                    }
-                }
-
-                $expenseTotal = 0;
-
-                if ($includeExpenseClaims) {
-                    $expenseTotal = Expense::where(DB::raw('DATE(purchase_date)'), '>=', $startDate)
-                        ->where(DB::raw('DATE(purchase_date)'), '<=', $endDate)
-                        ->where('user_id', $userId)
-                        ->where('status', 'approved')
-                        ->where('can_claim', 1)
-                        ->sum('price');
-                    $payableSalary = $payableSalary + $expenseTotal;
-                }
-
-                if ($addTimelogs) {
-                    $timeLogs = ProjectTimeLog::where(DB::raw('DATE(start_time)'), '>=', $startDate)
-                        ->where(DB::raw('DATE(start_time)'), '<=', $endDate)
-                        ->where('user_id', $userId)->get();
-
-                    $totalHours = 0;
-
-                    foreach ($timeLogs as $timeLog) {
-                        $totalHours = $totalHours + $timeLog->total_hours;
-                    }
-
-                    $earnings['Time Logs'] = $timeLogs->sum('earnings');
-                    $payableSalary = $payableSalary + $earnings['Time Logs'];
-                    $earnings['Time Logs'] = round($earnings['Time Logs'], 2);
-                    $earnings['Total Hours'] = $totalHours;
-                }
-
-                $overtimeRequest = OvertimeRequest::where('user_id', $userId)
-                    ->where('status', 'accept')
-                    ->whereDate('date', '>=', $startDate)
-                    ->whereDate('date', '<=', $endDate)->sum('amount');
-
-                if ($overtimeRequest > 0) {
-                    $earnings['Overtime'] = $overtimeRequest;
-                    $payableSalary = $payableSalary + $earnings['Overtime'];
-                }
-
-                $unpaidDaysAmount = 0;
-
-                if ($useAttendance) {
-                    $unpaidDayCount = $daysInMonth - $payDays;
-                    $unPaidAmount = round(($unpaidDayCount * $perDaySalary), 2);
-
-                    if ($unPaidAmount > 0) {
-                        $deductions['Unpaid Days Amount'] = $unPaidAmount;
-                        $unpaidDaysAmount = $deductions['Unpaid Days Amount'];
-                    }
-                }
-
-                $salaryComponents = [
-                    'earnings' => $earnings,
-                    'deductions' => $deductions
-                ];
-
-                $salaryComponentsJson = json_encode($salaryComponents);
 
                 $data = [
                     'user_id' => $userId,
                     'currency_id' => $payrollSetting->currency_id,
-                    'salary_group_id' => (($salaryGroup) ? $salaryGroup->salary_group_id : null),
-                    'basic_salary' => round(($totalBasicSalary), 2),
-                    'monthly_salary' => round($monthlySalary['netSalary'], 2),
-                    'net_salary' => (round(($payableSalary - $deductionsTotal), 2) < 0) ? 0.00 : round(($payableSalary - $deductionsTotal)),
-                    'gross_salary' => round((($payableSalary - $expenseTotal) + $unpaidDaysAmount), 2),
-                    'total_deductions' => round(($deductionsTotal), 2),
+                    'salary_group_id' => 1, // null
+                    'basic_salary' => round(($monthlySalary->basic_salary), 2),
+                    'monthly_salary' => round($monthlySalary->basic_salary, 2),
+                    'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary), 2),
+                    'gross_salary' => round( $totalBasicSalary, 2), // null
+                    'total_deductions' => round(($totalDetection), 2),
                     'month' => $startDate->month,
                     'payroll_cycle_id' => $payrollCycle,
                     'salary_from' => $startDate->format('Y-m-d'),
                     'salary_to' => $endDate->format('Y-m-d'),
                     'year' => $request->year,
-                    'salary_json' => $salaryComponentsJson,
-                    'expense_claims' => $expenseTotal,
+                    // 'salary_json' => null, // null
+                    // 'expense_claims' => null, // null
                     'pay_days' => $payDays,
                     'added_by' => user()->id,
                 ];
 
-                if ($payrollSetting->tds_status) {
-                    $data['tds'] = $deductions['TDS'];
-                }
-
-                if (!is_null($userSlip) && $userSlip->status != 'paid') {
-                    $userSlip->delete();
-                }
-
-                if (is_null($userSlip) || (!is_null($userSlip) && $userSlip->status != 'paid')) {
                     SalarySlip::create($data);
-                }
+
+                // dd(
+                //     [
+                //         "monthlySalaryBasic" => $monthlySalary->basic_salary,
+                //         "daysInMonth" => $daysInMonth,
+                //         "payDays" => $payDays,
+                //         "gazattedCount" => $gazattedPresentCount,
+                //         "holidayCount" => $holidayPresentCount,
+                //         "eveningShiftCount" => $eveningShiftPresentCout,
+                //         "technicalAllowance" => $technicalAllowance,
+                //         "livingCost" => $livingCostAllowance,
+                //         "specialCost" => $specialAllowance,
+                //         "totalBasicSalary" => $totalBasicSalary
+                //     ]
+                // );
+
+                // $salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')
+                //     ->where('user_id', $userId)
+                //     ->first();
+
+                // $totalBasicSalary = [];
+                // $employeeBasicSalary = EmployeeMonthlySalary::where('user_id', $userId)->where('type', 'initial')->first();
+
+                // if ($employeeBasicSalary->basic_value_type == 'fixed') {
+                //     $totalBasicSalary[] = $employeeBasicSalary->basic_salary;
+                // } else {
+                //     $totalBasicSalary[] = $employeeBasicSalary->effective_monthly_salary / 100 *
+                //         $employeeBasicSalary->basic_salary;
+                // }
+
+                // $totalBasicSalary = array_sum($totalBasicSalary);
+                // $earnings = array();
+                // $earningsTotal = 0;
+                // $deductions = array();
+                // $deductionsTotal = 0;
+
+                // if (!is_null($salaryGroup)) {
+
+                //     $earnings = [];
+                //     $deductions = [];
+
+                //     foreach ($salaryGroup->salary_group->components as $key => $components) {
+                //         $componentValueAmount = ($payrollCycleData->cycle != 'monthly') ? $components->component->{$payrollCycleData->cycle . '_value'} : $components->component->component_value;
+
+                //         $componentCalculation = $this->componentCalculation($components, $basicSalary, $componentValueAmount, $payableSalary, $totalBasicSalary, $earningsTotal, $deductionsTotal, $earnings, $deductions, $user->salary_id);
+
+                //         $earningsTotal = $componentCalculation['earningsTotal'];
+                //         $deductionsTotal = $componentCalculation['deductionsTotal'];
+                //         $earnings = $componentCalculation['earnings'];
+                //         $deductions = $componentCalculation['deductions'];
+                //     }
+                // }
+
+                // $salaryTdsTotal = 0;
+                // $payrollSetting = PayrollSetting::first();
+
+                // $today = now()->timezone($this->company->timezone);
+
+                // $year = $today->year;
+
+                // $financialyearStart = Carbon::parse($year . '-' . $payrollSetting->finance_month . '-01')->setTimezone($this->company->timezone);
+                // $financialyearEnd = Carbon::parse($today->year . '-' . $payrollSetting->finance_month . '-01')->addYear()->subDays(1)->setTimezone($this->company->timezone);
+
+
+                // if ($startDate->format('m') < $payrollSetting->finance_month) {
+                //     $startPayrollDate = clone $startDate;
+                //     $financialYear = $startPayrollDate->subYear()->year;
+
+                //     $financialyearStart = Carbon::parse($financialYear . '-' . $payrollSetting->finance_month . '-01')->setTimezone($this->company->timezone);
+                //     $financialyearEnd = Carbon::parse($today->year . '-' . $payrollSetting->finance_month . '-01')->subDays(1)->setTimezone($this->company->timezone);
+                // }
+
+                // $userSlip = SalarySlip::where('user_id', $userId)
+                //     ->where(function ($query) use ($startDate, $endDate) {
+                //         $query->whereBetween('salary_from', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                //             ->orWhereBetween('salary_to', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                //     })
+                //     ->where('year', $year)->first();
+
+
+                // if ($payrollSetting->tds_status) {
+                //     $deductions['TDS'] = 0;
+
+                //     $annualSalary = $this->calculateTdsSalary($userId, $joiningDate, $financialyearStart, $financialyearEnd, $endDate, $startDate);
+
+                //     if ($payrollSetting->tds_salary < $annualSalary) {
+
+                //         $salaryTds = SalaryTds::orderBy('salary_from', 'asc')->get();
+
+                //         $taxableSalary = $annualSalary;
+
+                //         $previousLimit = 0;
+                //         $salaryTdsTotal = $this->calculateTds($taxableSalary, $salaryTds, $previousLimit, $annualSalary, $salaryTdsTotal);
+
+
+                //         $tdsAlreadyPaid = SalarySlip::where('user_id', $userId)->sum('tds');
+
+                //         if (!is_null($userSlip)) {
+                //             $tdsAlreadyPaid = ($tdsAlreadyPaid - $userSlip->tds);
+                //         }
+
+                //         $tdsToBePaid = $salaryTdsTotal - $tdsAlreadyPaid;
+
+                //         $monthDiffFromFinYrEnd = $financialyearEnd->diffInMonths($startDate, true) + 1;
+
+                //         $deductions['TDS'] = floatval($tdsToBePaid) / $monthDiffFromFinYrEnd;
+
+                //         $deductionsTotal = $deductionsTotal + $deductions['TDS'];
+                //         $deductions['TDS'] = round($deductions['TDS'], 2);
+                //     }
+                // }
+
+                // $expenseTotal = 0;
+
+                // if ($includeExpenseClaims) {
+                //     $expenseTotal = Expense::where(DB::raw('DATE(purchase_date)'), '>=', $startDate)
+                //         ->where(DB::raw('DATE(purchase_date)'), '<=', $endDate)
+                //         ->where('user_id', $userId)
+                //         ->where('status', 'approved')
+                //         ->where('can_claim', 1)
+                //         ->sum('price');
+                //     $payableSalary = $payableSalary + $expenseTotal;
+                // }
+
+                // if ($addTimelogs) {
+                //     $timeLogs = ProjectTimeLog::where(DB::raw('DATE(start_time)'), '>=', $startDate)
+                //         ->where(DB::raw('DATE(start_time)'), '<=', $endDate)
+                //         ->where('user_id', $userId)->get();
+
+                //     $totalHours = 0;
+
+                //     foreach ($timeLogs as $timeLog) {
+                //         $totalHours = $totalHours + $timeLog->total_hours;
+                //     }
+
+                //     $earnings['Time Logs'] = $timeLogs->sum('earnings');
+                //     $payableSalary = $payableSalary + $earnings['Time Logs'];
+                //     $earnings['Time Logs'] = round($earnings['Time Logs'], 2);
+                //     $earnings['Total Hours'] = $totalHours;
+                // }
+
+                // $overtimeRequest = OvertimeRequest::where('user_id', $userId)
+                //     ->where('status', 'accept')
+                //     ->whereDate('date', '>=', $startDate)
+                //     ->whereDate('date', '<=', $endDate)->sum('amount');
+
+                // if ($overtimeRequest > 0) {
+                //     $earnings['Overtime'] = $overtimeRequest;
+                //     $payableSalary = $payableSalary + $earnings['Overtime'];
+                // }
+
+                // $unpaidDaysAmount = 0;
+
+                // if ($useAttendance) {
+                //     $unpaidDayCount = $daysInMonth - $payDays;
+                //     $unPaidAmount = round(($unpaidDayCount * $perDaySalary), 2);
+
+                //     if ($unPaidAmount > 0) {
+                //         $deductions['Unpaid Days Amount'] = $unPaidAmount;
+                //         $unpaidDaysAmount = $deductions['Unpaid Days Amount'];
+                //     }
+                // }
+
+                // $salaryComponents = [
+                //     'earnings' => $earnings,
+                //     'deductions' => $deductions
+                // ];
+
+                // $salaryComponentsJson = json_encode($salaryComponents);
+
+                // $data = [
+                //     'user_id' => $userId,
+                //     'currency_id' => $payrollSetting->currency_id,
+                //     'salary_group_id' => 1, // null
+                //     'basic_salary' => round(($monthlySalary->basic_salary), 2),
+                //     'monthly_salary' => round($monthlySalary->basic_salary, 2),
+                //     'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary)),
+                //     'gross_salary' => 5, // null
+                //     'total_deductions' => round(($totalDetection), 2),
+                //     'month' => $startDate->month,
+                //     'payroll_cycle_id' => $payrollCycle,
+                //     'salary_from' => $startDate->format('Y-m-d'),
+                //     'salary_to' => $endDate->format('Y-m-d'),
+                //     'year' => $request->year,
+                //     // 'salary_json' => null, // null
+                //     // 'expense_claims' => null, // null
+                //     'pay_days' => $payDays,
+                //     'added_by' => user()->id,
+                // ];
+
+
+                // if ($payrollSetting->tds_status) {
+                //     $data['tds'] = $deductions['TDS'];
+                // }
+
+                // if (!is_null($userSlip) && $userSlip->status != 'paid') {
+                //     $userSlip->delete();
+                // }
+
+                // if (is_null($userSlip) || (!is_null($userSlip) && $userSlip->status != 'paid')) {
+                //     SalarySlip::create($data);
+                // }
             }
         }
 
@@ -1461,16 +1573,16 @@ class PayrollController extends AccountBaseController
         $totalPresent = Attendance::select(
             DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
         )
-        ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
-        ->where('attendances.half_day', 'no')
-        ->where('attendances.user_id', $userId)
-        ->whereExists(function ($query) {
-            $query->select(DB::raw(1))
-                ->from('holidays')
-                ->whereRaw('DATE(holidays.date) = DATE(attendances.clock_in_time)');
-        })
-        ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
-        ->first();
+            ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+            ->where('attendances.half_day', 'no')
+            ->where('attendances.user_id', $userId)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('holidays')
+                    ->whereRaw('DATE(holidays.date) = DATE(attendances.clock_in_time)');
+            })
+            ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+            ->first();
 
         return $totalPresent->presentCount;
     }
