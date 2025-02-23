@@ -482,7 +482,7 @@ class PayrollController extends AccountBaseController
         $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 25);
 
         if ($request->userIds || $request->employee_id) {
-            $users = User::with(['employeeDetail', 'attendance'])
+            $users = User::with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
                 ->join('employee_monthly_salaries', 'employee_monthly_salaries.user_id', '=', 'users.id')
                 ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle)
@@ -491,12 +491,13 @@ class PayrollController extends AccountBaseController
 
             if ($request->userIds) {
                 $users = $users->whereIn('users.id', $request->userIds);
+                dd('1');
             } else {
                 $users = $users->whereIn('users.id', $request->employee_id);
             }
             $users = $users->get();
         } else if ($request->department) {
-            $users = User::with(['employeeDetail', 'attendance'])
+            $users = User::with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
                 ->join('employee_monthly_salaries', 'employee_monthly_salaries.user_id', '=', 'users.id')
                 ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle)
@@ -505,7 +506,7 @@ class PayrollController extends AccountBaseController
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
                 ->where('employee_details.department_id', $request->department)->get();
         } else {
-            $users = User::with(['employeeDetail', 'attendance'])->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
+            $users = User::with('employeeDetail')->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->join('role_user', 'role_user.user_id', '=', 'users.id')
                 ->join('roles', 'roles.id', '=', 'role_user.role_id')
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
@@ -563,9 +564,9 @@ class PayrollController extends AccountBaseController
             ->get();
 
         $leaveInMonth = Leave::where('user_id', $request->employee_id)
-        ->whereDate('leave_date', '>=', $startDate)
-        ->whereDate('leave_date', '<=', $endDate)
-        ->get();
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->get();
 
         $totalLeaveWithoutPay = 0;
 
@@ -592,7 +593,7 @@ class PayrollController extends AccountBaseController
             }
         }
 
-        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes / 3) + ($attLateAfterFifteenMinutes / 2) + $attBreakTime + $leaveWithoutPayInMonth);
+        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes + $attBreakTime) / 3) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         foreach ($users as $user) {
             $userId = $user->id;
@@ -605,12 +606,12 @@ class PayrollController extends AccountBaseController
             $HolidayStartDate = ($joiningDate->greaterThan($startDate)) ? $joiningDate : $startDate;
             $HolidayEndDate = (!is_null($exitDate) && $endDate->greaterThan($exitDate)) ? $exitDate : $endDate;
 
-            $holidayData = $this->getHolidayByDates($HolidayStartDate->toDateString(), $HolidayEndDate->toDateString(), $userId)->pluck('holiday_date')->values(); // Getting Holiday Data
+            $holidayData = $this->getHolidayByDates($HolidayStartDate->toDateString(), $HolidayEndDate->toDateString(), $userId)
+                ->pluck('holiday_date')
+                ->values(); // Getting Holiday Data
 
             $gazattedPresentCount = $this->countGazattedPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
-
             $holidayPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
-
             $eveningShiftPresentCout = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
 
             if ($endDate->greaterThan($joiningDate)) {
@@ -628,17 +629,20 @@ class PayrollController extends AccountBaseController
                     $payDays = ($payDays - $daysDifference);
                 }
 
+
                 $monthCur = $endDate->month;
                 $curMonthDays = Carbon::parse('01-' . $monthCur . '-' . $year);
                 // $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId, $endDate);
+
                 $monthlySalary = Allowance::where('user_id', $userId)->first();
-                $technicalAllowance = $monthlySalary->technical_allowance;
-                $livingCostAllowance = $monthlySalary->living_cost_allowance;
-                $specialAllowance = $monthlySalary->special_allowance;
+
+                $technicalAllowance = $monthlySalary?->technical_allowance;
+                $livingCostAllowance = $monthlySalary?->living_cost_allowance;
+                $specialAllowance = $monthlySalary?->special_allowance;
 
                 $daysInMonth = ($daysInMonth != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $daysInMonth;
 
-                $perDaySalary = $monthlySalary->basic_salary / $daysInMonth;
+                $perDaySalary = $monthlySalary?->basic_salary / $daysInMonth;
                 $payableSalary = $perDaySalary * $payDays;
 
                 $basicSalary = $payableSalary;
@@ -665,10 +669,10 @@ class PayrollController extends AccountBaseController
                     'user_id' => $userId,
                     'currency_id' => $payrollSetting->currency_id,
                     'salary_group_id' => 1, // null
-                    'basic_salary' => round(($monthlySalary->basic_salary), 2),
-                    'monthly_salary' => round($monthlySalary->basic_salary, 2),
+                    'basic_salary' => round(($monthlySalary?->basic_salary), 2),
+                    'monthly_salary' => round($monthlySalary?->basic_salary, 2),
                     'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary), 2),
-                    'gross_salary' => round( $totalBasicSalary, 2), // null
+                    'gross_salary' => round($totalBasicSalary, 2), // null
                     'total_deductions' => round(($totalDetection), 2),
                     'month' => $startDate->month,
                     'payroll_cycle_id' => $payrollCycle,
@@ -681,7 +685,7 @@ class PayrollController extends AccountBaseController
                     'added_by' => user()->id,
                 ];
 
-                    SalarySlip::create($data);
+                SalarySlip::create($data);
 
                 // dd(
                 //     [
@@ -1592,7 +1596,8 @@ class PayrollController extends AccountBaseController
         $totalPresent = Attendance::select(
             DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
         )
-            ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+            ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->toDateString())
+            ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->toDateString())
             ->where('half_day', 'no')
             ->where('user_id', $userId)
             ->whereNotNull('employee_shift_id')
@@ -1600,7 +1605,13 @@ class PayrollController extends AccountBaseController
             ->groupBy(DB::raw('DATE(attendances.clock_in_time)'))
             ->get();
 
-        return $totalPresent[0]->presentCount;
+        if ($totalPresent->isNotEmpty()) {
+            $result = $totalPresent[0]->presentCount;
+        } else {
+           $result = 0;
+        }
+
+        return $result;
     }
 
     public function byDepartment($payrollCycle = null, $departmentId = null)
