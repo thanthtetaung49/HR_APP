@@ -11,24 +11,20 @@
                     @lang('app.edit') @lang('payroll::modules.payroll.salarySlip')</h4>
                 <div class="row p-20">
                     <div class="col-12 mb-4">
-                        <h4>@lang('payroll::modules.payroll.salarySlipHeading') {{ \Carbon\Carbon::parse($salarySlip->year.'-'.$salarySlip->month.'-01')->format('F Y') }}</h4>
+                        <h4>@lang('payroll::modules.payroll.salarySlipHeading')
+                            {{ \Carbon\Carbon::parse($salarySlip->year . '-' . $salarySlip->month . '-01')->format('F Y') }}
+                        </h4>
                     </div>
                     <div class="col-6">
-                            <x-cards.data-row :label="__('modules.employees.fullName')"
-                                              :value="ucwords($salarySlip->user->name)" html="true"/>
-                            <x-cards.data-row :label="__('modules.employees.employeeId')"
-                                              :value="$salarySlip->user->employeeDetail->employee_id" html="true"/>
-                            <x-cards.data-row :label="__('app.designation')"
-                                              :value="(!is_null($salarySlip->user->employeeDetail->designation)) ? $salarySlip->user->employeeDetail->designation->name : '-'"
-                                              html="true"/>
+                        <x-cards.data-row :label="__('modules.employees.fullName')" :value="ucwords($salarySlip->user->name)" html="true" />
+                        <x-cards.data-row :label="__('modules.employees.employeeId')" :value="$salarySlip->user->employeeDetail->employee_id" html="true" />
+                        <x-cards.data-row :label="__('app.designation')" :value="!is_null($salarySlip->user->employeeDetail->designation)
+                            ? $salarySlip->user->employeeDetail->designation->name
+                            : '-'" html="true" />
                     </div>
                     <div class="col-6">
-                        <x-cards.data-row :label="__('modules.employees.joiningDate')"
-                                          :value="$salarySlip->user->employeeDetail->joining_date->format($company->date_format)"
-                                          html="true"/>
-                        <x-cards.data-row :label="__('payroll::modules.payroll.salaryGroup')"
-                                          :value="(!is_null($salarySlip->salary_group)) ? $salarySlip->salary_group->group_name : '-'"
-                                          html="true"/>
+                        <x-cards.data-row :label="__('modules.employees.joiningDate')" :value="$salarySlip->user->employeeDetail->joining_date->format($company->date_format)" html="true" />
+                        <x-cards.data-row :label="__('payroll::modules.payroll.salaryGroup')" :value="!is_null($salarySlip->salary_group) ? $salarySlip->salary_group->group_name : '-'" html="true" />
                     </div>
                 </div>
                 <div class="border-bottom-grey"></div>
@@ -36,48 +32,58 @@
                 <div class="row p-20">
 
                     <div class="col-md-3">
-                        <x-forms.datepicker fieldId="paid_on" :fieldLabel="__('modules.payments.paidOn')"
-                                            fieldName="paid_on" :fieldPlaceholder="__('placeholders.date')"
-                                            :fieldValue="$salarySlip->paid_on ? $salarySlip->paid_on->format($company->date_format) : ''"/>
+                        <x-forms.datepicker fieldId="paid_on" :fieldLabel="__('modules.payments.paidOn')" fieldName="paid_on" :fieldPlaceholder="__('placeholders.date')"
+                            :fieldValue="$salarySlip->paid_on ? $salarySlip->paid_on->format($company->date_format) : ''" />
                     </div>
 
                     <div class="col-md-3">
-                        <x-forms.select fieldId="salary_payment_method_id"
-                                        :fieldLabel="__('payroll::modules.payroll.salaryPaymentMethod')"
-                                        fieldName="salary_payment_method_id"
-                                        search="true">
+                        <x-forms.select fieldId="salary_payment_method_id" :fieldLabel="__('payroll::modules.payroll.salaryPaymentMethod')"
+                            fieldName="salary_payment_method_id" search="true">
                             <option value="">--</option>
-                            @foreach($salaryPaymentMethods as $item)
-                                <option
-                                    @if($item->id == $salarySlip->salary_payment_method_id) selected @endif
-                                value="{{ $item->id }}">{{ $item->payment_method }}</option>
+                            @foreach ($salaryPaymentMethods as $item)
+                                <option @if ($item->id == $salarySlip->salary_payment_method_id) selected @endif value="{{ $item->id }}">
+                                    {{ $item->payment_method }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
 
                     <div class="col-md-3">
-                        <x-forms.select fieldId="status" :fieldLabel="__('app.status')" fieldName="status"
-                                        search="true">
-                            <option @if($salarySlip->status == 'generated') selected @endif
-                            value="generated">{{ __('payroll::modules.payroll.generated') }}</option>
-                            <option @if($salarySlip->status == 'review') selected @endif
-                            value="review">{{ __('payroll::modules.payroll.review') }}</option>
-                            <option @if($salarySlip->status == 'locked') selected @endif
-                            value="locked">{{ __('payroll::modules.payroll.locked') }}</option>
-                            <option @if($salarySlip->status == 'paid') selected @endif
-                            value="paid">{{ __('payroll::modules.payroll.paid') }}</option>
+                        <x-forms.select fieldId="status" :fieldLabel="__('app.status')" fieldName="status" search="true">
+                            <option @if ($salarySlip->status == 'generated') selected @endif value="generated">
+                                {{ __('payroll::modules.payroll.generated') }}</option>
+                            <option @if ($salarySlip->status == 'review') selected @endif value="review">
+                                {{ __('payroll::modules.payroll.review') }}</option>
+                            <option @if ($salarySlip->status == 'locked') selected @endif value="locked">
+                                {{ __('payroll::modules.payroll.locked') }}</option>
+                            <option @if ($salarySlip->status == 'paid') selected @endif value="paid">
+                                {{ __('payroll::modules.payroll.paid') }}</option>
                         </x-forms.select>
                     </div>
 
                     <div class="col-lg-3 col-md-3">
-                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.expenseClaims')"
-                                      fieldName="expense_claims"
-                                      fieldId="expense_claims"
-                                      :fieldPlaceholder="__('payroll::modules.payroll.expenseClaims')"
-                                      :fieldValue="$salarySlip->expense_claims"/>
+                        <input type="hidden" id="userAllowanceId" name="userAllowanceId"
+                            value="{{ $salarySlip->user->userAllowances->id }}" />
+
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.basicSalary')" fieldName="basic_salary" fieldId="basic_salary"
+                            :fieldPlaceholder="__('payroll::modules.payroll.expenseClaims')" :fieldValue="$salarySlip->user->userAllowances->basic_salary" />
+                    </div>
+
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.technicalAllowance')" fieldName="technical_allowance" fieldId="technical_allowance"
+                            :fieldPlaceholder="__('payroll::modules.payroll.technicalAllowance')" :fieldValue="$salarySlip->user->userAllowances->technical_allowance" />
+                    </div>
+
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.livingCostAllowance')" fieldName="living_cost_allowance"
+                            fieldId="living_cost_allowance" :fieldPlaceholder="__('payroll::modules.payroll.livingCostAllowance')" :fieldValue="$salarySlip->user->userAllowances->living_cost_allowance" />
+                    </div>
+
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.specialAllowance')" fieldName="special_allowance" fieldId="special_allowance"
+                            :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" :fieldValue="$salarySlip->user->userAllowances->special_allowance" />
                     </div>
                 </div>
-                <div class="row p-20">
+                {{-- <div class="row p-20">
 
                     <div class="col-lg-6 col-md-6">
                         <div class="table-responsive py-3" id="earning-table">
@@ -102,8 +108,8 @@
 
                                 </tr>
 
-                                @foreach ($earnings as $key=>$item)
-                                    @if($key != 'Total Hours')
+                                @foreach ($earnings as $key => $item)
+                                    @if ($key != 'Total Hours')
                                         <tr>
                                             <td class="pr-2">{{ $key }}</td>
                                             <td class="text-right">
@@ -118,8 +124,8 @@
                                     @endif
                                 @endforeach
 
-                                @foreach ($earningsExtra as $key=>$item)
-                                @if($key != 'Total Hours')
+                                @foreach ($earningsExtra as $key => $item)
+                                @if ($key != 'Total Hours')
                                     <tr>
                                         <td class="pr-2"><input type="text" class="form-control height-35 f-14 my-2"
                                                                 name="extra_earnings_name[]" value="{{ $key }}"></td>
@@ -167,7 +173,7 @@
                             <div class="col-md-12 ">
                                 <table id="additionalDataBox" width="100%">
                                     <tbody>
-                                        @foreach ($earningsAdditional as $key=>$item)
+                                        @foreach ($earningsAdditional as $key => $item)
                                             <tr>
                                                 <td class="pr-2"><input type="text" class="form-control height-35 f-14 my-2"
                                                                         name="additional_name[]" value="{{ $key }}"></td>
@@ -206,7 +212,7 @@
                                     <th class="text-right text-uppercase">@lang('app.amount')</th>
                                     <th class="text-right"></th>
                                 </tr>
-                                @foreach ($deductions as $key=>$item)
+                                @foreach ($deductions as $key => $item)
                                     <tr>
                                         <td class="pr-2">{{ $key }}</td>
                                         <td class="text-right">
@@ -219,7 +225,7 @@
                                         <td></td>
                                     </tr>
                                 @endforeach
-                                @foreach ($deductionsExtra as $key=>$item)
+                                @foreach ($deductionsExtra as $key => $item)
                                     <tr>
                                         <td class="pr-2"><input type="text" class="form-control height-35 f-14 my-2"
                                                                 name="extra_deductions_name[]" value="{{ $key }}"></td>
@@ -260,7 +266,7 @@
                             + @lang('payroll::modules.payroll.reimbursement'))</h5>
                     </div>
 
-                </div>
+                </div> --}}
 
                 <div class="w-100 border-top-grey d-flex justify-content-end px-4 py-3">
                     <x-forms.button-cancel :link="route('payroll.index')" class="border-0 mr-3">@lang('app.cancel')
@@ -271,12 +277,38 @@
 
             </div>
         </x-form>
-
     </div>
 </div>
 
-
 <script>
+    $(document).ready(function() {
+        const dp1 = datepicker('#paid_on', {
+            position: 'bl',
+            ...datepickerConfig
+        });
+
+        $('#save-payroll').click(function() {
+            const url = "{{ route('payroll.update', $salarySlip->id) }}";
+
+            $.easyAjax({
+                url: url,
+                container: '#save-payroll-form',
+                type: "POST",
+                disableButton: true,
+                blockUI: true,
+                buttonSelector: "#save-payroll",
+                data: $('#save-payroll-form').serialize(),
+                success: function(response) {
+                    console.log(response);
+                    window.location.href = response.url;
+                }
+            });
+        });
+    });
+</script>
+
+
+{{-- <script>
 
     $(document).ready(function () {
 
@@ -548,4 +580,4 @@
         }
     });
 
-</script>
+</script> --}}

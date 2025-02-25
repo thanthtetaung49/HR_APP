@@ -112,7 +112,10 @@ class PayrollController extends AccountBaseController
     {
         $viewPermission = user()->permission('view_payroll');
 
-        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'payroll_cycle')->findOrFail($id);
+        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'payroll_cycle', 'user.userAllowances')
+            ->findOrFail($id);
+        
+            // dd($this->salarySlip->user->userAllowances->basic_salary->toArray());
 
         abort_403(!($viewPermission == 'all'
             || ($viewPermission == 'owned' && $this->salarySlip->user_id == user()->id)
@@ -120,66 +123,77 @@ class PayrollController extends AccountBaseController
             || ($viewPermission == 'both' && ($this->salarySlip->user_id == user()->id || $this->salarySlip->added_by == user()->id))
         ));
 
-        $salaryJson = json_decode($this->salarySlip->salary_json, true);
-        $this->earnings = $salaryJson['earnings'];
-        $this->deductions = $salaryJson['deductions'];
-        $extraJson = json_decode($this->salarySlip->extra_json, true);
-        $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
+        $this->salaryPaymentMethods = SalaryPaymentMethod::all();
+
+
+        // $salaryJson = json_decode($this->salarySlip->salary_json, true);
+        // $this->earnings = $salaryJson['earnings'];
+        // $this->deductions = $salaryJson['deductions'];
+        // $extraJson = json_decode($this->salarySlip->extra_json, true);
+        // $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
 
         if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
-            $this->basicSalary = (float) $this->salarySlip->basic_salary;
+            $this->basicSalary = (float) $this->salarySlip->user->userAllowances->basic_salary;
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
+            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 4);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
+            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 2);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = ((float) $this->salarySlip->basic_salary / 30);
+            $perday = ((float) $this->salarySlip->user->userAllowances->basic_salary / 30);
             $this->basicSalary = $perday * 14;
         }
 
-        $earn = [];
-
-        foreach ($this->earnings as $key => $value) {
-            if ($key != 'Total Hours') {
-                $earn[] = $value;
-            }
-        }
-
-        $earn = array_sum($earn);
-
-        $this->fixedAllowance = $this->salarySlip->gross_salary - ($this->basicSalary + $earn);
-
-        if ($this->fixedAllowance < 0) {
-            $this->fixedAllowance = 0;
-        }
-
-        if (!is_null($extraJson)) {
-
-            $this->earningsExtra = $extraJson['earnings'];
-            $this->deductionsExtra = $extraJson['deductions'];
-        } else {
-            $this->earningsExtra = '';
-            $this->deductionsExtra = '';
-        }
-
-        if (!is_null($additionalEarnings)) {
-            $this->earningsAdditional = $additionalEarnings['earnings'];
-        } else {
-            $this->earningsAdditional = '';
-        }
-
-        if ($this->earningsAdditional == '') {
-            $this->earningsAdditional = array();
-        }
-
-        if ($this->earningsExtra == '') {
-            $this->earningsExtra = array();
-        }
+        $this->technicalAllowance = $this->salarySlip->user->userAllowances->technical_allowance;
+        $this->livingCostAllowance = $this->salarySlip->user->userAllowances->living_cost_allowance;
+        $this->specialAllowance = $this->salarySlip->user->userAllowances->special_allowance;
 
 
-        if ($this->deductionsExtra == '') {
-            $this->deductionsExtra = array();
-        }
+        $this->totalAllowance = $this->basicSalary + $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance;
+
+
+        // $earn = [];
+
+        // foreach ($this->earnings as $key => $value) {
+        //     if ($key != 'Total Hours') {
+        //         $earn[] = $value;
+        //     }
+        // }
+
+        // $earn = array_sum($earn);
+
+        // $this->fixedAllowance = $this->salarySlip->gross_salary - ($this->basicSalary + $earn);
+
+        // if ($this->fixedAllowance < 0) {
+        //     $this->fixedAllowance = 0;
+        // }
+
+        // if (!is_null($extraJson)) {
+
+        //     $this->earningsExtra = $extraJson['earnings'];
+        //     $this->deductionsExtra = $extraJson['deductions'];
+        // } else {
+        //     $this->earningsExtra = '';
+        //     $this->deductionsExtra = '';
+        // }
+
+        // if (!is_null($additionalEarnings)) {
+        //     $this->earningsAdditional = $additionalEarnings['earnings'];
+        // } else {
+        //     $this->earningsAdditional = '';
+        // }
+
+        // if ($this->earningsAdditional == '') {
+        //     $this->earningsAdditional = array();
+        // }
+
+        // if ($this->earningsExtra == '') {
+        //     $this->earningsExtra = array();
+        // }
+
+
+        // if ($this->deductionsExtra == '') {
+        //     $this->deductionsExtra = array();
+        // }
 
         $this->payrollSetting = PayrollSetting::first();
         $this->extraFields = [];
@@ -197,11 +211,14 @@ class PayrollController extends AccountBaseController
             $this->fields = $this->fieldsData->filter(function ($value, $key) {
                 return in_array($value->id, $this->extraFields);
             })->all();
+
+
         }
 
-        if ($this->fixedAllowance < 1 && $this->fixedAllowance > -1) {
-            $this->fixedAllowance = 0;
-        }
+
+        // if ($this->fixedAllowance < 1 && $this->fixedAllowance > -1) {
+        //     $this->fixedAllowance = 0;
+        // }
 
         if (request()->ajax()) {
             $html = view('payroll::payroll.ajax.show-modal', $this->data)->render();
@@ -221,7 +238,10 @@ class PayrollController extends AccountBaseController
      */
     public function edit($id)
     {
-        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method')->findOrFail($id);
+        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'user.userAllowances')
+        ->findOrFail($id);
+
+        // dd($this->salarySlip->user->toArray());
 
         $editPermission = user()->permission('edit_payroll');
 
@@ -231,77 +251,78 @@ class PayrollController extends AccountBaseController
             || ($editPermission == 'both' && ($this->salarySlip->user_id == user()->id || $this->salarySlip->added_by == user()->id))
         ));
 
-        $salaryJson = json_decode($this->salarySlip->salary_json, true);
-        $this->earnings = $salaryJson['earnings'];
-        $this->deductions = $salaryJson['deductions'];
-        $extraJson = json_decode($this->salarySlip->extra_json, true);
-        $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
+        // $salaryJson = json_decode($this->salarySlip->salary_json, true);
+        // $this->earnings = $salaryJson['earnings'];
+        // $this->deductions = $salaryJson['deductions'];
+        // $extraJson = json_decode($this->salarySlip->extra_json, true);
+        // $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
 
-        if (!is_null($extraJson)) {
-            $this->earningsExtra = $extraJson['earnings'];
-            $this->deductionsExtra = $extraJson['deductions'];
-        } else {
-            $this->earningsExtra = '';
-            $this->deductionsExtra = '';
-        }
+        // if (!is_null($extraJson)) {
+        //     $this->earningsExtra = $extraJson['earnings'];
+        //     $this->deductionsExtra = $extraJson['deductions'];
+        // } else {
+        //     $this->earningsExtra = '';
+        //     $this->deductionsExtra = '';
+        // }
 
-        if (!is_null($additionalEarnings)) {
-            $this->earningsAdditional = $additionalEarnings['earnings'];
-        } else {
-            $this->earningsAdditional = '';
-        }
+        // if (!is_null($additionalEarnings)) {
+        //     $this->earningsAdditional = $additionalEarnings['earnings'];
+        // } else {
+        //     $this->earningsAdditional = '';
+        // }
 
-        if ($this->earningsAdditional == '') {
-            $this->earningsAdditional = array();
-        }
+        // if ($this->earningsAdditional == '') {
+        //     $this->earningsAdditional = array();
+        // }
 
-        if ($this->earningsExtra == '') {
-            $this->earningsExtra = array();
-        }
+        // if ($this->earningsExtra == '') {
+        //     $this->earningsExtra = array();
+        // }
 
-        if ($this->deductionsExtra == '') {
-            $this->deductionsExtra = array();
-        }
+        // if ($this->deductionsExtra == '') {
+        //     $this->deductionsExtra = array();
+        // }
 
-        if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
-            $this->basicSalary = $this->salarySlip->basic_salary;
-        } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
-        } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
-        } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = (float) $this->salarySlip->basic_salary / 30;
-            $this->basicSalary = $perday * 14;
-        }
+        // if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
+        //     $this->basicSalary = $this->salarySlip->basic_salary;
+        // } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
+        //     $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
+        // } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
+        //     $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
+        // } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
+        //     $perday = (float) $this->salarySlip->basic_salary / 30;
+        //     $this->basicSalary = $perday * 14;
+        // }
 
-        $earn = [];
-        $extraEarn = [];
+        // $earn = [];
+        // $extraEarn = [];
 
-        $this->earningsAdditionalTotal = isset($this->earningsAdditional) ? array_sum($this->earningsAdditional) : 0;
+        // $this->earningsAdditionalTotal = isset($this->earningsAdditional) ? array_sum($this->earningsAdditional) : 0;
 
-        foreach ($this->earnings as $key => $value) {
-            if ($key != 'Total Hours') {
-                $earn[] = $value;
-            }
-        }
+        // foreach ($this->earnings as $key => $value) {
+        //     if ($key != 'Total Hours') {
+        //         $earn[] = $value;
+        //     }
+        // }
 
-        foreach ($this->earningsExtra as $key => $value) {
-            $extraEarn[] = $value;
-        }
+        // foreach ($this->earningsExtra as $key => $value) {
+        //     $extraEarn[] = $value;
+        // }
 
-        $earn = array_sum($earn);
+        // $earn = array_sum($earn);
 
-        $extraEarn = array_sum($extraEarn);
+        // $extraEarn = array_sum($extraEarn);
 
 
-        $this->fixedAllowance = $this->salarySlip->gross_salary - ($this->basicSalary + $earn + $extraEarn);
+        // $this->fixedAllowance = $this->salarySlip->gross_salary - ($this->basicSalary + $earn + $extraEarn);
 
-        if ($this->fixedAllowance < 0) {
-            $this->fixedAllowance = 0;
-        }
+        // if ($this->fixedAllowance < 0) {
+        //     $this->fixedAllowance = 0;
+        // }
 
-        $this->currency = PayrollSetting::with('currency')->first();
+        // $this->currency = PayrollSetting::with('currency')->first();
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
+
 
         if (request()->ajax()) {
             $html = view('payroll::payroll.ajax.edit-modal', $this->data)->render();
@@ -322,90 +343,91 @@ class PayrollController extends AccountBaseController
      */
     public function update(Request $request, $id)
     {
-        $grossEarning = $request->basic_salary;
-        $totalDeductions = 0;
-        $reimbursement = $request->expense_claims;
-        $earningsName = $request->earnings_name;
-        $earnings = $request->earnings;
-        $deductionsName = $request->deductions_name;
-        $deductions = $request->deductions ? $request->deductions : array();
-        $extraEarningsName = $request->extra_earnings_name;
-        $extraEarnings = $request->extra_earnings;
-        $extraDeductionsName = $request->extra_deductions_name;
-        $extraDeductions = $request->extra_deductions;
-        $additionalEarnings = $request->additional_earnings;
-        $additionalEarningsName = $request->additional_name;
-        $additionalEarningTotal = 0;
+        // $grossEarning = $request->basic_salary;
+        // $totalDeductions = 0;
+        // $reimbursement = $request->expense_claims;
+        // $earningsName = $request->earnings_name;
+        // $earnings = $request->earnings;
+        // $deductionsName = $request->deductions_name;
+        // $deductions = $request->deductions ? $request->deductions : array();
+        // $extraEarningsName = $request->extra_earnings_name;
+        // $extraEarnings = $request->extra_earnings;
+        // $extraDeductionsName = $request->extra_deductions_name;
+        // $extraDeductions = $request->extra_deductions;
+        // $additionalEarnings = $request->additional_earnings;
+        // $additionalEarningsName = $request->additional_name;
+        // $additionalEarningTotal = 0;
 
-        $earningsArray = array();
-        $deductionsArray = array();
-        $extraEarningsArray = array();
-        $extraDeductionsArray = array();
-        $additionalEarningsArray = array();
+        // $earningsArray = array();
+        // $deductionsArray = array();
+        // $extraEarningsArray = array();
+        // $extraDeductionsArray = array();
+        // $additionalEarningsArray = array();
 
-        if ($earnings != '') {
-            foreach ($earnings as $key => $value) {
-                $earningsArray[$earningsName[$key]] = floatval($value);
-                $grossEarning = $grossEarning + $earningsArray[$earningsName[$key]];
-            }
-        }
+        // if ($earnings != '') {
+        //     foreach ($earnings as $key => $value) {
+        //         $earningsArray[$earningsName[$key]] = floatval($value);
+        //         $grossEarning = $grossEarning + $earningsArray[$earningsName[$key]];
+        //     }
+        // }
 
-        foreach ($deductions as $key => $value) {
-            if ($value != 0 && $value != '') {
-                $deductionsArray[$deductionsName[$key]] = floatval($value);
-                $totalDeductions = $totalDeductions + $deductionsArray[$deductionsName[$key]];
-            }
-        }
+        // foreach ($deductions as $key => $value) {
+        //     if ($value != 0 && $value != '') {
+        //         $deductionsArray[$deductionsName[$key]] = floatval($value);
+        //         $totalDeductions = $totalDeductions + $deductionsArray[$deductionsName[$key]];
+        //     }
+        // }
 
-        $salaryComponents = [
-            'earnings' => $earningsArray,
-            'deductions' => $deductionsArray
-        ];
-        $salaryComponentsJson = json_encode($salaryComponents);
+        // $salaryComponents = [
+        //     'earnings' => $earningsArray,
+        //     'deductions' => $deductionsArray
+        // ];
+        // $salaryComponentsJson = json_encode($salaryComponents);
 
-        if ($extraEarnings != '') {
-            foreach ($extraEarnings as $key => $value) {
-                if ($value != 0 && $value != '') {
-                    $extraEarningsArray[$extraEarningsName[$key]] = floatval($value);
-                    $grossEarning = $grossEarning + $extraEarningsArray[$extraEarningsName[$key]];
-                }
-            }
-        }
+        // if ($extraEarnings != '') {
+        //     foreach ($extraEarnings as $key => $value) {
+        //         if ($value != 0 && $value != '') {
+        //             $extraEarningsArray[$extraEarningsName[$key]] = floatval($value);
+        //             $grossEarning = $grossEarning + $extraEarningsArray[$extraEarningsName[$key]];
+        //         }
+        //     }
+        // }
 
-        if ($additionalEarnings != '') {
-            foreach ($additionalEarnings as $key => $value) {
-                if ($value != 0 && $value != '') {
-                    $additionalEarningsArray[$additionalEarningsName[$key]] = floatval($value);
-                    $additionalEarningTotal = $additionalEarningTotal + $additionalEarningsArray[$additionalEarningsName[$key]];
-                }
-            }
-        }
+        // if ($additionalEarnings != '') {
+        //     foreach ($additionalEarnings as $key => $value) {
+        //         if ($value != 0 && $value != '') {
+        //             $additionalEarningsArray[$additionalEarningsName[$key]] = floatval($value);
+        //             $additionalEarningTotal = $additionalEarningTotal + $additionalEarningsArray[$additionalEarningsName[$key]];
+        //         }
+        //     }
+        // }
 
-        if ($extraDeductions != '') {
-            foreach ($extraDeductions as $key => $value) {
-                if ($value != 0 && $value != '') {
-                    $extraDeductionsArray[$extraDeductionsName[$key]] = floatval($value);
-                    $totalDeductions = $totalDeductions + $extraDeductionsArray[$extraDeductionsName[$key]];
-                }
-            }
-        }
+        // if ($extraDeductions != '') {
+        //     foreach ($extraDeductions as $key => $value) {
+        //         if ($value != 0 && $value != '') {
+        //             $extraDeductionsArray[$extraDeductionsName[$key]] = floatval($value);
+        //             $totalDeductions = $totalDeductions + $extraDeductionsArray[$extraDeductionsName[$key]];
+        //         }
+        //     }
+        // }
 
-        $extraSalaryComponents = [
-            'earnings' => $extraEarningsArray,
-            'deductions' => $extraDeductionsArray
-        ];
+        // $extraSalaryComponents = [
+        //     'earnings' => $extraEarningsArray,
+        //     'deductions' => $extraDeductionsArray
+        // ];
 
-        $extraSalaryComponentsJson = json_encode($extraSalaryComponents);
+        // $extraSalaryComponentsJson = json_encode($extraSalaryComponents);
 
-        $additionalEarningComponents = [
-            'earnings' => $additionalEarningsArray,
-        ];
+        // $additionalEarningComponents = [
+        //     'earnings' => $additionalEarningsArray,
+        // ];
 
-        $additionalEarningComponentJson = json_encode($additionalEarningComponents);
+        // $additionalEarningComponentJson = json_encode($additionalEarningComponents);
 
-        $netSalary = $grossEarning - $totalDeductions + $reimbursement + $additionalEarningTotal;
+        // $netSalary = $grossEarning - $totalDeductions + $reimbursement + $additionalEarningTotal;
 
         $salarySlip = SalarySlip::findOrFail($id);
+        $userAllowance = Allowance::findOrFail($request->userAllowanceId);
 
         if ($request->paid_on != '') {
             $salarySlip->paid_on = Carbon::createFromFormat($this->company->date_format, $request->paid_on)->format('Y-m-d');
@@ -415,23 +437,31 @@ class PayrollController extends AccountBaseController
             $salarySlip->salary_payment_method_id = $request->salary_payment_method_id;
         }
 
-        $grossEarning = $grossEarning + $request->fixed_allowance_input + $additionalEarningTotal;
-        $netSalary = $netSalary + $request->fixed_allowance_input;
+        // dd($request->all(), $userAllowance);
 
-        // dd(round(($grossEarning), 2), $netSalary, $request->fixed_allowance_input);
-        $salarySlip->status = $request->status;
-        $salarySlip->expense_claims = $request->expense_claims;
-        $salarySlip->basic_salary = $request->basic_salary;
-        $salarySlip->salary_json = $salaryComponentsJson;
-        $salarySlip->extra_json = $extraSalaryComponentsJson;
-        $salarySlip->additional_earning_json = $additionalEarningComponentJson;
-        $salarySlip->tds = isset($deductionsArray['TDS']) ? $deductionsArray['TDS'] : 0;
-        $salarySlip->total_deductions = round(($totalDeductions), 2);
-        $salarySlip->net_salary = round(($netSalary), 2);
-        $salarySlip->gross_salary = round(($grossEarning), 2);
-        $salarySlip->last_updated_by = user()->id;
-        $salarySlip->fixed_allowance = $request->fixed_allowance_input;
+        $userAllowance->basic_salary = $request->basic_salary;
+        $userAllowance->living_cost_allowance = $request->living_cost_allowance;
+        $userAllowance->technical_allowance = $request->technical_allowance;
+        $userAllowance->special_allowance = $request->special_allowance;
+
+        // $grossEarning = $grossEarning + $request->fixed_allowance_input + $additionalEarningTotal;
+        // $netSalary = $netSalary + $request->fixed_allowance_input;
+
+        // // dd(round(($grossEarning), 2), $netSalary, $request->fixed_allowance_input);
+        // $salarySlip->status = $request->status;
+        // $salarySlip->expense_claims = $request->expense_claims;
+        // $salarySlip->basic_salary = $request->basic_salary;
+        // $salarySlip->salary_json = $salaryComponentsJson;
+        // $salarySlip->extra_json = $extraSalaryComponentsJson;
+        // $salarySlip->additional_earning_json = $additionalEarningComponentJson;
+        // $salarySlip->tds = isset($deductionsArray['TDS']) ? $deductionsArray['TDS'] : 0;
+        // $salarySlip->total_deductions = round(($totalDeductions), 2);
+        // $salarySlip->net_salary = round(($netSalary), 2);
+        // $salarySlip->gross_salary = round(($grossEarning), 2);
+        // $salarySlip->last_updated_by = user()->id;
+        // $salarySlip->fixed_allowance = $request->fixed_allowance_input;
         $salarySlip->save();
+        $userAllowance->save();
 
         return Reply::redirect(route('payroll.show', $salarySlip->id), __('messages.updateSuccess'));
     }
