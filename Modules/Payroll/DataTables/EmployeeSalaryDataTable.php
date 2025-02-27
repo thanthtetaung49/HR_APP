@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use App\Models\Role;
 use App\Models\User;
 use App\DataTables\BaseDataTable;
+use App\Models\Allowance;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Modules\Payroll\Entities\PayrollCycle;
@@ -32,7 +33,7 @@ class EmployeeSalaryDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addColumn('action', function ($row) {
-                $salary = EmployeeMonthlySalary::employeeNetSalary($row->id);
+                $salary = Allowance::employeeBasicSalary($row->id);
                 $action = '<div class="task_view">
                         <div class="dropdown">
                             <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
@@ -41,7 +42,7 @@ class EmployeeSalaryDataTable extends BaseDataTable
                             </a>
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
 
-                if ($salary['netSalary'] > 0) {
+                if ($salary['basicSalary'] > 0) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('employee-salary.edit-salary', [$row->id]) . '">
                                         <i class="fa fa-edit mr-2"></i>
                                         ' . trans('app.edit') . '
@@ -99,11 +100,16 @@ class EmployeeSalaryDataTable extends BaseDataTable
                 return ($row->allow_generate_payroll) ? __('app.yes') : __('app.no');
             })
             ->addColumn('gross_earning', function ($row) {
-                $salary = EmployeeMonthlySalary::employeeNetSalary($row->id);
+                // $salary = EmployeeMonthlySalary::employeeNetSalary($row->id);
+                $salary = Allowance::employeeBasicSalary($row->id);
 
-                if ($salary['netSalary'] > 0) {
-                    return currency_format($salary['netSalary'], ($this->currency->currency ? $this->currency->currency->id : company()->currency->id));
+                if ($salary['basicSalary'] > 0) {
+                    return currency_format($salary['basicSalary'], ($this->currency->currency ? $this->currency->currency->id : company()->currency->id));
                 }
+
+                // if ($salary['netSalary'] > 0) {
+                //     return currency_format($salary['netSalary'], ($this->currency->currency ? $this->currency->currency->id : company()->currency->id));
+                // }
 
                 return '--';
             })
@@ -221,7 +227,7 @@ class EmployeeSalaryDataTable extends BaseDataTable
             __('payroll::modules.payroll.salaryGroup') => ['data' => 'group_name', 'name' => 'group_name', 'title' => __('payroll::modules.payroll.salaryGroup')],
             __('app.employee') . ' ' . __('payroll::modules.payroll.allow_generate_payroll') => ['data' => 'allow_generate_payroll_export', 'name' => 'allow_generate_payroll', 'visible' => false, 'title' => __('app.employee') . ' ' . __('payroll::modules.payroll.allow_generate_payroll')],
             __('payroll::modules.payroll.allow_generate_payroll') => ['data' => 'allow_generate_payroll', 'name' => 'allow_generate_payroll', 'exportable' => false, 'title' => __('payroll::modules.payroll.allow_generate_payroll')],
-            __('payroll::modules.payroll.grossEarning') => ['data' => 'gross_earning', 'name' => 'name', 'visible' => true, 'title' => __('payroll::modules.payroll.netSalary') . ' (' . __('app.monthly') . ')'],
+            __('payroll::modules.payroll.grossEarning') => ['data' => 'gross_earning', 'name' => 'name', 'visible' => true, 'title' => __('payroll::modules.payroll.basicPay') . ' (' . __('app.monthly') . ')'],
 
             Column::computed('action', __('app.action'))
                 ->exportable(false)

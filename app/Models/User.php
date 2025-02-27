@@ -1220,4 +1220,8 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasOne(Allowance::class, 'user_id', 'id');
     }
 
+    public function userDetection() {
+        return $this->hasOne(Detection::class, 'user_id', 'id');
+    }
+
 }

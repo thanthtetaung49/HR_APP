@@ -14,9 +14,14 @@ class StoreSalary extends FormRequest
     public function rules()
     {
         return [
-            'annual_salary' => 'required',
+            // 'annual_salary' => 'required',
+            // 'basic_salary' => 'required',
+            // 'basic_value' => 'required',
             'basic_salary' => 'required',
-            'basic_value' => 'required',
+            'technical_allowance' => 'required',
+            'living_cost_allowance' => 'required',
+            'special_allowance' => 'required',
+            'other_detection' => 'required',
         ];
     }
 

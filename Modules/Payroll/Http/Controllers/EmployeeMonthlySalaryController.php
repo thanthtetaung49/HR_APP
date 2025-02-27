@@ -2,24 +2,28 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Team;
-use App\Models\Location;
 use App\Models\User;
 use App\Helper\Reply;
+use App\Models\Location;
+use App\Models\Allowance;
+use App\Models\Detection;
+use App\Models\Attendance;
 use App\Models\Designation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Modules\Payroll\Entities\PayrollCycle;
+use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Http\Requests\StoreSalary;
 use App\Http\Controllers\AccountBaseController;
-use Carbon\Carbon;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
+use Modules\Payroll\Entities\SalaryPaymentMethod;
 use Modules\Payroll\Entities\EmployeePayrollCycle;
 use Modules\Payroll\Entities\EmployeeMonthlySalary;
 use Modules\Payroll\Entities\PayrollCurrencySetting;
 use Modules\Payroll\DataTables\EmployeeSalaryDataTable;
 use Modules\Payroll\Entities\EmployeeVariableComponent;
-use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Http\Requests\StoreEmployyeMonthlySalary;
 
 class EmployeeMonthlySalaryController extends AccountBaseController
@@ -73,93 +77,108 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
-        $initialSalary = EmployeeMonthlySalary::where('user_id', $request->user_id)->where('type', 'initial')->first();
+        // allowance
+        $allowance = new Allowance();
+        $allowance->user_id = $request->user_id;
+        $allowance->basic_salary = $request->basic_salary;
+        $allowance->technical_allowance = $request->technical_allowance;
+        $allowance->living_cost_allowance = $request->living_cost_allowance;
+        $allowance->special_allowance = $request->special_allowance;
+        $allowance->save();
 
-        if ($request->fixedAllowance < 0) {
-            return Reply::error('payroll::modules.payroll.fixedAllowanceError');
-        }
+        // detection
+        $detection = new Detection();
+        $detection->user_id = $request->user_id;
+        $detection->other_detection = $request->other_detection;
+        $detection->save();
 
-        if ($request->annual_salary > 0) {
-            if (!is_null($initialSalary)) {
-                $salary = EmployeeMonthlySalary::find($initialSalary->id);
-                $salary->user_id = $request->user_id;
-                $salary->annual_salary = $request->annual_salary;
-                $salary->basic_salary = $request->basic_salary;
-                $salary->basic_value_type = $request->basic_value;
-                $salary->fixed_allowance = $request->fixedAllowance;
-                $salary->amount = $request->annual_salary / 12;
-                $salary->type = $request->type;
-                $salary->date = now()->timezone($this->company->timezone)->toDateString();
-                $salary->save();
+        // $initialSalary = EmployeeMonthlySalary::where('user_id', $request->user_id)->where('type', 'initial')->first();
 
-                if (!is_null($request->deduction_variable)) {
-                    foreach ($request->deduction_variable as $key => $value) {
-                        $variable = new EmployeeVariableComponent();
-                        $variable->monthly_salary_id = $salary->id;
-                        $variable->variable_component_id = $key;
-                        $variable->variable_value = $value;
-                        $variable->save();
-                    }
-                }
+        // if ($request->fixedAllowance < 0) {
+        //     return Reply::error('payroll::modules.payroll.fixedAllowanceError');
+        // }
 
-                if (!is_null($request->earning_variable)) {
+        // if ($request->annual_salary > 0) {
+        //     if (!is_null($initialSalary)) {
+        //         $salary = EmployeeMonthlySalary::find($initialSalary->id);
+        //         $salary->user_id = $request->user_id;
+        //         $salary->annual_salary = $request->annual_salary;
+        //         $salary->basic_salary = $request->basic_salary;
+        //         $salary->basic_value_type = $request->basic_value;
+        //         $salary->fixed_allowance = $request->fixedAllowance;
+        //         $salary->amount = $request->annual_salary / 12;
+        //         $salary->type = $request->type;
+        //         $salary->date = now()->timezone($this->company->timezone)->toDateString();
+        //         $salary->save();
 
-                    foreach ($request->earning_variable as $key => $value) {
-                        $variable = new EmployeeVariableComponent();
-                        $variable->monthly_salary_id = $salary->id;
-                        $variable->variable_component_id = $key;
-                        $variable->variable_value = $value;
-                        $variable->save();
-                    }
-                }
+        //         if (!is_null($request->deduction_variable)) {
+        //             foreach ($request->deduction_variable as $key => $value) {
+        //                 $variable = new EmployeeVariableComponent();
+        //                 $variable->monthly_salary_id = $salary->id;
+        //                 $variable->variable_component_id = $key;
+        //                 $variable->variable_value = $value;
+        //                 $variable->save();
+        //             }
+        //         }
 
-            }
-            else {
-                $salary = new EmployeeMonthlySalary();
-                $salary->user_id = $request->user_id;
-                $salary->annual_salary = $request->annual_salary;
-                $salary->basic_salary = $request->basic_salary;
-                $salary->basic_value_type = $request->basic_value;
-                $salary->fixed_allowance = $request->fixedAllowance;
-                $salary->amount = $request->annual_salary / 12;
-                $salary->effective_annual_salary = $request->annual_salary;
-                $salary->effective_monthly_salary = $request->annual_salary / 12;
-                $salary->type = $request->type;
-                $salary->date = now()->timezone($this->company->timezone)->toDateString();
-                $salary->save();
+        //         if (!is_null($request->earning_variable)) {
 
-                if (!is_null($request->deduction_variable)) {
-                    foreach ($request->deduction_variable as $key => $value) {
-                        $variable = new EmployeeVariableComponent();
-                        $variable->monthly_salary_id = $salary->id;
-                        $variable->variable_component_id = $key;
-                        $variable->variable_value = $value;
-                        $variable->save();
-                    }
-                }
+        //             foreach ($request->earning_variable as $key => $value) {
+        //                 $variable = new EmployeeVariableComponent();
+        //                 $variable->monthly_salary_id = $salary->id;
+        //                 $variable->variable_component_id = $key;
+        //                 $variable->variable_value = $value;
+        //                 $variable->save();
+        //             }
+        //         }
 
-                if (!is_null($request->earning_variable)) {
+        //     }
+        //     else {
+        //         $salary = new EmployeeMonthlySalary();
+        //         $salary->user_id = $request->user_id;
+        //         $salary->annual_salary = $request->annual_salary;
+        //         $salary->basic_salary = $request->basic_salary;
+        //         $salary->basic_value_type = $request->basic_value;
+        //         $salary->fixed_allowance = $request->fixedAllowance;
+        //         $salary->amount = $request->annual_salary / 12;
+        //         $salary->effective_annual_salary = $request->annual_salary;
+        //         $salary->effective_monthly_salary = $request->annual_salary / 12;
+        //         $salary->type = $request->type;
+        //         $salary->date = now()->timezone($this->company->timezone)->toDateString();
+        //         $salary->save();
 
-                    foreach ($request->earning_variable as $key => $value) {
-                        $variable = new EmployeeVariableComponent();
-                        $variable->monthly_salary_id = $salary->id;
-                        $variable->variable_component_id = $key;
-                        $variable->variable_value = $value;
-                        $variable->save();
-                    }
-                }
-            }
+        //         if (!is_null($request->deduction_variable)) {
+        //             foreach ($request->deduction_variable as $key => $value) {
+        //                 $variable = new EmployeeVariableComponent();
+        //                 $variable->monthly_salary_id = $salary->id;
+        //                 $variable->variable_component_id = $key;
+        //                 $variable->variable_value = $value;
+        //                 $variable->save();
+        //             }
+        //         }
 
-            $employeeCycle = EmployeePayrollCycle::where('user_id', $request->user_id)->first();
+        //         if (!is_null($request->earning_variable)) {
 
-            if (is_null($employeeCycle)) {
-                $payrollCycle = PayrollCycle::where('cycle', 'monthly')->first();
-                $employeeCycle = new EmployeePayrollCycle();
-                $employeeCycle->user_id = $request->user_id;
-                $employeeCycle->payroll_cycle_id = $payrollCycle->id;
-                $employeeCycle->save();
-            }
-        }
+        //             foreach ($request->earning_variable as $key => $value) {
+        //                 $variable = new EmployeeVariableComponent();
+        //                 $variable->monthly_salary_id = $salary->id;
+        //                 $variable->variable_component_id = $key;
+        //                 $variable->variable_value = $value;
+        //                 $variable->save();
+        //             }
+        //         }
+        //     }
+
+        //     $employeeCycle = EmployeePayrollCycle::where('user_id', $request->user_id)->first();
+
+        //     if (is_null($employeeCycle)) {
+        //         $payrollCycle = PayrollCycle::where('cycle', 'monthly')->first();
+        //         $employeeCycle = new EmployeePayrollCycle();
+        //         $employeeCycle->user_id = $request->user_id;
+        //         $employeeCycle->payroll_cycle_id = $payrollCycle->id;
+        //         $employeeCycle->save();
+        //     }
+        // }
 
         return Reply::successWithData(__('messages.recordSaved'), ['redirectUrl' => route('employee-salary.index')]);
     }
@@ -177,7 +196,8 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $this->employeeSalary = EmployeeMonthlySalary::employeeNetSalary($id);
         $this->employee = User::find($id);
         $this->currency = PayrollSetting::with('currency')->first();
-        $this->salaryHistory = EmployeeMonthlySalary::where('user_id', $id)->orderBy('date', 'asc')->get();
+        // $this->salaryHistory = EmployeeMonthlySalary::where('user_id', $id)->orderBy('date', 'asc')->get();
+        $this->salaryHistory = Allowance::where('user_id', $id)->orderBy('date', 'asc')->get();
 
         return view('payroll::employee-salary.show', $this->data);
     }
@@ -196,6 +216,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $this->employee = User::find($id);
         $this->currency = PayrollSetting::with('currency')->first();
         $this->salaryGroups = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $id)->first();
+
         return view('payroll::employee-salary.increment', $this->data);
     }
 
@@ -345,9 +366,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
                 $status->allow_generate_payroll = $request->status;
                 $status->save();
             }
-
-        }
-        else {
+        } else {
 
             $employeeMonthly = new EmployeeMonthlySalary();
             $employeeMonthly->user_id = $request->user_id;
@@ -382,6 +401,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $this->salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $id)->first();
         $this->payrollController = new EmployeeMonthlySalaryController();
         $this->currency = PayrollSetting::with('currency')->first();
+        $this->salaryPaymentMethods = SalaryPaymentMethod::all();
 
         if (request()->ajax()) {
             $this->pageTitle = __('payroll::app.menu.payroll');
@@ -400,9 +420,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
         if ($request->basicType == 'fixed') {
             $this->basicSalary = $request->basicValue;
-
-        }
-        else {
+        } else {
             $this->basicSalary = ($request->annualSalary / 12) / 100 * $request->basicValue;
         }
 
@@ -439,8 +457,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
                         $totalEarnings[] = $component->component->component_value;
                     }
-                }
-                else {
+                } else {
 
                     if ($component->component->value_type == 'fixed') {
                         $totalExpenses[] = $component->component->component_value;
@@ -478,9 +495,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
         if ($request->basicType == 'fixed') {
             $this->basicSalary = $request->basicValue;
-
-        }
-        else {
+        } else {
             $this->basicSalary = ($request->annualSalary / 12) / 100 * $request->basicValue;
         }
 
@@ -516,15 +531,13 @@ class EmployeeMonthlySalaryController extends AccountBaseController
                     if ($component->component->value_type == 'variable') {
                         $compValue = $this->employeeVariableSalaries->where('variable_component_id', $component->component->id)->first();
 
-                        if($compValue){
+                        if ($compValue) {
                             $totalEarnings[] = $compValue->variable_value;
-                        }
-                        else{
+                        } else {
                             $totalEarnings[] = $component->component->component_value;
                         }
                     }
-                }
-                else {
+                } else {
 
                     if ($component->component->value_type == 'fixed') {
                         $totalExpenses[] = $component->component->component_value;
@@ -541,11 +554,10 @@ class EmployeeMonthlySalaryController extends AccountBaseController
                     if ($component->component->value_type == 'variable') {
                         $compValueDeduction = $this->employeeVariableSalaries->where('variable_component_id', $component->component->id)->first();
 
-                        if($compValueDeduction){
+                        if ($compValueDeduction) {
                             $totalExpenses[] = $compValueDeduction->variable_value;
                             $this->deductionTotalWithoutVar = array_sum($totalExpenses);
-                        }
-                        else{
+                        } else {
                             $totalExpenses[] = $component->component->component_value;
                             $this->deductionTotalWithoutVar = array_sum($totalExpenses);
                         }
@@ -570,89 +582,88 @@ class EmployeeMonthlySalaryController extends AccountBaseController
     {
         $this->user_id = $id;
         $this->employee = User::findOrFail($id);
-        $this->salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $id)->first();
-        $this->employeeMonthlySalary = EmployeeMonthlySalary::where('user_id', $id)->first();
-        $this->payrollController = new EmployeeMonthlySalaryController();
-        $this->currency = PayrollSetting::with('currency')->first();
-        $this->employeeVariableSalaries = EmployeeVariableComponent::with('component')->where('monthly_salary_id', $this->employeeMonthlySalary->id)->get() ?? [''];
-
-        if ($this->employeeMonthlySalary->basic_value_type == 'fixed') {
-            $this->basicSalary = $this->employeeMonthlySalary->basic_salary;
-        }
-        else {
-            $this->basicSalary = ($this->employeeMonthlySalary->annual_salary / 12) / 100 * $this->employeeMonthlySalary->basic_salary;
-        }
-
-        $totalEarnings = [];
-        $totalExpenses = [];
-        $this->deductionTotalWithoutVar = 0;
-
-        if (!is_null($this->salaryGroup)) {
-
-            foreach ($this->salaryGroup->salary_group->components as $component) {
-
-                if ($component->component->component_type == 'earning') {
-                    if ($component->component->value_type == 'fixed') {
-                        $totalEarnings[] += $component->component->component_value;
-                    }
-
-                    if ($component->component->value_type == 'percent') {
-                        $totalEarnings[] += ($this->employeeMonthlySalary->annual_salary / 12) / 100 * $component->component->component_value;
-                    }
-
-                    if ($component->component->value_type == 'basic_percent') {
-                        $totalEarnings[] += $this->basicSalary / 100 * $component->component->component_value;
-                    }
-
-                    if ($component->component->value_type == 'variable') {
-                        $compValue = $this->employeeVariableSalaries->where('variable_component_id', $component->component->id)->first() ?? null;
-
-                        if($compValue){
-                            $totalEarnings[] = $compValue->variable_value;
-                        }
-                        else{
-                            $totalEarnings[] = $component->component->component_value;
-                        }
-                    }
-                }
-                else {
-
-                    if ($component->component->value_type == 'fixed') {
-                        $totalExpenses[] = $component->component->component_value;
-                    }
-
-                    if ($component->component->value_type == 'percent') {
-                        $totalExpenses[] = ($this->employeeMonthlySalary->annual_salary / 12) / 100 * $component->component->component_value;
-                    }
-
-                    if ($component->component->value_type == 'basic_percent') {
-                        $totalExpenses[] = $this->basicSalary / 100 * $component->component->component_value;
-                    }
+        // $this->salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $id)->first();
+        // $this->employeeMonthlySalary = EmployeeMonthlySalary::where('user_id', $id)->first();
+        // dd($this->employeeMonthlySalar);
+        // $this->payrollController = new EmployeeMonthlySalaryController();
+        // $this->currency = PayrollSetting::with('currency')->first();
+        // $this->employeeVariableSalaries = EmployeeVariableComponent::with('component')->where('monthly_salary_id', $this->employeeMonthlySalary->id)->get() ?? [''];
+        $this->allowance = Allowance::where('user_id', $id)->first();
+        $this->detection = Detection::where('user_id', $id)->first();
 
 
-                    if ($component->component->value_type == 'variable') {
-                        $compValueDeduction = $this->employeeVariableSalaries->where('variable_component_id', $component->component->id)->first();
+        // if ($this->employeeMonthlySalary->basic_value_type == 'fixed') {
+        //     $this->basicSalary = $this->employeeMonthlySalary->basic_salary;
+        // } else {
+        //     $this->basicSalary = ($this->employeeMonthlySalary->annual_salary / 12) / 100 * $this->employeeMonthlySalary->basic_salary;
+        // }
 
-                        if($compValueDeduction){
-                            $totalExpenses[] = $compValueDeduction->variable_value;
-                            $this->deductionTotalWithoutVar = array_sum($totalExpenses);
+        // $totalEarnings = [];
+        // $totalExpenses = [];
+        // $this->deductionTotalWithoutVar = 0;
 
-                        }
-                        else{
-                            $totalExpenses[] = $component->component->component_value;
-                            $this->deductionTotalWithoutVar = array_sum($totalExpenses);
-                        }
-                    }
-                }
-            }
-        }
+        // if (!is_null($this->salaryGroup)) {
 
-        $this->totalEarnings = $totalEarnings;
-        $this->totalExpenses = $totalExpenses;
-        $this->expenses = array_sum($totalExpenses);
+        //     foreach ($this->salaryGroup->salary_group->components as $component) {
+
+        //         if ($component->component->component_type == 'earning') {
+        //             if ($component->component->value_type == 'fixed') {
+        //                 $totalEarnings[] += $component->component->component_value;
+        //             }
+
+        //             if ($component->component->value_type == 'percent') {
+        //                 $totalEarnings[] += ($this->employeeMonthlySalary->annual_salary / 12) / 100 * $component->component->component_value;
+        //             }
+
+        //             if ($component->component->value_type == 'basic_percent') {
+        //                 $totalEarnings[] += $this->basicSalary / 100 * $component->component->component_value;
+        //             }
+
+        //             if ($component->component->value_type == 'variable') {
+        //                 $compValue = $this->employeeVariableSalaries->where('variable_component_id', $component->component->id)->first() ?? null;
+
+        //                 if ($compValue) {
+        //                     $totalEarnings[] = $compValue->variable_value;
+        //                 } else {
+        //                     $totalEarnings[] = $component->component->component_value;
+        //                 }
+        //             }
+        //         } else {
+
+        //             if ($component->component->value_type == 'fixed') {
+        //                 $totalExpenses[] = $component->component->component_value;
+        //             }
+
+        //             if ($component->component->value_type == 'percent') {
+        //                 $totalExpenses[] = ($this->employeeMonthlySalary->annual_salary / 12) / 100 * $component->component->component_value;
+        //             }
+
+        //             if ($component->component->value_type == 'basic_percent') {
+        //                 $totalExpenses[] = $this->basicSalary / 100 * $component->component->component_value;
+        //             }
 
 
-        $this->fixedAllowance = is_int($this->employeeMonthlySalary->fixed_allowance) ? $this->employeeMonthlySalary->fixed_allowance : 0;
+        //             if ($component->component->value_type == 'variable') {
+        //                 $compValueDeduction = $this->employeeVariableSalaries->where('variable_component_id', $component->component->id)->first();
+
+        //                 if ($compValueDeduction) {
+        //                     $totalExpenses[] = $compValueDeduction->variable_value;
+        //                     $this->deductionTotalWithoutVar = array_sum($totalExpenses);
+        //                 } else {
+        //                     $totalExpenses[] = $component->component->component_value;
+        //                     $this->deductionTotalWithoutVar = array_sum($totalExpenses);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
+
+        // $this->totalEarnings = $totalEarnings;
+        // $this->totalExpenses = $totalExpenses;
+        // $this->expenses = array_sum($totalExpenses);
+
+
+        // $this->fixedAllowance = is_int($this->employeeMonthlySalary->fixed_allowance) ? $this->employeeMonthlySalary->fixed_allowance : 0;
 
         if (request()->ajax()) {
             $this->pageTitle = __('payroll::app.menu.payroll');
@@ -663,59 +674,77 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
         $this->view = 'payroll::employee-salary.ajax.edit';
 
+
         return view('payroll::employee-salary.create', $this->data);
     }
 
     public function updateSalary(Request $request, $id)
     {
-        $salary = EmployeeMonthlySalary::where('id', $id)->where('type', 'initial')->first();
+        $user_id = $request->user_id;
 
-        if ($request->fixedAllowance < 0) {
-            return Reply::error('payroll::modules.payroll.fixedAllowanceError');
-        }
+        // allowance
+        $allowance = Allowance::where('user_id', $user_id)->first();
+        $allowance->user_id = $request->user_id;
+        $allowance->basic_salary = $request->basic_salary;
+        $allowance->technical_allowance = $request->technical_allowance;
+        $allowance->living_cost_allowance = $request->living_cost_allowance;
+        $allowance->special_allowance = $request->special_allowance;
+        $allowance->save();
 
-        if ($request->annual_salary > 0) {
-            $salary->user_id = $request->user_id;
-            $salary->effective_annual_salary = $request->annual_salary;
-            $salary->basic_salary = $request->basic_salary;
-            $salary->basic_value_type = $request->basic_value;
-            $salary->effective_monthly_salary = $request->annual_salary / 12;
-            $salary->type = $request->type;
-            $salary->fixed_allowance = $request->fixedAllowance;
-            $salary->date = now()->timezone($this->company->timezone)->toDateString();
-            $salary->save();
-            EmployeeVariableComponent::where('monthly_salary_id', $salary->id)->delete();
+        // detection
+        $detection = Detection::where('user_id', $user_id)->first();
+        $detection->user_id = $request->user_id;
+        $detection->other_detection = $request->other_detection;
+        $detection->save();
 
-            if (!is_null($request->deduction_variable)) {
-                foreach ($request->deduction_variable as $key => $value) {
-                    $variable = new EmployeeVariableComponent();
-                    $variable->monthly_salary_id = $salary->id;
-                    $variable->variable_component_id = $key;
-                    $variable->variable_value = $value;
-                    $variable->save();
-                }
-            }
+        // $salary = EmployeeMonthlySalary::where('id', $id)->where('type', 'initial')->first();
 
-            if (!is_null($request->earning_variable)) {
-                foreach ($request->earning_variable as $key => $value) {
-                    $variable = new EmployeeVariableComponent();
-                    $variable->monthly_salary_id = $salary->id;
-                    $variable->variable_component_id = $key;
-                    $variable->variable_value = $value;
-                    $variable->save();
-                }
-            }
+        // if ($request->fixedAllowance < 0) {
+        //     return Reply::error('payroll::modules.payroll.fixedAllowanceError');
+        // }
 
-            $employeeCycle = EmployeePayrollCycle::where('user_id', $request->user_id)->first();
+        // if ($request->annual_salary > 0) {
+        //     $salary->user_id = $request->user_id;
+        //     $salary->effective_annual_salary = $request->annual_salary;
+        //     $salary->basic_salary = $request->basic_salary;
+        //     $salary->basic_value_type = $request->basic_value;
+        //     $salary->effective_monthly_salary = $request->annual_salary / 12;
+        //     $salary->type = $request->type;
+        //     $salary->fixed_allowance = $request->fixedAllowance;
+        //     $salary->date = now()->timezone($this->company->timezone)->toDateString();
+        //     $salary->save();
+        //     EmployeeVariableComponent::where('monthly_salary_id', $salary->id)->delete();
 
-            if (is_null($employeeCycle)) {
-                $payrollCycle = PayrollCycle::where('cycle', 'monthly')->first();
-                $employeeCycle = new EmployeePayrollCycle();
-                $employeeCycle->user_id = $request->user_id;
-                $employeeCycle->payroll_cycle_id = $payrollCycle->id;
-                $employeeCycle->save();
-            }
-        }
+        //     if (!is_null($request->deduction_variable)) {
+        //         foreach ($request->deduction_variable as $key => $value) {
+        //             $variable = new EmployeeVariableComponent();
+        //             $variable->monthly_salary_id = $salary->id;
+        //             $variable->variable_component_id = $key;
+        //             $variable->variable_value = $value;
+        //             $variable->save();
+        //         }
+        //     }
+
+        //     if (!is_null($request->earning_variable)) {
+        //         foreach ($request->earning_variable as $key => $value) {
+        //             $variable = new EmployeeVariableComponent();
+        //             $variable->monthly_salary_id = $salary->id;
+        //             $variable->variable_component_id = $key;
+        //             $variable->variable_value = $value;
+        //             $variable->save();
+        //         }
+        //     }
+
+        //     $employeeCycle = EmployeePayrollCycle::where('user_id', $request->user_id)->first();
+
+        //     if (is_null($employeeCycle)) {
+        //         $payrollCycle = PayrollCycle::where('cycle', 'monthly')->first();
+        //         $employeeCycle = new EmployeePayrollCycle();
+        //         $employeeCycle->user_id = $request->user_id;
+        //         $employeeCycle->payroll_cycle_id = $payrollCycle->id;
+        //         $employeeCycle->save();
+        //     }
+        // }
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('employee-salary.index')]);
     }
@@ -730,5 +759,4 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
         return number_format($amount, $no_of_decimal, $decimal_separator, $thousand_separator);
     }
-
 }

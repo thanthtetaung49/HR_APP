@@ -10,17 +10,17 @@
                                 <x-employee :user="$employee" />
                             </div>
                             <div class="col-md-2">
-                                <x-forms.label class="my-3" fieldId=""
+                                {{-- <x-forms.label class="my-3" fieldId=""
                                                :fieldLabel="__('payroll::modules.payroll.salary')" fieldRequired="true">
                                 </x-forms.label>
 
 
-                                <p class="f-11 text-grey">@lang('payroll::modules.payroll.annualCtcInfo')</p>
+                                <p class="f-11 text-grey">@lang('payroll::modules.payroll.annualCtcInfo')</p> --}}
 
                                 <input type="hidden" name="user_id" id="user_id" value="{{ $user_id }}">
                                 <input type="hidden" name="type" id="type" value="initial">
                             </div>
-                            <div class="col-md-4">
+                            {{-- <div class="col-md-4">
                                 <x-forms.input-group class="mt-2">
 
                                     <x-slot name="prepend" id="currency">
@@ -33,12 +33,11 @@
                                            id="annual_salary" value="">
                                 </x-forms.input-group>
 
-                            </div>
+                            </div> --}}
                         </div>
                     </div>
 
-
-                    <div class="col-md-12">
+                    {{-- <div class="col-md-12">
                         <div class="row border-bottom-grey mt-4">
                             <div class="col-md-3">
 
@@ -58,8 +57,8 @@
                                     @lang('payroll::modules.payroll.annualAmount')</h5>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-md-12" id="components">
+                    </div> --}}
+                    <!-- <div class="col-md-12" id="components">
                         <div class="row">
                             <div class="col-md-12">
                                 <h3 class="heading-h3  mb-0 py-4">
@@ -90,7 +89,7 @@
 
                                             <x-slot name="prepend" id="currency">
                                                 <span
-                                                    class="input-group-text f-14 bg-white-shade">{{ ($currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol ) }}</span>
+                                                    class="input-group-text f-14 bg-white-shade">{{ $currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol }}</span>
                                             </x-slot>
 
                                             <input type="text" class="form-control height-35 f-14"
@@ -104,7 +103,7 @@
                                         <x-forms.input-group>
                                             <x-slot name="prepend" id="currency">
                                                 <span
-                                                    class="input-group-text f-14 bg-white-shade">{{ ($currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol ) }}</span>
+                                                    class="input-group-text f-14 bg-white-shade">{{ $currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol }}</span>
                                             </x-slot>
 
                                             <input type="text" class="form-control height-35 f-14"
@@ -118,55 +117,55 @@
                             </div>
 
                             @if (!is_null($salaryGroup))
-                                @foreach ($salaryGroup->salary_group->components as $component)
-                                    <div class="col-md-12 mt-1">
+@foreach ($salaryGroup->salary_group->components as $component)
+<div class="col-md-12 mt-1">
                                         <div class="row">
                                             @if ($component->component->component_type == 'earning')
-                                                <div class="col-md-3">
+<div class="col-md-3">
                                                     <x-forms.label fieldId=""
                                                     :fieldLabel="$component->component->component_name" />
                                                 </div>
                                                 <div class="col-md-3">
                                                     @if ($component->component->value_type == 'basic_percent')
-                                                    <x-forms.label fieldId=""
-                                                        :fieldLabel="($component->component->component_value.' '.__('payroll::modules.payroll.percentOfBasic'))" />
-                                                    @else
-                                                    <x-forms.label fieldId=""
+<x-forms.label fieldId=""
+                                                        :fieldLabel="$component->component->component_value .
+                                                            ' ' .
+                                                            __('payroll::modules.payroll.percentOfBasic')" />
+@else
+<x-forms.label fieldId=""
                                                         :fieldLabel="$component->component->value_type ?? '--'" />
-                                                    @endif
+@endif
                                                 </div>
                                                 <div class="col-md-3">
                                                     @if ($component->component->value_type == 'variable')
-                                                        <x-forms.input-group>
+<x-forms.input-group>
                                                             <x-slot name="prepend" id="currency">
                                                             <span
-                                                                class="input-group-text f-14 bg-white-shade">{{ ($currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol ) }}</span>
+                                                                class="input-group-text f-14 bg-white-shade">{{ $currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol }}</span>
                                                             </x-slot>
                                                             <input type="text" class="form-control height-35 f-14"
                                                                  id=""
                                                                 value="{{ $payrollController->currencyFormatterCustom(0) }}">
                                                         </x-forms.input-group>
-
-                                                    @else
-                                                        <x-forms.input-group>
+@else
+<x-forms.input-group>
                                                             <x-slot name="prepend" id="currency">
                                                             <span
-                                                                class="input-group-text f-14 bg-white-shade">{{ ($currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol ) }}</span>
+                                                                class="input-group-text f-14 bg-white-shade">{{ $currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol }}</span>
                                                             </x-slot>
                                                             <input type="text" class="form-control height-35 f-14"
                                                                  id=""
                                                                 value="{{ $payrollController->currencyFormatterCustom(0) }}"
                                                                 readonly>
                                                         </x-forms.input-group>
-
-                                                    @endif
+@endif
                                                 </div>
 
                                                 <div class="col-md-3">
                                                     <x-forms.input-group>
                                                         <x-slot name="prepend" id="currency">
                                                             <span
-                                                                class="input-group-text f-14 bg-white-shade">{{ ($currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol ) }}</span>
+                                                                class="input-group-text f-14 bg-white-shade">{{ $currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol }}</span>
                                                         </x-slot>
                                                         <input type="text" class="form-control height-35 f-14"
                                                              id=""
@@ -176,11 +175,11 @@
 
 
                                                 </div>
-                                            @endif
+@endif
                                         </div>
                                     </div>
-                                @endforeach
-                            @endif
+@endforeach
+@endif
                             <div class="col-md-12">
                                 <div class="row my-3">
                                     <div class="col-md-3">
@@ -196,12 +195,18 @@
 
                                     </div>
                                     <div class="col-md-3">
-                                        <x-forms.label fieldId="" :fieldLabel="currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id ))" />
+                                        <x-forms.label fieldId="" :fieldLabel="currency_format(
+                                            0,
+                                            $currency->currency ? $currency->currency->id : company()->currency->id,
+                                        )" />
                                     </div>
 
                                     <div class="col-md-3">
 
-                                        <x-forms.label fieldId="" :fieldLabel="currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id ))" />
+                                        <x-forms.label fieldId="" :fieldLabel="currency_format(
+                                            0,
+                                            $currency->currency ? $currency->currency->id : company()->currency->id,
+                                        )" />
                                     </div>
                                 </div>
                             </div>
@@ -215,15 +220,62 @@
                                     </div>
                                     <div class="col-md-3">
                                         <h3 class="heading-h3 mb-0 py-4">
-                                            {{ currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</h3>
+                                            {{ currency_format(0, $currency->currency ? $currency->currency->id : company()->currency->id) }}</h3>
                                     </div>
                                     <div class="col-md-3">
                                         <h3 class="heading-h3 mb-0 py-4">
-                                            {{ currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</h3>
+                                            {{ currency_format(0, $currency->currency ? $currency->currency->id : company()->currency->id) }}</h3>
                                     </div>
                                 </div>
 
                             </div>
+                        </div>
+                    </div> !-->
+
+                    <div class="col-sm-12">
+                        <div class="add-client bg-white rounded">
+                            <div class="border-bottom-grey"></div>
+
+                            <div class="row p-20">
+                                <div class="col-12">
+                                    <h5>@lang('payroll::modules.payroll.allowanceHeading')</h5>
+                                </div>
+
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.basicSalary')" fieldName="basic_salary" fieldId="basic_salary"
+                                        :fieldPlaceholder="__('payroll::modules.payroll.expenseClaims')" />
+                                </div>
+
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.technicalAllowance')" fieldName="technical_allowance"
+                                        fieldId="technical_allowance" :fieldPlaceholder="__('payroll::modules.payroll.technicalAllowance')" />
+                                </div>
+
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.livingCostAllowance')" fieldName="living_cost_allowance"
+                                        fieldId="living_cost_allowance" :fieldPlaceholder="__('payroll::modules.payroll.livingCostAllowance')" />
+                                </div>
+
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.specialAllowance')" fieldName="special_allowance"
+                                        fieldId="special_allowance" :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" />
+                                </div>
+                            </div>
+
+                            <div class="border-bottom-grey"></div>
+
+                            <div class="row p-20">
+                                <div class="col-12 ">
+                                    <h5>@lang('payroll::modules.payroll.detectionHeading')</h5>
+                                </div>
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherDetection')" fieldName="other_detection"
+                                        fieldId="other_detection" :fieldPlaceholder="__('payroll::modules.payroll.otherDetection')" />
+                                </div>
+                            </div>
+
+                            <div class="border-bottom-grey"></div>
+
                         </div>
                     </div>
                 </div>
@@ -239,56 +291,55 @@
 
     </div>
 </div>
+
 <script>
+    // $("#annual_salary").on("keyup change", function(e) {
+    //     var annualSalary = $(this).val();
+    //     var monthlySalary = annualSalary / 12;
+    //     let netMonthlySalary = number_format(monthlySalary.toFixed(2));
+    //     $('#monthly_salary').html(netMonthlySalary);
+    // });
 
-    $("#annual_salary").on("keyup change", function (e) {
-        var annualSalary = $(this).val();
-        var monthlySalary = annualSalary / 12;
-        let netMonthlySalary = number_format(monthlySalary.toFixed(2));
-        $('#monthly_salary').html(netMonthlySalary);
-    });
+    // function changeClc() {
+    //     var basicSalary = $('#basic_value').val();
+    //     if ($('#basic-type').val() == 'ctc_percent' && basicSalary > 100) {
+    //         $('#basic_value').val(100);
+    //     }
+    //     if (basicSalary > 0) {
+    //         getBasicCalculations();
+    //     }
+    // }
 
-    function changeClc() {
-        var basicSalary = $('#basic_value').val();
-        if($('#basic-type').val() == 'ctc_percent' && basicSalary > 100){
-            $('#basic_value').val(100);
-        }
-        if(basicSalary > 0){
-            getBasicCalculations();
-        }
-    }
+    // function selectType(vals) {
+    //     getBasicCalculations();
+    // }
 
-    function selectType(vals) {
-        getBasicCalculations();
-    }
+    // function getBasicCalculations() {
 
-    function getBasicCalculations() {
+    //     var basicType = $('#basic-type').val();
+    //     var basicValue = $('#basic_value').val();
+    //     var annualSalary = $('#annual_salary').val();
+    //     var userId = $('#user_id').val();
 
-        var basicType = $('#basic-type').val();
-        var basicValue = $('#basic_value').val();
-        var annualSalary = $('#annual_salary').val();
-        var userId = $('#user_id').val();
+    //     const url = "{{ route('employee-salary.get-salary') }}";
+    //     $.easyAjax({
+    //         url: url,
+    //         type: "GET",
+    //         disableButton: true,
+    //         blockUI: true,
+    //         data: {
+    //             basicType: basicType,
+    //             basicValue: basicValue,
+    //             annualSalary: annualSalary,
+    //             userId: userId
+    //         },
+    //         success: function(response) {
+    //             $('#components').html(response.component)
+    //         }
+    //     })
+    // }
 
-        const url = "{{ route('employee-salary.get-salary') }}";
-        $.easyAjax({
-            url: url,
-            type: "GET",
-            disableButton: true,
-            blockUI: true,
-            data: {
-                basicType: basicType,
-                basicValue: basicValue,
-                annualSalary: annualSalary,
-                userId: userId
-            },
-            success: function (response) {
-                $('#components').html(response.component)
-            }
-        })
-    }
-
-    $('body').on('click', '#save-initial-salary', function () {
-
+    $('body').on('click', '#save-initial-salary', function() {
         $.easyAjax({
             url: "{{ route('employee-salary.store') }}",
             container: '#save-salary-form',
@@ -297,7 +348,7 @@
             disableButton: true,
             buttonSelector: "#save-initial-salary",
             data: $('#save-salary-form').serialize(),
-            success: function (response) {
+            success: function(response) {
                 if (response.status == 'success') {
                     if ($(MODAL_XL).hasClass('show')) {
                         $(MODAL_XL).modal('hide');
@@ -311,62 +362,62 @@
 
     });
 
-    function number_format(number) {
-        let decimals = '{{ currency_format_setting()->no_of_decimal }}';
-        let thousands_sep = '{{ currency_format_setting()->thousand_separator }}';
-        let currency_position = '{{ currency_format_setting()->currency_position }}';
-        let dec_point = '{{ currency_format_setting()->decimal_separator }}';
-        // Strip all characters but numerical ones.
-        number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
+    // function number_format(number) {
+    //     let decimals = '{{ currency_format_setting()->no_of_decimal }}';
+    //     let thousands_sep = '{{ currency_format_setting()->thousand_separator }}';
+    //     let currency_position = '{{ currency_format_setting()->currency_position }}';
+    //     let dec_point = '{{ currency_format_setting()->decimal_separator }}';
+    //     // Strip all characters but numerical ones.
+    //     number = (number + '').replace(/[^0-9+\-Ee.]/g, '');
 
-        var currency_symbol = '{{ ($currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol ) }}';
+    //     var currency_symbol =
+    //         '{{ $currency->currency ? $currency->currency->currency_symbol : company()->currency->currency_symbol }}';
 
-        var n = !isFinite(+number) ? 0 : +number,
-            prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
-            sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
-            dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
-            s = '',
-            toFixedFix = function (n, prec) {
-                var k = Math.pow(10, prec);
-                return '' + Math.round(n * k) / k;
-            };
-        // Fix for IE parseFloat(0.55).toFixed(0) = 0;
-        s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
-        if (s[0].length > 3) {
-            s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
-        }
-        if ((s[1] || '').length < prec) {
-            s[1] = s[1] || '';
-            s[1] += new Array(prec - s[1].length + 1).join('0');
-        }
+    //     var n = !isFinite(+number) ? 0 : +number,
+    //         prec = !isFinite(+decimals) ? 0 : Math.abs(decimals),
+    //         sep = (typeof thousands_sep === 'undefined') ? ',' : thousands_sep,
+    //         dec = (typeof dec_point === 'undefined') ? '.' : dec_point,
+    //         s = '',
+    //         toFixedFix = function(n, prec) {
+    //             var k = Math.pow(10, prec);
+    //             return '' + Math.round(n * k) / k;
+    //         };
+    //     // Fix for IE parseFloat(0.55).toFixed(0) = 0;
+    //     s = (prec ? toFixedFix(n, prec) : '' + Math.round(n)).split('.');
+    //     if (s[0].length > 3) {
+    //         s[0] = s[0].replace(/\B(?=(?:\d{3})+(?!\d))/g, sep);
+    //     }
+    //     if ((s[1] || '').length < prec) {
+    //         s[1] = s[1] || '';
+    //         s[1] += new Array(prec - s[1].length + 1).join('0');
+    //     }
 
-        // number = dec_point == '' ? s[0] : s.join(dec);
+    //     // number = dec_point == '' ? s[0] : s.join(dec);
 
-        number = s.join(dec);
+    //     number = s.join(dec);
 
-        switch (currency_position) {
-            case 'left':
-                number = currency_symbol + number;
-                break;
-            case 'right':
-                number = number + currency_symbol;
-                break;
-            case 'left_with_space':
-                number = currency_symbol + ' ' + number;
-                break;
-            case 'right_with_space':
-                number = number + ' ' + currency_symbol;
-                break;
-            default:
-                number = currency_symbol + number;
-                break;
-        }
-        return number;
-    }
+    //     switch (currency_position) {
+    //         case 'left':
+    //             number = currency_symbol + number;
+    //             break;
+    //         case 'right':
+    //             number = number + currency_symbol;
+    //             break;
+    //         case 'left_with_space':
+    //             number = currency_symbol + ' ' + number;
+    //             break;
+    //         case 'right_with_space':
+    //             number = number + ' ' + currency_symbol;
+    //             break;
+    //         default:
+    //             number = currency_symbol + number;
+    //             break;
+    //     }
+    //     return number;
+    // }
 
-    $('.variable').on('keydown', e => {
-        lastValue = $(e.target).val();
-        lastValue = lastValue.replace(/[,]/g, '');
-    });
-
+    // $('.variable').on('keydown', e => {
+    //     lastValue = $(e.target).val();
+    //     lastValue = lastValue.replace(/[,]/g, '');
+    // });
 </script>

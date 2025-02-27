@@ -95,7 +95,7 @@
                             <div class="table-responsive">
                                 <x-table class="table-bordered" headType="thead-light">
                                     <x-slot name="thead">
-                                        <th>@lang('payroll::modules.payroll.earning')</th>
+                                        <th>@lang('payroll::modules.payroll.allowanceHeading')</th>
                                         <th class="text-right">@lang('app.amount')</th>
                                     </x-slot>
 
@@ -176,6 +176,36 @@
                                         <th class="text-right">@lang('app.amount')</th>
                                     </x-slot>
 
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.beforeLateDetection')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($beforeLateDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.afterLateDetection')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($afterLateDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.breakTimeLateDetection')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($breakTimeLateDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.leaveWithoutPayDetection')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($leaveWithoutPayDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.otherDetection')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($monthlyOtherDetection?->other_detection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                    </tr>
+
                                     {{-- @foreach ($deductions as $key => $item)
                                         <tr>
                                             <td>{{ ($key) }}</td>
@@ -204,10 +234,10 @@
                             <h5 class="heading-h5">@lang('payroll::modules.payroll.totalDeductions')</h5>
                         </div>
                         @php
-                            // $allDeduction = array_sum($deductions) + array_sum($deductionsExtra);
+                            $allDeduction = $beforeLateDetection + $afterLateDetection + $breakTimeLateDetection + $leaveWithoutPayDetection + $monthlyOtherDetection?->other_detection;
                         @endphp
                         <div class="col-md-3 text-right">
-                            {{-- <h5 class="heading-h5">{{ currency_format($allDeduction, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</h5> --}}
+                            <h5 class="heading-h5">{{ currency_format($allDeduction, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</h5>
                         </div>
 
 
@@ -238,12 +268,11 @@
                         <div class="col-md-12 p-20 mt-3">
                             <h3 class="text-center heading-h3">
                                 <span class="text-uppercase mr-3">@lang('payroll::modules.payroll.netSalary'):</span>
-                                {{-- {{ currency_format(sprintf('%0.2f', $salarySlip->net_salary), ($currency->currency ? $currency->currency->id : company()->currency->id )) }} --}}
+                                {{ currency_format(sprintf('%0.2f', $totalAllowance - $allDeduction), ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
                             </h3>
                             <h5 class="text-center text-lightest">@lang('payroll::modules.payroll.netSalary') =
-                                (@lang('payroll::modules.payroll.grossEarning') -
-                                @lang('payroll::modules.payroll.totalDeductions') +
-                                @lang('payroll::modules.payroll.reimbursement'))</h5>
+                                (@lang('payroll::modules.payroll.totalAllowance') -
+                                @lang('payroll::modules.payroll.totalDeductions'))</h5>
                         </div>
                     </div>
                 </div>

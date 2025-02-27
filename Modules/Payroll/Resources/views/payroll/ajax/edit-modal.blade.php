@@ -30,7 +30,9 @@
                 <div class="border-bottom-grey"></div>
 
                 <div class="row p-20">
-
+                    <div class="col-12 mb-4">
+                        <h4>@lang('payroll::modules.payroll.allowanceHeading')</h4>
+                    </div>
                     <div class="col-md-3">
                         <x-forms.datepicker fieldId="paid_on" :fieldLabel="__('modules.payments.paidOn')" fieldName="paid_on" :fieldPlaceholder="__('placeholders.date')"
                             :fieldValue="$salarySlip->paid_on ? $salarySlip->paid_on->format($company->date_format) : ''" />
@@ -61,7 +63,7 @@
                     </div>
 
                     <div class="col-lg-3 col-md-3">
-                        <input type="hidden" id="userAllowanceId" name="userAllowanceId"
+                        <input type="hidden" id="userId" name="userId"
                             value="{{ $salarySlip->user->userAllowances->id }}" />
 
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.basicSalary')" fieldName="basic_salary" fieldId="basic_salary"
@@ -83,6 +85,18 @@
                             :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" :fieldValue="$salarySlip->user->userAllowances->special_allowance" />
                     </div>
                 </div>
+                <div class="border-bottom-grey"></div>
+
+                <div class="row p-20">
+                    <div class="col-12 mb-4">
+                        <h4>@lang('payroll::modules.payroll.detectionHeading')</h4>
+                    </div>
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherDetection')" fieldName="other_detection" fieldId="other_detection"
+                            :fieldPlaceholder="__('payroll::modules.payroll.otherDetection')" :fieldValue="$salarySlip->user->userDetection->other_detection" />
+                    </div>
+                </div>
+
                 {{-- <div class="row p-20">
 
                     <div class="col-lg-6 col-md-6">

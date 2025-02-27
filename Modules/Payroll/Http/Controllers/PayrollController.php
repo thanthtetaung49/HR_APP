@@ -26,6 +26,7 @@ use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Entities\OvertimeRequest;
 use App\Http\Controllers\AccountBaseController;
+use App\Models\Detection;
 use Modules\Payroll\DataTables\PayrollDataTable;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
@@ -114,8 +115,6 @@ class PayrollController extends AccountBaseController
 
         $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'payroll_cycle', 'user.userAllowances')
             ->findOrFail($id);
-        
-            // dd($this->salarySlip->user->userAllowances->basic_salary->toArray());
 
         abort_403(!($viewPermission == 'all'
             || ($viewPermission == 'owned' && $this->salarySlip->user_id == user()->id)
@@ -124,7 +123,6 @@ class PayrollController extends AccountBaseController
         ));
 
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
-
 
         // $salaryJson = json_decode($this->salarySlip->salary_json, true);
         // $this->earnings = $salaryJson['earnings'];
@@ -150,6 +148,108 @@ class PayrollController extends AccountBaseController
 
         $this->totalAllowance = $this->basicSalary + $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance;
 
+        $this->monthlySalary = Allowance::where('user_id',  $this->salarySlip->user_id)->first();
+        $this->monthlyOtherDetection = Detection::where('user_id', $this->salarySlip->user_id)->first();
+
+        $startDate = Carbon::parse($this->salarySlip->salary_from);
+        $endDate = $startDate->clone()->parse($this->salarySlip->salary_to);
+
+
+        $subQuery = Attendance::select(
+            'clock_in_time',
+            DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(clock_in_time) ORDER BY clock_in_time ASC) as row_num')
+        )
+            ->where('user_id', $this->salarySlip->user_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate);
+
+        $attendanceLateInMonth = Attendance::select(
+            DB::raw("DATE(clock_in_time) as presentDate"),
+            "late",
+            "clock_in_time"
+        )
+            ->where('user_id', $this->salarySlip->user_id)
+            ->whereDate('clock_in_time', '>=', "2025-01-26")
+            ->whereDate('clock_in_time', '<=', "2025-02-25")
+            ->whereIn('clock_in_time', function ($query) use ($subQuery) {
+                $query->select('clock_in_time')
+                    ->fromSub($subQuery, 'ranked')
+                    ->where('row_num', 1);
+            })
+            ->get();
+
+
+        $breakTimeLateMonth = Attendance::select(
+            DB::raw("DATE(clock_in_time) as presentDate"),
+            "half_day_late",
+            "clock_in_time"
+        )
+            ->where('user_id', $this->salarySlip->user_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate)
+            ->whereIn('clock_in_time', function ($query) use ($subQuery) {
+                $query->select('clock_in_time')
+                    ->fromSub($subQuery, 'ranked')
+                    ->where('row_num', 2);
+            })
+            ->where('half_day_late', 'yes')
+            ->get();
+
+        $leaveInMonth = Leave::where('user_id', $this->salarySlip->user_id)
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->get();
+
+
+        $totalLeaveWithoutPay = 0;
+
+        $attendanceSetting = AttendanceSetting::first();
+        $attLateBeforeFifteenMinutes = 0;
+        $attLateAfterFifteenMinutes = 0;
+        $attBreakTime = $breakTimeLateMonth->count();
+        $leaveWithoutPayInMonth = $leaveInMonth->count();
+
+        foreach ($attendanceLateInMonth as $key => $attendanceLate) {
+            $clock_in_time = $attendanceLate->clock_in_time;
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+
+
+            $lateTime = $officeStartTime->clone()->addMinutes(15);
+
+            if ($clock_in_time->greaterThan($officeStartTime) && $clock_in_time->lessThan($lateTime)) {
+                $attLateBeforeFifteenMinutes += 1;
+            }
+
+            if ($clock_in_time->greaterThan($lateTime)) {
+                $attLateAfterFifteenMinutes += 1;
+            }
+        }
+
+        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes + $attBreakTime) / 3) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
+
+        $lastDayOfMonth = $startDate->clone()->lastOfMonth();
+        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 25);
+
+        $this->perDaySalary = $this->monthlySalary?->basic_salary / $daysInMonth;
+
+        $this->beforeLateDetection = ($attLateBeforeFifteenMinutes / 3) * $this->perDaySalary;
+        $this->afterLateDetection = $attLateAfterFifteenMinutes * $this->perDaySalary;
+        $this->breakTimeLateDetection = ($attBreakTime / 3) * $this->perDaySalary;
+        $this->leaveWithoutPayDetection = $leaveWithoutPayInMonth * $this->perDaySalary;
+
+        // dd([
+        //     'beforeLate' => $this->attLateBeforeFifteenMinutes,
+        //     'afterLate' => $this->attLateAfterFifteenMinutes,
+        //     'breakTimeLate' => $this->attBreakTime,
+        //     'lwp' => $this->leaveWithoutPayInMonth,
+        //     'payDays' => $this->perDaySalary,
+        //     'otherDetection' =>  $this->monthlyOtherDetection?->other_detection
+        // ]);
+
+        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection;
+
+        // dd($this->totalDetection, $attLateBeforeFifteenMinutes);
 
         // $earn = [];
 
@@ -211,10 +311,7 @@ class PayrollController extends AccountBaseController
             $this->fields = $this->fieldsData->filter(function ($value, $key) {
                 return in_array($value->id, $this->extraFields);
             })->all();
-
-
         }
-
 
         // if ($this->fixedAllowance < 1 && $this->fixedAllowance > -1) {
         //     $this->fixedAllowance = 0;
@@ -238,8 +335,8 @@ class PayrollController extends AccountBaseController
      */
     public function edit($id)
     {
-        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'user.userAllowances')
-        ->findOrFail($id);
+        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'user.userAllowances', 'user.userDetection')
+            ->findOrFail($id);
 
         // dd($this->salarySlip->user->toArray());
 
@@ -427,7 +524,8 @@ class PayrollController extends AccountBaseController
         // $netSalary = $grossEarning - $totalDeductions + $reimbursement + $additionalEarningTotal;
 
         $salarySlip = SalarySlip::findOrFail($id);
-        $userAllowance = Allowance::findOrFail($request->userAllowanceId);
+        $userAllowance = Allowance::findOrFail($request->userId);
+        $userDetection = Detection::findOrFail($request->userId);
 
         if ($request->paid_on != '') {
             $salarySlip->paid_on = Carbon::createFromFormat($this->company->date_format, $request->paid_on)->format('Y-m-d');
@@ -437,12 +535,14 @@ class PayrollController extends AccountBaseController
             $salarySlip->salary_payment_method_id = $request->salary_payment_method_id;
         }
 
-        // dd($request->all(), $userAllowance);
-
+        // allowance
         $userAllowance->basic_salary = $request->basic_salary;
         $userAllowance->living_cost_allowance = $request->living_cost_allowance;
         $userAllowance->technical_allowance = $request->technical_allowance;
         $userAllowance->special_allowance = $request->special_allowance;
+
+        // detection
+        $userDetection->other_detection = $request->other_detection;
 
         // $grossEarning = $grossEarning + $request->fixed_allowance_input + $additionalEarningTotal;
         // $netSalary = $netSalary + $request->fixed_allowance_input;
@@ -460,8 +560,11 @@ class PayrollController extends AccountBaseController
         // $salarySlip->gross_salary = round(($grossEarning), 2);
         // $salarySlip->last_updated_by = user()->id;
         // $salarySlip->fixed_allowance = $request->fixed_allowance_input;
+
+
         $salarySlip->save();
         $userAllowance->save();
+        $userDetection->save();
 
         return Reply::redirect(route('payroll.show', $salarySlip->id), __('messages.updateSuccess'));
     }
@@ -521,7 +624,6 @@ class PayrollController extends AccountBaseController
 
             if ($request->userIds) {
                 $users = $users->whereIn('users.id', $request->userIds);
-                dd('1');
             } else {
                 $users = $users->whereIn('users.id', $request->employee_id);
             }
@@ -665,6 +767,7 @@ class PayrollController extends AccountBaseController
                 // $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId, $endDate);
 
                 $monthlySalary = Allowance::where('user_id', $userId)->first();
+                $monthlyOtherDetection = Detection::where('user_id', $userId)->first();
 
                 $technicalAllowance = $monthlySalary?->technical_allowance;
                 $livingCostAllowance = $monthlySalary?->living_cost_allowance;
@@ -689,7 +792,7 @@ class PayrollController extends AccountBaseController
                     $basicSalary = $basicSalary + ($eveningShiftPresentCout * 500);
                 }
 
-                $totalDetection = $totalLeaveWithoutPay * $perDaySalary;
+                $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection;
                 $totalBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance + $specialAllowance; // allowance calculation
                 $netSalary = $totalBasicSalary - $totalDetection;
 
@@ -1638,7 +1741,7 @@ class PayrollController extends AccountBaseController
         if ($totalPresent->isNotEmpty()) {
             $result = $totalPresent[0]->presentCount;
         } else {
-           $result = 0;
+            $result = 0;
         }
 
         return $result;
