@@ -108,6 +108,8 @@ return array(
         'currentAnnualGrossSalary' => 'Current Annual Gross Salary',
         'annualIncrementAmount' => 'Annual Increment Amount',
         'annualDecrementAmount' => 'Annual Decrement Amount',
+        'increaseAmount' => 'Increasement Amount',
+        'decreaseAmount' => 'Decreasement Amount',
         'incrementDate' => 'Increment Date',
         'decrementDate' => 'Decrement Date',
         'percentOfCTC' => '% of CTC',

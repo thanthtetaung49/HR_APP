@@ -21,6 +21,7 @@ return new class extends Migration
                     ->cascadeOnDelete()
                     ->cascadeOnUpdate();
             $table->integer('other_detection');
+            $table->string('type')->default('initial');
             $table->timestamps();
         });
     }

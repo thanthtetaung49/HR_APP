@@ -17,6 +17,7 @@ use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Http\Requests\StoreSalary;
 use App\Http\Controllers\AccountBaseController;
+use App\Models\AdditionalBasicSalary;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
 use Modules\Payroll\Entities\EmployeePayrollCycle;
@@ -193,12 +194,16 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
-        $this->employeeSalary = EmployeeMonthlySalary::employeeNetSalary($id);
+        // $this->employeeSalary = EmployeeMonthlySalary::employeeNetSalary($id);
         $this->employee = User::find($id);
         $this->currency = PayrollSetting::with('currency')->first();
         // $this->salaryHistory = EmployeeMonthlySalary::where('user_id', $id)->orderBy('date', 'asc')->get();
-        $this->salaryHistory = Allowance::where('user_id', $id)->orderBy('date', 'asc')->get();
-
+        $this->basicSalary = Allowance::where('user_id', $id)->orderBy('created_at', 'asc')
+            ->first();
+        $this->salaryHistory = AdditionalBasicSalary::with('salaryAllowance')
+            ->where('salary_allowance_id', $this->basicSalary->id)
+            ->orderBy('created_at', 'asc')
+            ->get();
         return view('payroll::employee-salary.show', $this->data);
     }
 
@@ -212,10 +217,13 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
-        $this->employeeSalary = EmployeeMonthlySalary::employeeNetSalary($id);
+        // $this->employeeSalary = EmployeeMonthlySalary::employeeNetSalary($id);
         $this->employee = User::find($id);
         $this->currency = PayrollSetting::with('currency')->first();
-        $this->salaryGroups = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $id)->first();
+        $this->allowance = Allowance::where('user_id', $id)->first();
+        $this->detection = Detection::where('user_id', $id)->first();
+
+        // $this->salaryGroups = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $id)->first();
 
         return view('payroll::employee-salary.increment', $this->data);
     }
@@ -246,7 +254,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
      * @return void
      */
     //phpcs:ignore
-    public function incrementStore(StoreEmployyeMonthlySalary $request, $id)
+    public function incrementStore(Request $request, $id)
     {
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
@@ -254,16 +262,25 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $this->id = $id;
 
         $date = Carbon::createFromFormat($this->company->date_format, $request->date)->format('Y-m-d');
+        $allowance = Allowance::where('user_id', $id)->first();
 
-
-        $salary = new EmployeeMonthlySalary();
+        $salary = new AdditionalBasicSalary();
+        $salary->salary_allowance_id = $allowance->id;
         $salary->user_id = $request->user_id;
-        $salary->annual_salary = $request->annual_salary;
-
-        $salary->amount = $request->annual_salary / 12;
         $salary->type = $request->type;
+        $salary->amount = $request->amount;
         $salary->date = $date;
+
         $salary->save();
+
+        // $salary = new EmployeeMonthlySalary();
+        // $salary->user_id = $request->user_id;
+        // $salary->annual_salary = $request->annual_salary;
+
+        // $salary->amount = $request->annual_salary / 12;
+        // $salary->type = $request->type;
+        // $salary->date = $date;
+        // $salary->save();
 
         return Reply::success(__('messages.recordSaved'));
     }
@@ -271,14 +288,27 @@ class EmployeeMonthlySalaryController extends AccountBaseController
     public function incrementEdit(Request $request)
     {
         $salaryId = $request->salaryId;
+
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
-        $this->employeeSalary = EmployeeMonthlySalary::where('id', $salaryId)->first();
-        $userId = $this->employeeSalary->user_id;
+        // $this->employeeSalary = EmployeeMonthlySalary::where('id', $salaryId)->first();;
+        // $userId = $this->employeeSalary->user_id;
+        $this->salary = AdditionalBasicSalary::with('salaryAllowance')
+            ->where('id', $salaryId)
+            ->first();
+        $userId = $this->salary->user_id;
+
         $this->employee = User::find($userId);
         $this->currency = PayrollSetting::with('currency')->first();
-        $this->salaryGroups = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')->where('user_id', $userId)->first();
+
+
+        // $this->salaryGroups = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')
+        //                     ->where('user_id', $userId)
+        //                     ->first();
+
+        // dd($this->employee, $this->currency, $this->salary);
+
         return view('payroll::employee-salary.edit-increment', $this->data);
     }
 
@@ -287,14 +317,24 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
         $id = $request->salaryId;
+        dd($id);
 
-        $salary = EmployeeMonthlySalary::findOrFail($id);
-        $salary->user_id = $request->user_id;
-        $salary->annual_salary = $request->annual_salary;
-        $salary->amount = $request->annual_salary / 12;
+        $salary = AdditionalBasicSalary::findOrFail($id);
+        dd($salary);
+
         $salary->type = $request->type;
-        $salary->date = now()->timezone($this->company->timezone)->toDateString();
+        $salary->amount = $request->amount;
+        $salary->date = Carbon::parse($request->date)->timezone($this->company->timezone)->toDateString();
+
         $salary->save();
+
+        // $salary = EmployeeMonthlySalary::findOrFail($id);
+        // $salary->user_id = $request->user_id;
+        // $salary->annual_salary = $request->annual_salary;
+        // $salary->amount = $request->annual_salary / 12;
+        // $salary->type = $request->type;
+        // $salary->date = now()->timezone($this->company->timezone)->toDateString();
+        // $salary->save();
 
         return Reply::success(__('messages.recordSaved'));
     }
@@ -335,7 +375,10 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
-        EmployeeMonthlySalary::destroy($id);
+        $salary = AdditionalBasicSalary::findOrFail($id);
+        $salary->delete();
+
+        // EmployeeMonthlySalary::destroy($id);
 
         return Reply::success(__('messages.deleteSuccess'));
     }
@@ -588,6 +631,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         // $this->payrollController = new EmployeeMonthlySalaryController();
         // $this->currency = PayrollSetting::with('currency')->first();
         // $this->employeeVariableSalaries = EmployeeVariableComponent::with('component')->where('monthly_salary_id', $this->employeeMonthlySalary->id)->get() ?? [''];
+
         $this->allowance = Allowance::where('user_id', $id)->first();
         $this->detection = Detection::where('user_id', $id)->first();
 

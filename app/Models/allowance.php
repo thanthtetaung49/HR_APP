@@ -18,4 +18,8 @@ class Allowance extends Model
             'basicSalary' => $salary
         ];
     }
+
+    public function additionalSalaries() {
+        return $this->hasMany(AdditionalBasicSalary::class, 'salary_allowance_id', 'id');
+    }
 }

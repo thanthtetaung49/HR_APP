@@ -28,8 +28,6 @@ class EmployeeSalaryDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-
-
         return datatables()
             ->eloquent($query)
             ->addColumn('action', function ($row) {

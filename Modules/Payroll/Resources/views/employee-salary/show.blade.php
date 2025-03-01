@@ -23,8 +23,9 @@
                 <tr>
                     <td>{{ $key + 1 }}</td>
                     <td>
-                        {{ currency_format($salary->basic_salary, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
-                        {{-- @if ($salary->type == 'initial')
+                        {{ currency_format($salary->salaryAllowance->basic_salary, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
+
+                        @if ($salary->type == 'initial')
                             {{ currency_format($salary->amount, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
                         @elseif($salary->type == 'increment')
                             <span
@@ -32,13 +33,14 @@
                         @elseif($salary->type == 'decrement')
                             <span
                                 class="text-danger">-{{ currency_format($salary->amount, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</span>
-                        @endif --}}
+                        @endif
+
                     </td>
-                    {{-- <td>
+                    <td>
                         {{ $salary->type }}
-                    </td> --}}
-                    {{-- <td>
-                        {{ $salary->created_at->format($company->date_format) }}
+                    </td>
+                    <td>
+                        {{ $salary->date }}
                     </td>
                     <td class="text-right">
                         @if ($salary->type == 'increment' || $salary->type == 'decrement')
@@ -55,7 +57,7 @@
                                 <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
                             </a>
                         </div>
-                    </td> --}}
+                    </td>
                 </tr>
             @empty
                 <tr>
@@ -82,6 +84,7 @@
     $('body').off('click', ".edit-salary").on('click', '.edit-salary', function () {
         const salaryId = $(this).data('salary-id');
         const url = "{{ route('employee-salary.increment_edit') }}?salaryId=" + salaryId;
+        console.log(url);
 
         $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
         $.ajaxModal(MODAL_LG, url);
@@ -90,6 +93,7 @@
     /* delete salary */
     $('body').on('click', '.delete-salary', function () {
         var id = $(this).data('salary-id');
+
         Swal.fire({
             title: "@lang('messages.sweetAlertTitle')",
             text: "@lang('payroll::messages.salaryDelete')",

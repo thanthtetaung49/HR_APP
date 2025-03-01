@@ -1226,83 +1226,217 @@ class PayrollController extends AccountBaseController
 
     public function domPdfObjectForDownload($id)
     {
-        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method')->find($id);
-        $this->payrollSetting = PayrollSetting::with('currency')->first();
+        // $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method')->find($id);
+        // $this->payrollSetting = PayrollSetting::with('currency')->first();
 
+        // $this->company = $this->salarySlip->company;
+
+        // $salaryJson = json_decode($this->salarySlip->salary_json, true);
+        // $this->earnings = $salaryJson['earnings'];
+        // $this->deductions = $salaryJson['deductions'];
+        // $extraJson = json_decode($this->salarySlip->extra_json, true);
+        // $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
+
+        // if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
+        //     $this->basicSalary = $this->salarySlip->basic_salary;
+        // } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
+        //     $this->basicSalary = $this->salarySlip->basic_salary / 4;
+        // } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
+        //     $this->basicSalary = $this->salarySlip->basic_salary / 2;
+        // } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
+        //     $perday = $this->salarySlip->basic_salary / 30;
+        //     $this->basicSalary = $perday * 14;
+        // }
+
+        // if (!is_null($extraJson)) {
+        //     $this->earningsExtra = $extraJson['earnings'];
+        //     $this->deductionsExtra = $extraJson['deductions'];
+        // } else {
+        //     $this->earningsExtra = '';
+        //     $this->deductionsExtra = '';
+        // }
+
+        // if (!is_null($additionalEarnings)) {
+        //     $this->earningsAdditional = $additionalEarnings['earnings'];
+        // } else {
+        //     $this->earningsAdditional = '';
+        // }
+
+        // if ($this->earningsAdditional == '') {
+        //     $this->earningsAdditional = array();
+        // }
+
+        // if ($this->earningsExtra == '') {
+        //     $this->earningsExtra = array();
+        // }
+
+        // if ($this->deductionsExtra == '') {
+        //     $this->deductionsExtra = array();
+        // }
+
+        // $earn = [];
+        // $extraEarn = [];
+
+        // foreach ($this->earnings as $key => $value) {
+        //     if ($key != 'Total Hours') {
+        //         $earn[] = $value;
+        //     }
+        // }
+
+        // foreach ($this->earningsExtra as $key => $value) {
+        //     if ($key != 'Total Hours') {
+        //         $extraEarn[] = $value;
+        //     }
+        // }
+
+        // $earn = array_sum($earn);
+
+        // $extraEarn = array_sum($extraEarn);
+
+        // if ($this->basicSalary == '' || is_null($this->basicSalary)) {
+        //     $this->basicSalary = 0.0;
+        // }
+
+        // $this->fixedAllowance = $this->salarySlip->gross_salary - ($this->basicSalary + $earn + $extraEarn);
+
+        // $this->fixedAllowance = ($this->fixedAllowance < 0) ? 0 : round(floatval($this->fixedAllowance), 2);
+
+        // $this->payrollSetting = PayrollSetting::first();
+
+        // $this->extraFields = [];
+
+        // if ($this->payrollSetting->extra_fields) {
+        //     $this->extraFields = json_decode($this->payrollSetting->extra_fields);
+        // }
+
+        // $this->employeeDetail = EmployeeDetails::where('user_id', '=', $this->salarySlip->user->id)->first()->withCustomFields();
+        // $this->currency = PayrollSetting::with('currency')->first();
+
+        // if (!is_null($this->employeeDetail) && $this->employeeDetail->getCustomFieldGroupsWithFields()) {
+        //     $this->fieldsData = $this->employeeDetail->getCustomFieldGroupsWithFields()->fields;
+        //     $this->fields = $this->fieldsData->filter(function ($value, $key) {
+        //         return in_array($value->id, $this->extraFields);
+        //     })->all();
+        // }
+
+        $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'payroll_cycle', 'user.userAllowances')
+            ->findOrFail($id);
         $this->company = $this->salarySlip->company;
+        // dd($this->company->toArray());
 
-        $salaryJson = json_decode($this->salarySlip->salary_json, true);
-        $this->earnings = $salaryJson['earnings'];
-        $this->deductions = $salaryJson['deductions'];
-        $extraJson = json_decode($this->salarySlip->extra_json, true);
-        $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
+        $this->salaryPaymentMethods = SalaryPaymentMethod::all();
 
         if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
-            $this->basicSalary = $this->salarySlip->basic_salary;
+            $this->basicSalary = (float) $this->salarySlip->user->userAllowances->basic_salary;
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = $this->salarySlip->basic_salary / 4;
+            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 4);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = $this->salarySlip->basic_salary / 2;
+            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 2);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = $this->salarySlip->basic_salary / 30;
+            $perday = ((float) $this->salarySlip->user->userAllowances->basic_salary / 30);
             $this->basicSalary = $perday * 14;
         }
 
-        if (!is_null($extraJson)) {
-            $this->earningsExtra = $extraJson['earnings'];
-            $this->deductionsExtra = $extraJson['deductions'];
-        } else {
-            $this->earningsExtra = '';
-            $this->deductionsExtra = '';
-        }
+        $this->technicalAllowance = $this->salarySlip->user->userAllowances->technical_allowance;
+        $this->livingCostAllowance = $this->salarySlip->user->userAllowances->living_cost_allowance;
+        $this->specialAllowance = $this->salarySlip->user->userAllowances->special_allowance;
 
-        if (!is_null($additionalEarnings)) {
-            $this->earningsAdditional = $additionalEarnings['earnings'];
-        } else {
-            $this->earningsAdditional = '';
-        }
 
-        if ($this->earningsAdditional == '') {
-            $this->earningsAdditional = array();
-        }
+        $this->totalAllowance = $this->basicSalary + $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance;
 
-        if ($this->earningsExtra == '') {
-            $this->earningsExtra = array();
-        }
+        $this->monthlySalary = Allowance::where('user_id',  $this->salarySlip->user_id)->first();
+        $this->monthlyOtherDetection = Detection::where('user_id', $this->salarySlip->user_id)->first();
 
-        if ($this->deductionsExtra == '') {
-            $this->deductionsExtra = array();
-        }
+        $startDate = Carbon::parse($this->salarySlip->salary_from);
+        $endDate = $startDate->clone()->parse($this->salarySlip->salary_to);
 
-        $earn = [];
-        $extraEarn = [];
 
-        foreach ($this->earnings as $key => $value) {
-            if ($key != 'Total Hours') {
-                $earn[] = $value;
+        $subQuery = Attendance::select(
+            'clock_in_time',
+            DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(clock_in_time) ORDER BY clock_in_time ASC) as row_num')
+        )
+            ->where('user_id', $this->salarySlip->user_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate);
+
+        $attendanceLateInMonth = Attendance::select(
+            DB::raw("DATE(clock_in_time) as presentDate"),
+            "late",
+            "clock_in_time"
+        )
+            ->where('user_id', $this->salarySlip->user_id)
+            ->whereDate('clock_in_time', '>=', "2025-01-26")
+            ->whereDate('clock_in_time', '<=', "2025-02-25")
+            ->whereIn('clock_in_time', function ($query) use ($subQuery) {
+                $query->select('clock_in_time')
+                    ->fromSub($subQuery, 'ranked')
+                    ->where('row_num', 1);
+            })
+            ->get();
+
+
+        $breakTimeLateMonth = Attendance::select(
+            DB::raw("DATE(clock_in_time) as presentDate"),
+            "half_day_late",
+            "clock_in_time"
+        )
+            ->where('user_id', $this->salarySlip->user_id)
+            ->whereDate('clock_in_time', '>=', $startDate)
+            ->whereDate('clock_in_time', '<=', $endDate)
+            ->whereIn('clock_in_time', function ($query) use ($subQuery) {
+                $query->select('clock_in_time')
+                    ->fromSub($subQuery, 'ranked')
+                    ->where('row_num', 2);
+            })
+            ->where('half_day_late', 'yes')
+            ->get();
+
+        $leaveInMonth = Leave::where('user_id', $this->salarySlip->user_id)
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->get();
+
+
+        $totalLeaveWithoutPay = 0;
+
+        $attendanceSetting = AttendanceSetting::first();
+        $attLateBeforeFifteenMinutes = 0;
+        $attLateAfterFifteenMinutes = 0;
+        $attBreakTime = $breakTimeLateMonth->count();
+        $leaveWithoutPayInMonth = $leaveInMonth->count();
+
+        foreach ($attendanceLateInMonth as $key => $attendanceLate) {
+            $clock_in_time = $attendanceLate->clock_in_time;
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+
+
+            $lateTime = $officeStartTime->clone()->addMinutes(15);
+
+            if ($clock_in_time->greaterThan($officeStartTime) && $clock_in_time->lessThan($lateTime)) {
+                $attLateBeforeFifteenMinutes += 1;
+            }
+
+            if ($clock_in_time->greaterThan($lateTime)) {
+                $attLateAfterFifteenMinutes += 1;
             }
         }
 
-        foreach ($this->earningsExtra as $key => $value) {
-            if ($key != 'Total Hours') {
-                $extraEarn[] = $value;
-            }
-        }
+        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes + $attBreakTime) / 3) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
-        $earn = array_sum($earn);
+        $lastDayOfMonth = $startDate->clone()->lastOfMonth();
+        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 25);
 
-        $extraEarn = array_sum($extraEarn);
+        $this->perDaySalary = $this->monthlySalary?->basic_salary / $daysInMonth;
 
-        if ($this->basicSalary == '' || is_null($this->basicSalary)) {
-            $this->basicSalary = 0.0;
-        }
+        $this->beforeLateDetection = ($attLateBeforeFifteenMinutes / 3) * $this->perDaySalary;
+        $this->afterLateDetection = $attLateAfterFifteenMinutes * $this->perDaySalary;
+        $this->breakTimeLateDetection = ($attBreakTime / 3) * $this->perDaySalary;
+        $this->leaveWithoutPayDetection = $leaveWithoutPayInMonth * $this->perDaySalary;
 
-        $this->fixedAllowance = $this->salarySlip->gross_salary - ($this->basicSalary + $earn + $extraEarn);
-
-        $this->fixedAllowance = ($this->fixedAllowance < 0) ? 0 : round(floatval($this->fixedAllowance), 2);
+        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection;
 
         $this->payrollSetting = PayrollSetting::first();
-
         $this->extraFields = [];
 
         if ($this->payrollSetting->extra_fields) {
@@ -1310,7 +1444,8 @@ class PayrollController extends AccountBaseController
         }
 
         $this->employeeDetail = EmployeeDetails::where('user_id', '=', $this->salarySlip->user->id)->first()->withCustomFields();
-        $this->currency = PayrollSetting::with('currency')->first();
+        $this->payrollSetting = PayrollSetting::with('currency')->first();
+
 
         if (!is_null($this->employeeDetail) && $this->employeeDetail->getCustomFieldGroupsWithFields()) {
             $this->fieldsData = $this->employeeDetail->getCustomFieldGroupsWithFields()->fields;
@@ -1319,11 +1454,16 @@ class PayrollController extends AccountBaseController
             })->all();
         }
 
+        // dd($this->monthlyOtherDetection->toArray());
+
+
+
         $pdf = app('dompdf.wrapper');
         $pdf->setOption('enable_php', true);
         $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
 
         $month = Carbon::createFromFormat('m', $this->salarySlip->month)->translatedFormat('F');
+
 
         $pdf->loadView('payroll::payroll.pdfview', $this->data);
         $filename = $this->salarySlip->user->employeeDetail->employee_id . '-' . $month . '-' . $this->salarySlip->year;

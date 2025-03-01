@@ -43,7 +43,7 @@
                             fieldName="salary_payment_method_id" search="true">
                             <option value="">--</option>
                             @foreach ($salaryPaymentMethods as $item)
-                                <option @if ($item->id == $salarySlip->salary_payment_method_id) selected @endif value="{{ $item->id }}">
+                                <option @if ($item->id == $salarySlip->salary_payment_method_id) selected @endif value="{{ $item->id }}" >
                                     {{ $item->payment_method }}</option>
                             @endforeach
                         </x-forms.select>
@@ -67,22 +67,22 @@
                             value="{{ $salarySlip->user->userAllowances->id }}" />
 
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.basicSalary')" fieldName="basic_salary" fieldId="basic_salary"
-                            :fieldPlaceholder="__('payroll::modules.payroll.expenseClaims')" :fieldValue="$salarySlip->user->userAllowances->basic_salary" />
+                            :fieldPlaceholder="__('payroll::modules.payroll.expenseClaims')" :fieldValue="$salarySlip->user->userAllowances->basic_salary" :fieldReadOnly="true"/>
                     </div>
 
                     <div class="col-lg-3 col-md-3">
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.technicalAllowance')" fieldName="technical_allowance" fieldId="technical_allowance"
-                            :fieldPlaceholder="__('payroll::modules.payroll.technicalAllowance')" :fieldValue="$salarySlip->user->userAllowances->technical_allowance" />
+                            :fieldPlaceholder="__('payroll::modules.payroll.technicalAllowance')" :fieldValue="$salarySlip->user->userAllowances->technical_allowance" :fieldReadOnly="true"/>
                     </div>
 
                     <div class="col-lg-3 col-md-3">
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.livingCostAllowance')" fieldName="living_cost_allowance"
-                            fieldId="living_cost_allowance" :fieldPlaceholder="__('payroll::modules.payroll.livingCostAllowance')" :fieldValue="$salarySlip->user->userAllowances->living_cost_allowance" />
+                            fieldId="living_cost_allowance" :fieldPlaceholder="__('payroll::modules.payroll.livingCostAllowance')" :fieldValue="$salarySlip->user->userAllowances->living_cost_allowance" :fieldReadOnly="true"/>
                     </div>
 
                     <div class="col-lg-3 col-md-3">
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.specialAllowance')" fieldName="special_allowance" fieldId="special_allowance"
-                            :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" :fieldValue="$salarySlip->user->userAllowances->special_allowance" />
+                            :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" :fieldValue="$salarySlip->user->userAllowances->special_allowance" :fieldReadOnly="true"/>
                     </div>
                 </div>
                 <div class="border-bottom-grey"></div>
@@ -93,7 +93,7 @@
                     </div>
                     <div class="col-lg-3 col-md-3">
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherDetection')" fieldName="other_detection" fieldId="other_detection"
-                            :fieldPlaceholder="__('payroll::modules.payroll.otherDetection')" :fieldValue="$salarySlip->user->userDetection->other_detection" />
+                            :fieldPlaceholder="__('payroll::modules.payroll.otherDetection')" :fieldValue="$salarySlip->user->userDetection->other_detection" :fieldReadOnly="true"/>
                     </div>
                 </div>
 
