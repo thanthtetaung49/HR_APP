@@ -131,15 +131,17 @@ class PayrollController extends AccountBaseController
         // $additionalEarnings = json_decode($this->salarySlip->additional_earning_json, true);
 
         if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
-            $this->basicSalary = (float) $this->salarySlip->user->userAllowances->basic_salary;
+            $this->basicSalary = (float) $this->salarySlip->basic_salary;
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 4);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 2);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = ((float) $this->salarySlip->user->userAllowances->basic_salary / 30);
+            $perday = ((float) $this->salarySlip->basic_salary / 30);
             $this->basicSalary = $perday * 14;
         }
+
+        $this->netSalary = (float) $this->salarySlip->net_salary;
 
         $this->technicalAllowance = $this->salarySlip->user->userAllowances->technical_allowance;
         $this->livingCostAllowance = $this->salarySlip->user->userAllowances->living_cost_allowance;
@@ -246,6 +248,9 @@ class PayrollController extends AccountBaseController
         //     'payDays' => $this->perDaySalary,
         //     'otherDetection' =>  $this->monthlyOtherDetection?->other_detection
         // ]);
+
+        $this->totalAllowance =  $this->salarySlip->gross_salary;
+
 
         $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection;
 
@@ -766,7 +771,12 @@ class PayrollController extends AccountBaseController
                 $curMonthDays = Carbon::parse('01-' . $monthCur . '-' . $year);
                 // $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId, $endDate);
 
-                $monthlySalary = Allowance::where('user_id', $userId)->first();
+                $monthlySalary = Allowance::with(['additionalSalaries' => function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('date', [$startDate, $endDate]);
+                }])
+                    ->where('user_id', $userId)
+                    ->first();
+
                 $monthlyOtherDetection = Detection::where('user_id', $userId)->first();
 
                 $technicalAllowance = $monthlySalary?->technical_allowance;
@@ -775,7 +785,17 @@ class PayrollController extends AccountBaseController
 
                 $daysInMonth = ($daysInMonth != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $daysInMonth;
 
-                $perDaySalary = $monthlySalary?->basic_salary / $daysInMonth;
+                $basicSalaryInMonth = $monthlySalary?->basic_salary;
+
+                foreach ($monthlySalary->additionalSalaries as $additionalSalary) {
+                    if ($additionalSalary->type == 'increment') {
+                        $basicSalaryInMonth += $additionalSalary->amount;
+                    } else {
+                        $basicSalaryInMonth -= $additionalSalary->amount;
+                    }
+                }
+
+                $perDaySalary = $basicSalaryInMonth / $daysInMonth;
                 $payableSalary = $perDaySalary * $payDays;
 
                 $basicSalary = $payableSalary;
@@ -792,9 +812,25 @@ class PayrollController extends AccountBaseController
                     $basicSalary = $basicSalary + ($eveningShiftPresentCout * 500);
                 }
 
+                // dd([
+                //     'basicSalaryInMonth' => $basicSalaryInMonth,
+                //     'daysInMonth' => $daysInMonth,
+                //     'payableSalary' => $perDaySalary * $payDays,
+                //     'basicSalary' => $basicSalary,
+                //     'gazattedPresentCount' => $gazattedPresentCount,
+                //     'holidayPresentCount' => $holidayPresentCount,
+                //     'eveningShiftPresentCout' => $eveningShiftPresentCout
+                // ]);
+
                 $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection;
                 $totalBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance + $specialAllowance; // allowance calculation
                 $netSalary = $totalBasicSalary - $totalDetection;
+
+                // dd([
+                //     'netSalary' => $netSalary,
+                //     'totalBasicSalary' => $totalBasicSalary,
+                //     'totalDetection' => $totalDetection
+                // ]);
 
                 $payrollSetting = PayrollSetting::first();
 
@@ -802,8 +838,8 @@ class PayrollController extends AccountBaseController
                     'user_id' => $userId,
                     'currency_id' => $payrollSetting->currency_id,
                     'salary_group_id' => 1, // null
-                    'basic_salary' => round(($monthlySalary?->basic_salary), 2),
-                    'monthly_salary' => round($monthlySalary?->basic_salary, 2),
+                    'basic_salary' => round(($basicSalaryInMonth), 2),
+                    'monthly_salary' => round($basicSalaryInMonth, 2),
                     'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary), 2),
                     'gross_salary' => round($totalBasicSalary, 2), // null
                     'total_deductions' => round(($totalDetection), 2),
@@ -1322,27 +1358,26 @@ class PayrollController extends AccountBaseController
         $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'payroll_cycle', 'user.userAllowances')
             ->findOrFail($id);
         $this->company = $this->salarySlip->company;
-        // dd($this->company->toArray());
 
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
 
         if ($this->salarySlip->payroll_cycle->cycle == 'monthly') {
-            $this->basicSalary = (float) $this->salarySlip->user->userAllowances->basic_salary;
+            $this->basicSalary = (float) $this->salarySlip->basic_salary;
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'weekly') {
-            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 4);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 4);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'semimonthly') {
-            $this->basicSalary = ((float) $this->salarySlip->user->userAllowances->basic_salary / 2);
+            $this->basicSalary = ((float) $this->salarySlip->basic_salary / 2);
         } elseif ($this->salarySlip->payroll_cycle->cycle == 'biweekly') {
-            $perday = ((float) $this->salarySlip->user->userAllowances->basic_salary / 30);
+            $perday = ((float) $this->salarySlip->basic_salary / 30);
             $this->basicSalary = $perday * 14;
         }
+
+        $this->netSalary = (float) $this->salarySlip->net_salary;
+        $this->totalAllowance = (float) $this->salarySlip->gross_salary;
 
         $this->technicalAllowance = $this->salarySlip->user->userAllowances->technical_allowance;
         $this->livingCostAllowance = $this->salarySlip->user->userAllowances->living_cost_allowance;
         $this->specialAllowance = $this->salarySlip->user->userAllowances->special_allowance;
-
-
-        $this->totalAllowance = $this->basicSalary + $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance;
 
         $this->monthlySalary = Allowance::where('user_id',  $this->salarySlip->user_id)->first();
         $this->monthlyOtherDetection = Detection::where('user_id', $this->salarySlip->user_id)->first();
@@ -1454,16 +1489,11 @@ class PayrollController extends AccountBaseController
             })->all();
         }
 
-        // dd($this->monthlyOtherDetection->toArray());
-
-
-
         $pdf = app('dompdf.wrapper');
         $pdf->setOption('enable_php', true);
         $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
 
         $month = Carbon::createFromFormat('m', $this->salarySlip->month)->translatedFormat('F');
-
 
         $pdf->loadView('payroll::payroll.pdfview', $this->data);
         $filename = $this->salarySlip->user->employeeDetail->employee_id . '-' . $month . '-' . $this->salarySlip->year;

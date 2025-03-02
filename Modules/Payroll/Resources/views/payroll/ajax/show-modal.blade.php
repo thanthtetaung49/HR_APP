@@ -95,7 +95,7 @@
                             <div class="table-responsive">
                                 <x-table class="table-bordered" headType="thead-light">
                                     <x-slot name="thead">
-                                        <th>@lang('payroll::modules.payroll.allowanceHeading')</th>
+                                        <th>@lang('payroll::modules.payroll.earning')</th>
                                         <th class="text-right">@lang('app.amount')</th>
                                     </x-slot>
 
@@ -122,6 +122,7 @@
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($specialAllowance, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
                                     </tr>
+
                                     {{-- @foreach ($earnings as $key => $item)
                                         @if($key == 'Time Logs')
                                             <tr>
@@ -268,7 +269,7 @@
                         <div class="col-md-12 p-20 mt-3">
                             <h3 class="text-center heading-h3">
                                 <span class="text-uppercase mr-3">@lang('payroll::modules.payroll.netSalary'):</span>
-                                {{ currency_format(sprintf('%0.2f', $totalAllowance - $allDeduction), ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
+                                {{ currency_format(sprintf('%0.2f', $netSalary), ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
                             </h3>
                             <h5 class="text-center text-lightest">@lang('payroll::modules.payroll.netSalary') =
                                 (@lang('payroll::modules.payroll.totalAllowance') -

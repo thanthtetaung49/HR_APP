@@ -381,7 +381,7 @@
     <tr>
         <td class="netsalary-title">
             <strong style="margin-right: 20px;">@lang('payroll::modules.payroll.netSalary'):</strong>
-            {{ currency_format(sprintf('%0.2f', $totalAllowance - $allDeduction), ($payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id), false)}} {!! htmlentities($payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code) !!}
+            {{ currency_format(sprintf('%0.2f', $netSalary), ($payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id), false)}} {!! htmlentities($payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code) !!}
         </td>
     </tr>
     <tr>

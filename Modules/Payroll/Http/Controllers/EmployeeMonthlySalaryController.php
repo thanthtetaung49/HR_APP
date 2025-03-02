@@ -13,11 +13,12 @@ use App\Models\Attendance;
 use App\Models\Designation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
+use App\Models\AdditionalBasicSalary;
 use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Http\Requests\StoreSalary;
 use App\Http\Controllers\AccountBaseController;
-use App\Models\AdditionalBasicSalary;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
 use Modules\Payroll\Entities\EmployeePayrollCycle;
@@ -376,6 +377,17 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
         $salary = AdditionalBasicSalary::findOrFail($id);
+        $salaryCountByBasicSalary = AdditionalBasicSalary::where('salary_allowance_id', $salary->salary_allowance_id)
+                                    ->get();
+        $allowance = Allowance::findOrFail($salary->salary_allowance_id);
+        $detection = Detection::where('user_id', $allowance->user_id);
+
+        // delete parent allowance basic salary
+        if ($salaryCountByBasicSalary->count() < 2) {
+            $allowance->delete();
+            $detection->delete();
+        }
+
         $salary->delete();
 
         // EmployeeMonthlySalary::destroy($id);

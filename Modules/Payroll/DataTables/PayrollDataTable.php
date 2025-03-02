@@ -57,6 +57,10 @@ class PayrollDataTable extends BaseDataTable
                 return currency_format($row->gross_salary, $row->currency_id);
 
             })
+            ->editColumn('total_detections', function ($row) {
+                return currency_format($row->total_deductions, $row->currency_id);
+
+            })
             ->editColumn('salary_status', function ($row) {
                 if ($row->salary_status == 'generated') {
                     return '<span class="badge badge-success bg-dark">' . __('payroll::modules.payroll.generated') . '</span>';
@@ -158,12 +162,11 @@ class PayrollDataTable extends BaseDataTable
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
             ->join('payroll_cycles', 'payroll_cycles.id', '=', 'employee_payroll_cycles.payroll_cycle_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to')
+            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to', 'salary_slips.total_deductions')
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $request->cycle)
             ->where('salary_slips.year', $request->year);
 
-        // dd($users->get()->toArray(), $startDate, $endDate);
 
         if (!is_null($startDate) && !is_null($endDate)) {
             $users = $users->whereRaw('Date(salary_slips.salary_from) = ?', [$startDate]);
@@ -232,7 +235,8 @@ class PayrollDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'visible' => ($this->viewPayrollPermission == 'all'), 'title' => __('app.name')],
             __('payroll::modules.payroll.netSalary') => ['data' => 'net_salary', 'name' => 'net_salary', 'title' => __('payroll::modules.payroll.netSalary')],
-            __('payroll::modules.payroll.ctc') => ['data' => 'gross_salary', 'name' => 'gross_salary', 'title' => __('payroll::modules.payroll.ctc')],
+            __('payroll::modules.payroll.totalAllowance') => ['data' => 'gross_salary', 'name' => 'gross_salary', 'title' => __('payroll::modules.payroll.totalAllowance')],
+            __('payroll::modules.payroll.totalDeductions') => ['data' => 'total_detections', 'name' => 'total_detections', 'title' => __('payroll::modules.payroll.totalDeductions')],
             __('payroll::modules.payroll.duration') => ['data' => 'salary_from', 'name' => 'salary_from', 'title' => __('payroll::modules.payroll.duration')],
             __('modules.payments.paidOn') => ['data' => 'paid_on', 'name' => 'paid_on', 'title' => __('modules.payments.paidOn')],
             __('app.status') => ['data' => 'salary_status', 'name' => 'salary_status', 'title' => __('app.status')],
