@@ -101,7 +101,15 @@ class CustomField extends BaseModel
                     $data = $customField->values;
                     $data = json_decode($data); // string to array
 
-                    return $finalData ? (($finalData->value >= 0 && $finalData->value != null) ? $data[$finalData->value] : '--') : '--';
+                    $index = intval($finalData->value); // Ensure it's a valid number
+                    return $finalData ? (
+                        ($index >= 0 && $index < count($data))
+                        ? $data[$index]
+                        : '--'
+                    ) : '--';
+
+
+                    // return $finalData ? (($finalData->value >= 0 && $finalData->value != null) ? $data[$finalData->value] : '--') : '--';
                 }
 
                 if ($customField->type == 'file') {
@@ -115,7 +123,6 @@ class CustomField extends BaseModel
             if ($customField->type == 'file') {
                 $customFieldNames[] = $customField->name;
             }
-
         }
 
         return $customFieldNames;
@@ -137,7 +144,5 @@ class CustomField extends BaseModel
         }
 
         return $slug;
-
     }
-
 }

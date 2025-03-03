@@ -549,9 +549,29 @@
         });
 
         $('#location').change(function() {
-            console.log('hello');
             let location_id = $(this).val();
             let url = "{{ route('location.select') }}";
+
+            let designation_id = $("#employee_designation").val();
+            let department_id = $("#employee_department").val();
+
+            let department_html = `<option value="all">--</option>`;
+            let designation_html = `<option value="all">--</option>`;
+
+            if (department_id != "all" && designation_id != "all") {
+                $("#employee_department").html(department_html);
+                $("#employee_department").selectpicker('refresh');
+
+                $("#employee_designation").html(designation_html);
+                $("#employee_designation").selectpicker('refresh');
+
+            } else if (designation_id != "all") {
+                $("#employee_designation").html(designation_html);
+                $("#employee_designation").selectpicker('refresh');
+            } else {
+                $("#employee_department").html(department_html);
+                $("#employee_department").selectpicker('refresh');
+            }
 
             $.ajax({
                 type: "POST",
@@ -562,8 +582,7 @@
                 },
                 success: function(response) {
                     let teams = response.data;
-                    console.log(teams);
-                    let html = `<option value="">--</option>`;
+                    let html = department_html;
 
                     teams.forEach((team) => {
                         html += `
@@ -572,14 +591,25 @@
                     });
 
                     $("#employee_department").html(html);
-                    $("#employee_department").selectpicker('refresh'); // refresh the bootstrap select ui
+                    $("#employee_department").selectpicker(
+                    'refresh'); // refresh the bootstrap select ui
                 }
             });
         });
 
-        $("#employee_department").change(function () {
+        $("#employee_department").change(function() {
             let department_id = $(this).val();
             let url = "{{ route('department.select') }}";
+
+            let location_id = $("#location").val();
+            let designation_id = $("#employee_designation").val();
+
+            let designation_html = `<option value="all">--</option>`;
+
+            if (designation_id != "all") {
+                $("#employee_designation").html(designation_html);
+                $("#employee_designation").selectpicker('refresh');
+            }
 
             $.ajax({
                 type: "POST",
@@ -589,9 +619,8 @@
                     _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
-                    console.log(response.data);
                     let designations = response.data;
-                    let html = `<option value="">--</option>`;
+                    let html = designation_html;
 
                     designations.forEach((designation) => {
                         html += `
@@ -600,7 +629,8 @@
                     });
 
                     $("#employee_designation").html(html);
-                    $("#employee_designation").selectpicker('refresh'); // refresh the bootstrap select ui
+                    $("#employee_designation").selectpicker(
+                    'refresh'); // refresh the bootstrap select ui
                 }
             });
         });
@@ -636,7 +666,7 @@
         clipboard.on('success', function(e) {
             Swal.fire({
                 icon: 'success',
-                text: '@lang('app.urlCopied')',
+                text: '@lang('modules.employees.accountDetails')',
                 toast: true,
                 position: 'top-end',
                 timer: 3000,

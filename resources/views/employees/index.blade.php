@@ -365,7 +365,6 @@
                 $("#designation").selectpicker('refresh');
             }
 
-
             $.ajax({
                 type: "POST",
                 url: url,

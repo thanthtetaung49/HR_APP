@@ -31,6 +31,8 @@ class EmployeeSalaryDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addColumn('action', function ($row) {
+                // dd($row->id, $row->toArray());
+
                 $salary = Allowance::employeeBasicSalary($row->id);
                 $action = '<div class="task_view">
                         <div class="dropdown">
@@ -47,6 +49,8 @@ class EmployeeSalaryDataTable extends BaseDataTable
                                     </a>';
                     $action .= '<a href="javascript:;" data-user-id="' . $row->id . '" class="dropdown-item update-salary" ><i class="fa fa-plus"></i> ' .  __('payroll::modules.payroll.increment') . '</a>';
                     $action .= '<a href="javascript:;" data-user-id="' . $row->id . '" class="dropdown-item salary-history" ><i class="fa fa-eye"></i> ' . __('payroll::modules.payroll.salaryHistory') . '</a>';
+
+                    $action .= '<a href="' . route('employee-salary.delete_allowance', [$row->id]) . '' . '" class="dropdown-item" ><i class="fa fa-trash"></i> ' . __('payroll::modules.payroll.delete') .  '</a>';
                 } else {
                     $action = '<a href="' . route('employee-salary.make-salary', [$row->id]) . '" data-user-id="' . $row->id . '" class="dropdown-item add-salary openRightModal float-left" ><i class="fa fa-plus"></i> ' . __('payroll::modules.payroll.addSalary') . '</a>';
                 }

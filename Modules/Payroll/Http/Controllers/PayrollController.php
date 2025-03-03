@@ -854,7 +854,21 @@ class PayrollController extends AccountBaseController
                     'added_by' => user()->id,
                 ];
 
-                SalarySlip::create($data);
+                $userSlip = SalarySlip::where('user_id', $userId)
+                    ->where(function ($query) use ($startDate, $endDate) {
+                        $query->whereBetween('salary_from', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                            ->orWhereBetween('salary_to', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
+                    })
+                    ->where('year', $year)->first();
+
+                 if (!is_null($userSlip) && $userSlip->status != 'paid') {
+                    $userSlip->delete();
+                }
+
+                if (is_null($userSlip) || (!is_null($userSlip) && $userSlip->status != 'paid')) {
+                    SalarySlip::create($data);
+                }
+
 
                 // dd(
                 //     [

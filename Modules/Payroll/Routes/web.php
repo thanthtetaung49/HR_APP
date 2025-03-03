@@ -53,6 +53,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('employee-salary/increment-store/{id?}', [EmployeeMonthlySalaryController::class, 'incrementStore'])->name('employee-salary.increment-store');
     Route::get('employee-salary/increment-edit', [EmployeeMonthlySalaryController::class, 'incrementEdit'])->name('employee-salary.increment_edit');
     Route::post('employee-salary/increment-update', [EmployeeMonthlySalaryController::class, 'incrementUpdate'])->name('employee-salary.increment_update');
+    Route::get('employee-salary/delete-allowance/{id}', [EmployeeMonthlySalaryController::class, 'deleteAllowance'])->name('employee-salary.delete_allowance');
     Route::resource('employee-salary', EmployeeMonthlySalaryController::class);
 
     Route::get('payroll-export-reports', [PayrollReportController::class, 'exportReport'])->name('payroll-reports.export-report');

@@ -199,7 +199,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $this->employee = User::find($id);
         $this->currency = PayrollSetting::with('currency')->first();
         // $this->salaryHistory = EmployeeMonthlySalary::where('user_id', $id)->orderBy('date', 'asc')->get();
-        $this->basicSalary = Allowance::where('user_id', $id)->orderBy('created_at', 'asc')
+        $this->basicSalary = Allowance::with('additionalSalaries')->where('user_id', $id)->orderBy('created_at', 'asc')
             ->first();
         $this->salaryHistory = AdditionalBasicSalary::with('salaryAllowance')
             ->where('salary_allowance_id', $this->basicSalary->id)
@@ -318,10 +318,8 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
         $id = $request->salaryId;
-        dd($id);
 
         $salary = AdditionalBasicSalary::findOrFail($id);
-        dd($salary);
 
         $salary->type = $request->type;
         $salary->amount = $request->amount;
@@ -393,6 +391,16 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         // EmployeeMonthlySalary::destroy($id);
 
         return Reply::success(__('messages.deleteSuccess'));
+    }
+
+    public function deleteAllowance ($id) {
+        $allowance = Allowance::where('user_id', $id)->first();
+        $detection = Detection::where('user_id', $allowance->user_id)->first();
+
+        $allowance->delete();
+        $detection->delete();
+
+        return redirect()->route('employee-salary.index');
     }
 
     public function employeePayrollCycle(Request $request)

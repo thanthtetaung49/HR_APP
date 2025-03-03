@@ -2,6 +2,7 @@
 
 return array(
     'payroll' => array(
+        'delete' => 'Delete',
         'salaryGroup' => 'Salary Group',
         'salaryGroupComponents' => 'Salary Group Components',
         'salaryComponents' => 'Salary Components',
