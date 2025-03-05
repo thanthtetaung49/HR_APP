@@ -11,9 +11,13 @@ use App\Models\Allowance;
 use App\Models\Detection;
 use App\Models\Attendance;
 use App\Models\Designation;
+use App\Traits\ImportExcel;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use App\Imports\AttendanceImport;
 use Illuminate\Support\Facades\DB;
+use App\Imports\EmployeeSalaryImport;
+use App\Jobs\ImportEmployeeSalaryJob;
 use App\Models\AdditionalBasicSalary;
 use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
@@ -30,6 +34,7 @@ use Modules\Payroll\Http\Requests\StoreEmployyeMonthlySalary;
 
 class EmployeeMonthlySalaryController extends AccountBaseController
 {
+    use ImportExcel;
 
     public function __construct()
     {
@@ -76,6 +81,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
      */
     public function store(StoreSalary $request)
     {
+
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
@@ -86,13 +92,17 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $allowance->technical_allowance = $request->technical_allowance;
         $allowance->living_cost_allowance = $request->living_cost_allowance;
         $allowance->special_allowance = $request->special_allowance;
+
+        $allowance->special_allowance = $request->special_allowance;
         $allowance->save();
 
         // detection
         $detection = new Detection();
         $detection->user_id = $request->user_id;
         $detection->other_detection = $request->other_detection;
+
         $detection->save();
+
 
         // $initialSalary = EmployeeMonthlySalary::where('user_id', $request->user_id)->where('type', 'initial')->first();
 
@@ -199,7 +209,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $this->employee = User::find($id);
         $this->currency = PayrollSetting::with('currency')->first();
         // $this->salaryHistory = EmployeeMonthlySalary::where('user_id', $id)->orderBy('date', 'asc')->get();
-        $this->basicSalary = Allowance::with('additionalSalaries')->where('user_id', $id)->orderBy('created_at', 'asc')
+        $this->basicSalary = Allowance::where('user_id', $id)->orderBy('created_at', 'asc')
             ->first();
         $this->salaryHistory = AdditionalBasicSalary::with('salaryAllowance')
             ->where('salary_allowance_id', $this->basicSalary->id)
@@ -376,7 +386,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
         $salary = AdditionalBasicSalary::findOrFail($id);
         $salaryCountByBasicSalary = AdditionalBasicSalary::where('salary_allowance_id', $salary->salary_allowance_id)
-                                    ->get();
+            ->get();
         $allowance = Allowance::findOrFail($salary->salary_allowance_id);
         $detection = Detection::where('user_id', $allowance->user_id);
 
@@ -393,7 +403,19 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         return Reply::success(__('messages.deleteSuccess'));
     }
 
-    public function deleteAllowance ($id) {
+    public function initialSalaryDestroy($id)
+    {
+        $allowance = Allowance::findOrFail($id);
+        $detection = Detection::where('user_id', $allowance->user_id);
+
+        $allowance->delete();
+        $detection->delete();
+
+        return Reply::success(__('messages.deleteSuccess'));
+    }
+
+    public function deleteAllowance($id)
+    {
         $allowance = Allowance::where('user_id', $id)->first();
         $detection = Detection::where('user_id', $allowance->user_id)->first();
 
@@ -822,5 +844,36 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $decimal_separator = !is_null($formats->decimal_separator) ? $formats->decimal_separator : '0';
 
         return number_format($amount, $no_of_decimal, $decimal_separator, $thousand_separator);
+    }
+
+    public function importSalary()
+    {
+        $this->pageTitle = __('app.importSalary');
+
+        if (request()->ajax()) {
+            $html = view('payroll::employee-salary.ajax.import', $this->data)->render();
+
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        }
+    }
+
+    public function importStore(Request $request)
+    {
+        $rvalue = $this->importFileProcess($request, EmployeeSalaryImport::class);
+
+        if ($rvalue == 'abort') {
+            return Reply::error(__('messages.abortAction'));
+        }
+
+        $view = view('payroll::employee-salary.ajax.import_progress', $this->data)->render();
+
+        return Reply::successWithData(__('messages.importUploadSuccess'), ['view' => $view]);
+    }
+
+    public function importProcess(Request $request)
+    {
+        $batch = $this->importSalaryJobProcess($request, EmployeeSalaryImport::class, ImportEmployeeSalaryJob::class);
+
+        return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
     }
 }

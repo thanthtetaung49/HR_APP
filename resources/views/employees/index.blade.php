@@ -393,9 +393,6 @@
         $(`#employee, #status, #role, #gender, #skill, #designation, #locationSearch, #department, #employmentType, #{{ $field->name . '_' . $field->id }}`).on(
             'change keyup',
             function() {
-
-                console.log($(`#{{ $field->name . '_' . $field->id }}`).val());
-
                 if ($('#status').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#employee').val() != "all") {

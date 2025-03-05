@@ -77,7 +77,10 @@
     <div class="content-wrapper">
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex" id="table-actions">
-
+            <x-forms.link-secondary :link="route('employee-salary.import')" class="mr-3 openRightModal float-left d-none d-lg-block"
+                icon="file-upload">
+                @lang('app.importExcel')
+            </x-forms.link-secondary>
         </div>
         <!-- Add Task Export Buttons End -->
         <!-- Task Box Start -->

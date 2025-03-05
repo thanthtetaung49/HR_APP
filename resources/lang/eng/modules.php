@@ -1,6 +1,15 @@
 <?php
 
 return array(
+    'allowance' => array(
+        'basicSalary' => 'Basic Salary',
+        'technicalAllowance' => 'Technical Allowance',
+        'livingCostAllowance' => 'Living Cost Allowance',
+        'specialAllowance' => 'Special Allowance'
+    ),
+    'detection' => array(
+        'otherDetection' => 'Other Detection'
+    ),
     'dashboard' => array(
         'totalClients' => 'Total Clients',
         'newClients' => 'New Clients',

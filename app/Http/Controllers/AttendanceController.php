@@ -1183,7 +1183,6 @@ class AttendanceController extends AccountBaseController
 
     public function importStore(ImportRequest $request)
     {
-        // dd($request->all());
         $rvalue = $this->importFileProcess($request, AttendanceImport::class);
 
         if ($rvalue == 'abort') {
@@ -1197,7 +1196,6 @@ class AttendanceController extends AccountBaseController
 
     public function importProcess(ImportProcessRequest $request)
     {
-        // dd($request->all());
         $batch = $this->importJobProcess($request, AttendanceImport::class, ImportAttendanceJob::class);
 
         return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);

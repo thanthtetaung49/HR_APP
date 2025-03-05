@@ -235,7 +235,7 @@ class PayrollDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'visible' => ($this->viewPayrollPermission == 'all'), 'title' => __('app.name')],
             __('payroll::modules.payroll.netSalary') => ['data' => 'net_salary', 'name' => 'net_salary', 'title' => __('payroll::modules.payroll.netSalary')],
-            __('payroll::modules.payroll.totalAllowance') => ['data' => 'gross_salary', 'name' => 'gross_salary', 'title' => __('payroll::modules.payroll.totalAllowance')],
+            __('payroll::modules.payroll.earning') => ['data' => 'gross_salary', 'name' => 'gross_salary', 'title' => __('payroll::modules.payroll.earning')],
             __('payroll::modules.payroll.totalDeductions') => ['data' => 'total_detections', 'name' => 'total_detections', 'title' => __('payroll::modules.payroll.totalDeductions')],
             __('payroll::modules.payroll.duration') => ['data' => 'salary_from', 'name' => 'salary_from', 'title' => __('payroll::modules.payroll.duration')],
             __('modules.payments.paidOn') => ['data' => 'paid_on', 'name' => 'paid_on', 'title' => __('modules.payments.paidOn')],

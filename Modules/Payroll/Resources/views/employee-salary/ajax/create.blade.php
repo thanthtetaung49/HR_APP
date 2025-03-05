@@ -243,7 +243,7 @@
 
                                 <div class="col-lg-3 col-md-3">
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.basicSalary')" fieldName="basic_salary" fieldId="basic_salary"
-                                        :fieldPlaceholder="__('payroll::modules.payroll.expenseClaims')" />
+                                        :fieldPlaceholder="__('payroll::modules.payroll.basicSalary')" />
                                 </div>
 
                                 <div class="col-lg-3 col-md-3">

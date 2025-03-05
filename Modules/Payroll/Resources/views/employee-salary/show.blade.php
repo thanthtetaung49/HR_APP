@@ -19,9 +19,32 @@
                 <th class="text-right">@lang('app.action')</th>
             </x-slot>
 
+            <tr>
+                <td>
+                    1
+                </td>
+                <td>
+                    {{ currency_format($basicSalary->basic_salary, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
+                </td>
+                <td>
+                    initial
+                </td>
+                <td>
+                    {{ \Carbon\Carbon::parse($basicSalary->created)->format('Y-m-d') }}
+                </td>
+                <td class="text-right">
+                    <div class="task_view">
+                        <a class="delete-inital-salary task_view_more d-flex align-items-center justify-content-center"
+                           href="javascript:;" data-salary-id="{{ $basicSalary->id }}">
+                            <i class="fa fa-trash icons mr-2"></i> @lang('app.delete')
+                        </a>
+                    </div>
+                </td>
+            </tr>
+
             @forelse($salaryHistory as $key=>$salary)
                 <tr>
-                    <td>{{ $key + 1 }}</td>
+                    <td>{{ $key + 2 }}</td>
                     <td>
                         {{ currency_format($salary->salaryAllowance->basic_salary, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
 
@@ -89,6 +112,55 @@
         $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
         $.ajaxModal(MODAL_LG, url);
     });
+
+
+    /* delete initial salary */
+    $('body').on('click', '.delete-inital-salary', function () {
+        var id = $(this).data('salary-id');
+
+        Swal.fire({
+            title: "@lang('messages.sweetAlertTitle')",
+            text: "@lang('payroll::messages.salaryDelete')",
+            icon: 'warning',
+            showCancelButton: true,
+            focusConfirm: false,
+            confirmButtonText: "@lang('messages.confirmDelete')",
+            cancelButtonText: "@lang('app.cancel')",
+            customClass: {
+                confirmButton: 'btn btn-primary mr-3',
+                cancelButton: 'btn btn-secondary'
+            },
+            showClass: {
+                popup: 'swal2-noanimation',
+                backdrop: 'swal2-noanimation'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+
+                var url = "{{ route('employee-salary.initialSalary.destroy', ':id') }}";
+                url = url.replace(':id', id);
+
+                var token = "{{ csrf_token() }}";
+
+                $.easyAjax({
+                    type: 'POST',
+                    url: url,
+                    blockUI: true,
+                    data: {
+                        '_token': token,
+                        '_method': 'DELETE'
+                    },
+                    success: function (response) {
+                        if (response.status == "success") {
+                            window.location.reload();
+                        }
+                    }
+                });
+            }
+        });
+    })
+
 
     /* delete salary */
     $('body').on('click', '.delete-salary', function () {

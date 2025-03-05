@@ -106,7 +106,7 @@ class EmployeeSalaryDataTable extends BaseDataTable
                 $salary = Allowance::employeeBasicSalary($row->id);
 
                 if ($salary['basicSalary'] > 0) {
-                    return currency_format($salary['basicSalary'], ($this->currency->currency ? $this->currency->currency->id : company()->currency->id));
+                    return (int) $salary['basicSalary'];
                 }
 
                 // if ($salary['netSalary'] > 0) {

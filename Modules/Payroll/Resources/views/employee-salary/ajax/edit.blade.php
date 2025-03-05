@@ -43,7 +43,7 @@
                                 <div class="col-lg-3 col-md-3">
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.specialAllowance')" fieldName="special_allowance"
                                         fieldId="special_allowance" :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" :fieldValue="$allowance->technical_allowance"
-                                        f:ieldValue="$allowance->special_allowance" />
+                                        :fieldValue="$allowance->special_allowance" />
                                 </div>
                             </div>
 

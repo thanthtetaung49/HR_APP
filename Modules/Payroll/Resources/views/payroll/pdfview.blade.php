@@ -239,6 +239,18 @@
                                 ) !!}
                             </td>
                         </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.actualBasicSalary')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($payableSalary, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+
+
                         <tr>
                             <td>@lang('payroll::modules.payroll.technicalAllowance')</td>
                             <td align="right" class="text-uppercase">
@@ -256,6 +268,23 @@
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
                             </td>
+                        </tr>
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.Overtime')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($overtimeAmount,$payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}</td>
+                        </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.gazattedAllowance')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($gazattedAllowance,$payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}</td>
+                        </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.eveningShiftAllowance')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($eveningShiftAllowance,$payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}</td>
                         </tr>
                         <tr>
                             <td>@lang('payroll::modules.payroll.specialAllowance')</td>
@@ -285,6 +314,13 @@
                     </thead>
                     <tbody>
                         <tr>
+                            <td>@lang('payroll::modules.payroll.absent')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($absent, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                            </td>
+                        </tr>
+
+                        <tr>
                             <td>@lang('payroll::modules.payroll.beforeLateDetection')</td>
                             <td align="right" class="text-uppercase">
                                 {{ currency_format($beforeLateDetection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
@@ -311,15 +347,25 @@
                                 ) !!}
                             </td>
                         </tr>
+
                         <tr>
-                            <td>@lang('payroll::modules.payroll.leaveWithoutPayDetection')</td>
+                            <td>@lang('payroll::modules.payroll.creditSales')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($leaveWithoutPayDetection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
-                                {!! htmlentities(
-                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
-                                ) !!}
-                            </td>
+                              {{ currency_format(0, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}</td>
                         </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.deposit')</td>
+                            <td align="right" class="text-uppercase">
+                              {{ currency_format(0, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}</td>
+                        </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.loan')</td>
+                            <td align="right" class="text-uppercase">
+                              {{ currency_format(0, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}</td>
+                        </tr>
+
                         <tr>
                             <td>@lang('payroll::modules.payroll.otherDetection')</td>
                             <td align="right" class="text-uppercase">

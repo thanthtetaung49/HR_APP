@@ -141,4 +141,37 @@ trait ImportExcel
         return $batch;
     }
 
+    public function importSalaryJobProcess($request, $importClass, $importJobClass) {
+        // get class name from $importClass
+        $importClassName = (new ReflectionClass($importClass))->getShortName();
+
+        // clear previous import
+        Artisan::call('queue:clear database --queue=' . $importClassName);
+        Artisan::call('queue:flush');
+        // Get index of an array not null value with key
+        $columns = array_filter($request->columns, function ($value) {
+            return $value !== null;
+        });
+
+        $excelData = Excel::toArray(new $importClass, public_path(Files::UPLOAD_FOLDER . '/' . Files::IMPORT_FOLDER . '/' . $request->file))[0];
+
+        if ($request->has_heading) {
+            array_shift($excelData);
+        }
+
+        $jobs = [];
+
+        Session::put('leads_count', count($excelData));
+
+        foreach ($excelData as $row) {
+            $jobs[] = (new $importJobClass($row, $columns, company()));
+        }
+
+        $batch = Bus::batch($jobs)->onConnection('database')->onQueue($importClassName)->name($importClassName)->dispatch();
+
+        Files::deleteFile($request->file, Files::IMPORT_FOLDER);
+
+        return $batch;
+    }
+
 }

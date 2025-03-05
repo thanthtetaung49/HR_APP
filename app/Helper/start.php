@@ -579,7 +579,8 @@ if (!function_exists('currency_format')) {
         }
 
         $currency_position = $formats->currency_position;
-        $no_of_decimal = !is_null($formats->no_of_decimal) ? $formats->no_of_decimal : '0';
+        // $no_of_decimal = !is_null($formats->no_of_decimal) ? $formats->no_of_decimal : '0';
+        $no_of_decimal = '0';
         $thousand_separator = !is_null($formats->thousand_separator) ? $formats->thousand_separator : '';
         $decimal_separator = !is_null($formats->decimal_separator) ? $formats->decimal_separator : '0';
 

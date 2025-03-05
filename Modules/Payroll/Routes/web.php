@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Modules\Payroll\Entities\EmployeeMonthlySalary;
 use Modules\Payroll\Http\Controllers\EmployeeHourlyRateSettingController;
 use Modules\Payroll\Http\Controllers\EmployeeMonthlySalaryController;
 use Modules\Payroll\Http\Controllers\OvertimePolicyController;
@@ -37,7 +38,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('payroll/download/{id}', [PayrollController::class, 'downloadPdf'])->name('payroll.download_pdf');
     Route::post('payroll/get-cycle-data', [PayrollController::class, 'getCycleData'])->name('payroll.get-cycle-data');
     Route::post('payroll/get_expense_title', [PayrollController::class, 'getExpenseTitle'])->name('payroll.get_expense_title');
-    Route::get('payroll/get_employee/{payrollCycle?}/{departmentId?}', [PayrollController::class, 'byDepartment'])->name('payroll.get-employee');
+    // Route::get('payroll/get_employee/{payrollCycle?}/{departmentId?}', [PayrollController::class, 'byDepartment'])->name('payroll.get-employee');
+    Route::get('payroll/get_employee', [PayrollController::class, 'byRank'])->name('payroll.get-employee');
 
     Route::resource('payroll', PayrollController::class);
 
@@ -54,6 +56,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('employee-salary/increment-edit', [EmployeeMonthlySalaryController::class, 'incrementEdit'])->name('employee-salary.increment_edit');
     Route::post('employee-salary/increment-update', [EmployeeMonthlySalaryController::class, 'incrementUpdate'])->name('employee-salary.increment_update');
     Route::get('employee-salary/delete-allowance/{id}', [EmployeeMonthlySalaryController::class, 'deleteAllowance'])->name('employee-salary.delete_allowance');
+    Route::get('employee-salary/import', [EmployeeMonthlySalaryController::class, 'importSalary'])->name('employee-salary.import');
+    Route::post('employee-salary/import', [EmployeeMonthlySalaryController::class, 'importStore'])->name('employee-salary.import.store');
+    Route::post('employee-salary/import/process', [EmployeeMonthlySalaryController::class, 'importProcess'])->name('employee-salary.import.process');
+    Route::delete('employee-salary/initialSalary/delete/{id}', [EmployeeMonthlySalaryController::class, 'initialSalaryDestroy'])->name('employee-salary.initialSalary.destroy');
     Route::resource('employee-salary', EmployeeMonthlySalaryController::class);
 
     Route::get('payroll-export-reports', [PayrollReportController::class, 'exportReport'])->name('payroll-reports.export-report');

@@ -103,10 +103,6 @@ class EmployeeController extends AccountBaseController
                     }
                 }
             }
-
-            // dd($this->data);
-
-
         }
 
         return $dataTable->render('employees.index', $this->data);
@@ -160,8 +156,6 @@ class EmployeeController extends AccountBaseController
 
             return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
-
-        // dd($this->fields->toArray());
 
         return view('employees.create', $this->data);
     }
