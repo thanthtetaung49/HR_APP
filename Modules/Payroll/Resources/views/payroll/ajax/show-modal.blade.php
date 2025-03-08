@@ -208,9 +208,9 @@
                                     </tr>
 
                                     <tr>
-                                        <td>@lang('payroll::modules.payroll.beforeLateDetection')</td>
+                                        <td>@lang('payroll::modules.payroll.leaveWithoutPay')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($beforeLateDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                            {{ currency_format($leaveWithoutPayDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
                                     </tr>
 
                                     <tr>
@@ -277,11 +277,8 @@
                         <div class="col-md-3">
                             <h5 class="heading-h5">@lang('payroll::modules.payroll.totalDeductions')</h5>
                         </div>
-                        @php
-                            $allDeduction = $beforeLateDetection + $afterLateDetection + $breakTimeLateDetection + $leaveWithoutPayDetection + $monthlyOtherDetection?->other_detection;
-                        @endphp
                         <div class="col-md-3 text-right">
-                            <h5 class="heading-h5">{{ currency_format($allDeduction, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</h5>
+                            <h5 class="heading-h5">{{ currency_format($totalDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</h5>
                         </div>
 
 
