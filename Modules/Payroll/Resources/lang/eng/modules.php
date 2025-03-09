@@ -2,6 +2,8 @@
 
 return array(
     'payroll' => array(
+        'bankName' => "Bank Name",
+        'bankAccountNumber' => "Bank Account Number",
         'creditSales' => 'Credit Sales',
         'deposit' => 'Deposit',
         'Loan' => 'Loan',

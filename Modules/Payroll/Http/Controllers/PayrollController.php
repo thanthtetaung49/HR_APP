@@ -152,7 +152,6 @@ class PayrollController extends AccountBaseController
             $this->basicSalary = $perday * 14;
         }
 
-
         $this->netSalary = $this->salarySlip->net_salary;
         $this->acutalBasicSalary = $this->salarySlip->monthly_salary;
         $this->technicalAllowance = $this->salarySlip->user->userAllowances?->technical_allowance;
@@ -267,14 +266,16 @@ class PayrollController extends AccountBaseController
         $this->breakTimeLateDetection = 0;
 
         for ($i = 0; $i <  $this->breakTimeLateCount; $i++) {
-            $this->breakTimeLateDetection = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
+            $this->breakTimeLateDetection = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
         }
+
+    //    dd($this->breakTimeLateDetection,  floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)), $this->perDaySalary, $this->salarySlip?->basic_salary, $daysInMonth);
 
         $this->afterLateDetection = ($attLateAfterFifteenMinutes * $this->perDaySalary);
         $this->leaveWithoutPayDetection = ($leaveWithoutPayInMonth * $this->perDaySalary);
-        $this->absent = $absentInMonth * $this->perDaySalary;
+        $this->absent = $absentInMonth * $this->perDaySalary * 2;
 
-        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->absent;
 
@@ -615,7 +616,7 @@ class PayrollController extends AccountBaseController
 
 
         $absentDetection = $absentInMonth * $perDaySalary;
-        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
         // totalDetections
         $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $request->other_detection + $absentDetection;
 
@@ -883,7 +884,7 @@ class PayrollController extends AccountBaseController
 
         $absentInMonth = Leave::with(['type' => function ($query) {
             return $query->select('paid', 'type_name');
-        }])->where('user_id', $request->employee_id)
+        }])->whereIn('user_id', $request->employee_id)
             ->where('leave_type_id', 7)
             ->where('paid', 0)
             ->whereDate('leave_date', '>=', $startDate)
@@ -892,7 +893,7 @@ class PayrollController extends AccountBaseController
 
         $leaveWithoutPayInMonth = Leave::with(['type' => function ($query) {
             return $query->select('paid', 'type_name');
-        }])->where('user_id', $request->employee_id)
+        }])->whereIn('user_id', $request->employee_id)
             ->where('leave_type_id', 6)
             ->where('paid', 0)
             ->whereDate('leave_date', '>=', $startDate)
@@ -923,7 +924,7 @@ class PayrollController extends AccountBaseController
             }
         }
 
-        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         foreach ($users as $user) {
             $userId = $user->id;
@@ -1010,7 +1011,9 @@ class PayrollController extends AccountBaseController
                 $gazattedAllowance = $gazattedPresentCount * 3000;
                 $eveningShiftAllowance = $eveningShiftPresentCout * 500;
 
-                $absentDetection = $absentInMonth * $perDaySalary;
+                $absentDetection = $absentInMonth * $perDaySalary * 2;
+
+                // dd($absentInMonth, $perDaySalary);
 
                 // detection calculation
                 $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection + $absentDetection;
@@ -1682,14 +1685,14 @@ class PayrollController extends AccountBaseController
         $this->breakTimeLateDetection = 0;
 
         for ($i = 0; $i <  $this->breakTimeLateCount; $i++) {
-            $this->breakTimeLateDetection = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
+            $this->breakTimeLateDetection = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
         }
 
         $this->afterLateDetection = ($attLateAfterFifteenMinutes * $this->perDaySalary);
         $this->leaveWithoutPayDetection = ($leaveWithoutPayInMonth * $this->perDaySalary);
-        $this->absent = $absentInMonth * $this->perDaySalary;
+        $this->absent = $absentInMonth * $this->perDaySalary * 2;
 
-        $totalLeaveWithoutPay = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->absent;
 

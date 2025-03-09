@@ -1,6 +1,12 @@
 <?php
 
 return array(
+    'bankInformation' => array(
+        'bankInfo' => 'Bank Information',
+        'bankName' => 'Bank Name',
+        'bankAccountName' => 'Bank Acount Name',
+        'bankAccountNumber' => 'Bank Account Number'
+    ),
     'allowance' => array(
         'basicSalary' => 'Basic Salary',
         'technicalAllowance' => 'Technical Allowance',

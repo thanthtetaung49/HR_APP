@@ -168,6 +168,17 @@
                         :</strong>
                     {{ $salarySlip->user->employeeDetail->joining_date->translatedFormat($company->date_format) }}</td>
             </tr>
+
+            <tr>
+                <td><strong>@lang('modules.bankInformation.bankAccountName')
+                        :</strong>
+                    {{ !is_null($salarySlip->user->bank_name) ? $salarySlip->user->bank_name : '-' }}
+                </td>
+                <td><strong>@lang('modules.bankInformation.bankAccountNumber')
+                    :</strong>
+                {{ !is_null($salarySlip->user->bank_account_number) ? $salarySlip->user->bank_account_number : '-' }}
+            </td>
+            </tr>
             @if (isset($fields) && !is_null($fields))
                 @php $numberCheck = 0; @endphp
                 <tr>
@@ -272,7 +283,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.Overtime')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($overtimeAmount,$payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($overtimeAmount, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -282,7 +293,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.gazattedAllowance')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($gazattedAllowance,$payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($gazattedAllowance, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -292,7 +303,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.eveningShiftAllowance')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($eveningShiftAllowance,$payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($eveningShiftAllowance, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -366,30 +377,30 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.creditSales')</td>
                             <td align="right" class="text-uppercase">
-                              {{ currency_format($monthlyOtherDetection?->credit_sales, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
-                              {!! htmlentities(
-                                $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
-                            ) !!}
+                                {{ currency_format($monthlyOtherDetection?->credit_sales, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
                             </td>
                         </tr>
 
                         <tr>
                             <td>@lang('payroll::modules.payroll.deposit')</td>
                             <td align="right" class="text-uppercase">
-                              {{ currency_format($monthlyOtherDetection?->deposit, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
-                              {!! htmlentities(
-                                $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
-                            ) !!}
+                                {{ currency_format($monthlyOtherDetection?->deposit, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
                             </td>
                         </tr>
 
                         <tr>
                             <td>@lang('payroll::modules.payroll.loan')</td>
                             <td align="right" class="text-uppercase">
-                              {{ currency_format($monthlyOtherDetection?->loan, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
-                              {!! htmlentities(
-                                $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
-                            ) !!}
+                                {{ currency_format($monthlyOtherDetection?->loan, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
                             </td>
                         </tr>
 
@@ -443,21 +454,24 @@
     <!-- TotalTotal -->
     <table class="payment_total">
 
-    <tr>
-        <td class="netsalary-title">
-            <strong style="margin-right: 20px;">@lang('payroll::modules.payroll.netSalary'):</strong>
-            {{ currency_format(sprintf('%0.2f', $netSalary), ($payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id), false)}} {!! htmlentities($payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code) !!}
-        </td>
-    </tr>
-    <tr>
-        <td class="netsalary-formula">
-            <h5 class="text-center text-muted">@lang('payroll::modules.payroll.netSalary') =
-                (@lang('payroll::modules.payroll.totalAllowance') -
-                @lang('payroll::modules.payroll.totalDeductions'))</h5>
-        </td>
-    </tr>
+        <tr>
+            <td class="netsalary-title">
+                <strong style="margin-right: 20px;">@lang('payroll::modules.payroll.netSalary'):</strong>
+                {{ currency_format(sprintf('%0.2f', $netSalary), $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                {!! htmlentities(
+                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                ) !!}
+            </td>
+        </tr>
+        <tr>
+            <td class="netsalary-formula">
+                <h5 class="text-center text-muted">@lang('payroll::modules.payroll.netSalary') =
+                    (@lang('payroll::modules.payroll.totalAllowance') -
+                    @lang('payroll::modules.payroll.totalDeductions'))</h5>
+            </td>
+        </tr>
 
 
-</table>
+    </table>
     <!-- TotalTotal -->
 </body>

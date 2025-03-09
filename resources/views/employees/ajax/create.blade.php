@@ -211,7 +211,26 @@
                             </x-forms.textarea>
                         </div>
                     </div>
+                </div>
 
+                <h4 class="p-20 mb-0 f-21 font-weight-normal  border-top-grey">
+                    @lang('modules.bankInformation.bankInfo')</h4>
+                <div class="p-20 row">
+                    <div class="col-lg-3 col-md-6">
+                        <x-forms.text fieldId="bank_name" :fieldLabel="__('modules.bankInformation.bankName')" fieldName="bank_name"
+                            fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankName')">
+                        </x-forms.text>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <x-forms.text fieldId="bank_account_name" :fieldLabel="__('modules.bankInformation.bankAccountName')" fieldName="bank_account_name"
+                            fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankAccountName')">
+                        </x-forms.text>
+                    </div>
+                    <div class="col-lg-3 col-md-6">
+                        <x-forms.text type="number" fieldId="bank_account_number" :fieldLabel="__('modules.bankInformation.bankAccountNumber')" fieldName="bank_account_number"
+                            fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankAccountNumber')">
+                        </x-forms.text>
+                    </div>
                 </div>
 
                 <h4 class="p-20 mb-0 f-21 font-weight-normal  border-top-grey">
@@ -592,7 +611,7 @@
 
                     $("#employee_department").html(html);
                     $("#employee_department").selectpicker(
-                    'refresh'); // refresh the bootstrap select ui
+                        'refresh'); // refresh the bootstrap select ui
                 }
             });
         });
@@ -630,7 +649,7 @@
 
                     $("#employee_designation").html(html);
                     $("#employee_designation").selectpicker(
-                    'refresh'); // refresh the bootstrap select ui
+                        'refresh'); // refresh the bootstrap select ui
                 }
             });
         });

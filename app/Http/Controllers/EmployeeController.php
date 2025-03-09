@@ -245,6 +245,7 @@ class EmployeeController extends AccountBaseController
      */
     public function store(StoreRequest $request)
     {
+        // dd($request->all());
         $addPermission = user()->permission('add_employees');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
@@ -263,6 +264,9 @@ class EmployeeController extends AccountBaseController
             $user->location_id = $request->location;
             $user->department_id = $request->department;
             $user->designation_id = $request->designation;
+            $user->bank_name = $request->bank_name;
+            $user->bank_account_name = $request->bank_account_name;
+            $user->bank_account_number = $request->bank_account_number;
 
             if ($request->has('login')) {
                 $user->login = $request->login;
@@ -501,6 +505,9 @@ class EmployeeController extends AccountBaseController
         $user->location_id = $request->location;
         $user->department_id = $request->department;
         $user->designation_id = $request->designation;
+        $user->bank_name = $request->bank_name;
+        $user->bank_account_name = $request->bank_account_name;
+        $user->bank_account_number = $request->bank_account_number;
 
         if ($request->status) {
             $lastDate = $request->last_date ? Carbon::createFromFormat($this->company->date_format, $request->last_date, $this->company->timezone) : null;
