@@ -222,25 +222,30 @@
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.breakTimeLateDetection')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($breakTimeLateDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                            @if ($breakTimeLateCount < 1)
+                                                {{ currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
+                                            @else
+                                                {{ currency_format($breakTimeLateDetection, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}
+                                            @endif
+                                        </td>
                                     </tr>
 
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.creditSales')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                            {{ currency_format($monthlyOtherDetection?->credit_sales, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
                                     </tr>
 
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.deposit')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                            {{ currency_format($monthlyOtherDetection?->deposit, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
                                     </tr>
 
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.loan')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format(0, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
+                                            {{ currency_format($monthlyOtherDetection?->loan, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
                                     </tr>
 
 

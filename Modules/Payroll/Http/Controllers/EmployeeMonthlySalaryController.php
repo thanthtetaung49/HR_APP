@@ -81,7 +81,6 @@ class EmployeeMonthlySalaryController extends AccountBaseController
      */
     public function store(StoreSalary $request)
     {
-
         $viewPermission = user()->permission('manage_employee_salary');
         abort_403(!in_array($viewPermission, ['all', 'added']));
 
@@ -100,6 +99,9 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection = new Detection();
         $detection->user_id = $request->user_id;
         $detection->other_detection = $request->other_detection;
+        $detection->credit_sales = $request->credit_sales;
+        $detection->deposit = $request->deposit;
+        $detection->loan = $request->loan;
 
         $detection->save();
 
@@ -781,6 +783,9 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection = Detection::where('user_id', $user_id)->first();
         $detection->user_id = $request->user_id;
         $detection->other_detection = $request->other_detection;
+        $detection->credit_sales = $request->credit_sales;
+        $detection->deposit = $request->deposit;
+        $detection->loan = $request->loan;
         $detection->save();
 
         // $salary = EmployeeMonthlySalary::where('id', $id)->where('type', 'initial')->first();

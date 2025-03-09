@@ -21,6 +21,9 @@ return new class extends Migration
                     ->cascadeOnDelete()
                     ->cascadeOnUpdate();
             $table->integer('other_detection');
+            $table->integer('credit_sales');
+            $table->integer('deposit');
+            $table->integer('loan');
             $table->string('type')->default('initial');
             $table->timestamps();
         });

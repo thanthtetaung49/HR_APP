@@ -95,6 +95,16 @@
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherDetection')" fieldName="other_detection" fieldId="other_detection"
                             :fieldPlaceholder="__('payroll::modules.payroll.otherDetection')" :fieldValue="$salarySlip->user->userDetection->other_detection"/>
                     </div>
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.creditSales')" fieldName="credit_sales" fieldId="credit_sales"
+                            :fieldPlaceholder="__('payroll::modules.payroll.creditSales')" :fieldValue="$salarySlip->user->userDetection->credit_sales"/>
+                    </div> <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.deposit')" fieldName="deposit" fieldId="deposit"
+                            :fieldPlaceholder="__('payroll::modules.payroll.deposit')" :fieldValue="$salarySlip->user->userDetection->deposit"/>
+                    </div> <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.Loan')" fieldName="loan" fieldId="loan"
+                            :fieldPlaceholder="__('payroll::modules.payroll.Loan')" :fieldValue="$salarySlip->user->userDetection->loan"/>
+                    </div>
                 </div>
 
                 {{-- <div class="row p-20">

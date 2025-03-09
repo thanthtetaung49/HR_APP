@@ -601,6 +601,8 @@ class AttendanceController extends AccountBaseController
 
         $employeeShiftId = $this->attendanceSettings->id;
 
+        // dd($employeeShiftId);
+
         $shiftStartTime = $clockIn->format('Y-m-d') . ' ' . $this->attendanceSettings->office_start_time;
 
         if (Carbon::parse($this->attendanceSettings->office_start_time)->gt(Carbon::parse($this->attendanceSettings->office_end_time))) {

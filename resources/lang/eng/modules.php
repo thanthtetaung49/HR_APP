@@ -8,7 +8,10 @@ return array(
         'specialAllowance' => 'Special Allowance'
     ),
     'detection' => array(
-        'otherDetection' => 'Other Detection'
+        'otherDetection' => 'Other Detection',
+        'creditSales' => 'Credit Sales',
+        'deposit' => 'Deposit',
+        'loan' => 'Loan'
     ),
     'dashboard' => array(
         'totalClients' => 'Total Clients',

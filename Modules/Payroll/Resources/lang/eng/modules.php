@@ -2,6 +2,9 @@
 
 return array(
     'payroll' => array(
+        'creditSales' => 'Credit Sales',
+        'deposit' => 'Deposit',
+        'Loan' => 'Loan',
         'absent' => 'Absent',
         'leaveWithoutPay' => 'Leave Without Pay',
         'gazattedAllowance' => 'Gazatted Allowance',

@@ -56,7 +56,6 @@
                 file: true,
                 data: $('#import-salary-data-form').serialize(),
                 success: function (response) {
-                    console.log(response);
                     if (response.status === 'success') {
                         $('#import_table').html(response.view);
                     }

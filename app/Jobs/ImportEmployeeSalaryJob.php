@@ -71,8 +71,12 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $technical_allowance = $this->isColumnExists('technical_allowance') ? $this->getColumnValue('technical_allowance') : 0;
                     $living_cost_allowance = $this->isColumnExists('living_cost_allowance') ? $this->getColumnValue('living_cost_allowance') : 0;
                     $special_allowance = $this->isColumnExists('special_allowance') ? $this->getColumnValue('special_allowance') : 0;
-                    $other_detection = $this->isColumnExists('other_detection') ? $this->getColumnValue('other_detection') : 0;  
-                    
+                    $other_detection = $this->isColumnExists('other_detection') ? $this->getColumnValue('other_detection') : 0;
+                    $credit_sales = $this->isColumnExists('credit_sales') ? $this->getColumnValue('credit_sales') : 0;
+                    $deposit = $this->isColumnExists('deposit') ? $this->getColumnValue('deposit') : 0;
+                    $loan = $this->isColumnExists('loan') ? $this->getColumnValue('loan') : 0;
+
+
                     $allowance = new Allowance();
                     $allowance->user_id = $user->id;
                     $allowance->basic_salary = $basic_salary;
@@ -80,11 +84,14 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $allowance->living_cost_allowance = $living_cost_allowance;
                     $allowance->special_allowance = $special_allowance;
 
-                    
+
                     $detection = new Detection();
                     $detection->user_id = $user->id;
                     $detection->other_detection = $other_detection;
-                    
+                    $detection->credit_sales = $credit_sales;
+                    $detection->deposit = $deposit;
+                    $detection->loan = $loan;
+
                     $allowance->save();
                     $detection->save();
 

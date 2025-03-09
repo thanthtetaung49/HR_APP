@@ -261,8 +261,15 @@ class PayrollController extends AccountBaseController
 
         $basicSalary = $this->payableSalary;
 
-        // $this->beforeLateDetection = ($attLateBeforeFifteenMinutes / 3) * $this->perDaySalary;
-        $this->breakTimeLateDetection = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
+        $totalLateTime = $attLateBeforeFifteenMinutes + $attBreakTime;
+        $this->breakTimeLateCount = floor($totalLateTime / 3);
+
+        $this->breakTimeLateDetection = 0;
+
+        for ($i = 0; $i <  $this->breakTimeLateCount; $i++) {
+            $this->breakTimeLateDetection = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
+        }
+
         $this->afterLateDetection = ($attLateAfterFifteenMinutes * $this->perDaySalary);
         $this->leaveWithoutPayDetection = ($leaveWithoutPayInMonth * $this->perDaySalary);
         $this->absent = $absentInMonth * $this->perDaySalary;
@@ -639,6 +646,9 @@ class PayrollController extends AccountBaseController
 
         // detection
         $userDetection->other_detection = $request->other_detection;
+        $userDetection->credit_sales = $request->credit_sales;
+        $userDetection->deposit = $request->deposit;
+        $userDetection->loan = $request->loan;
 
         $salarySlip->save();
         $userAllowance->save();
@@ -1666,8 +1676,15 @@ class PayrollController extends AccountBaseController
 
         $basicSalary = $this->payableSalary;
 
-        // $this->beforeLateDetection = ($attLateBeforeFifteenMinutes / 3) * $this->perDaySalary;
-        $this->breakTimeLateDetection = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
+        $totalLateTime = $attLateBeforeFifteenMinutes + $attBreakTime;
+        $this->breakTimeLateCount = floor($totalLateTime / 3);
+
+        $this->breakTimeLateDetection = 0;
+
+        for ($i = 0; $i <  $this->breakTimeLateCount; $i++) {
+            $this->breakTimeLateDetection = (($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
+        }
+
         $this->afterLateDetection = ($attLateAfterFifteenMinutes * $this->perDaySalary);
         $this->leaveWithoutPayDetection = ($leaveWithoutPayInMonth * $this->perDaySalary);
         $this->absent = $absentInMonth * $this->perDaySalary;

@@ -272,6 +272,16 @@
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherDetection')" fieldName="other_detection"
                                         fieldId="other_detection" :fieldPlaceholder="__('payroll::modules.payroll.otherDetection')" />
                                 </div>
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.creditSales')" fieldName="credit_sales" fieldId="credit_sales"
+                                        :fieldPlaceholder="__('payroll::modules.payroll.creditSales')"/>
+                                </div> <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.deposit')" fieldName="deposit" fieldId="deposit"
+                                        :fieldPlaceholder="__('payroll::modules.payroll.deposit')"/>
+                                </div> <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.Loan')" fieldName="loan" fieldId="loan"
+                                        :fieldPlaceholder="__('payroll::modules.payroll.Loan')"/>
+                                </div>
                             </div>
 
                             <div class="border-bottom-grey"></div>

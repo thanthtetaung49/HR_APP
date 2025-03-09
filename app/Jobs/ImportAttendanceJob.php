@@ -128,9 +128,18 @@ class ImportAttendanceJob implements ShouldQueue
 
                         $attendance->half_day = $half_day;
 
+                        $employeeShift = EmployeeShiftSchedule::with('shift')
+                            ->where('user_id', $user->id)
+                            ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
+                            ->first();
+
                         $attendanceSettings = $this->attendanceShift($showClockIn);
 
-                        $attendance->employee_shift_id = $attendanceSettings->id;
+                        if (isset($employeeShift)) {
+                            $attendance->employee_shift_id = $employeeShift->employee_shift_id;
+                        } else {
+                            $attendance->employee_shift_id = $attendanceSettings->id;
+                        }
 
                         $attendance->shift_start_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
 
@@ -143,7 +152,6 @@ class ImportAttendanceJob implements ShouldQueue
                         $attendance->half_day_late = $this->half_day_late;
 
                         $attendance->save();
-
                     }
 
                     DB::commit();

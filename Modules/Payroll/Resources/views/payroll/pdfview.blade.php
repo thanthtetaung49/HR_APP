@@ -366,7 +366,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.creditSales')</td>
                             <td align="right" class="text-uppercase">
-                              {{ currency_format(0, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                              {{ currency_format($monthlyOtherDetection?->credit_sales, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                               {!! htmlentities(
                                 $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                             ) !!}
@@ -376,7 +376,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.deposit')</td>
                             <td align="right" class="text-uppercase">
-                              {{ currency_format(0, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                              {{ currency_format($monthlyOtherDetection?->deposit, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                               {!! htmlentities(
                                 $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                             ) !!}
@@ -386,7 +386,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.loan')</td>
                             <td align="right" class="text-uppercase">
-                              {{ currency_format(0, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                              {{ currency_format($monthlyOtherDetection?->loan, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                               {!! htmlentities(
                                 $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                             ) !!}
