@@ -261,6 +261,7 @@
             } else {
                 $("#selectEmployee").find("option").prop("selected", false);
             }
+            $("#selectEmployee").selectpicker('refresh');
         })
 
         $('#useAttendance').change(function() {
