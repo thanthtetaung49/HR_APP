@@ -2391,18 +2391,14 @@ class PayrollController extends AccountBaseController
     public function countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData)
     {
         $totalPresent = Attendance::select(
-            DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount'),
-            'attendances.*'
+            DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
         )
-            ->orWhere('employee_shift_id', [4, 5]) // 4 and 5 are evening  shift
+            ->whereIn('employee_shift_id', [4, 5]) // 4 and 5 are evening  shift
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->toDateString())
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->toDateString())
-            // ->where('employee_shift_id', 4)
-            // ->where('employee_shift_id', 5)
             ->where('half_day', 'no')
             ->where('user_id', $userId)
             ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
-            ->groupBy(DB::raw('DATE(attendances.clock_in_time)'))
             ->get();
 
         if ($totalPresent->isNotEmpty()) {
