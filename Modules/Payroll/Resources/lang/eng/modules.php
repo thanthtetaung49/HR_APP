@@ -2,6 +2,9 @@
 
 return array(
     'payroll' => array(
+        'selectAllEmployee' => 'Select All Employee',
+        'offDayHolidaySalary' => 'OffDay/Holiday Salary',
+        'totalNonWorkingDaySalary' => 'Total Non Working Day Salary',
         'bankName' => "Bank Name",
         'bankAccountNumber' => "Bank Account Number",
         'creditSales' => 'Credit Sales',

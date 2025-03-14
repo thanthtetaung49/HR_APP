@@ -972,6 +972,7 @@ return array(
     'importDealExcelInfo' => 'Date format should be in Y-m-d (e.g. 2022-04-21) format. Make sure the date format is correct in the excel file.',
     'backToClient' => 'Back to Clients',
     'backToAttendance' => 'Back to Attendance',
+    'backToEmployeeSalary' => 'Back to Employee Salary',
     'backToLead' => 'Back to Leads',
     'backToDeal' => 'Back to Deals',
     'backToProject' => 'Back to Projects',

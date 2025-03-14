@@ -319,6 +319,26 @@
                             </td>
                         </tr>
 
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.offDayHolidaySalary')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($offDayHolidaySalary, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.totalNonWorkingDaySalary')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($totalNonWorkingDaySalary, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+
                     </tbody>
                 </table>
                 <!-- Table for Details -->

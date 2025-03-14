@@ -90,22 +90,27 @@
                     <x-form id="genrate-payroll-form" method="PUT">
                         <div class="row">
 
-                            <div class="col-4 mb-2 firstRow">
+                            <div class="col-3 mb-2 firstRow">
                                 <x-forms.checkbox fieldId="includeExpenseClaims" checked :fieldLabel="__('payroll::modules.payroll.includeExpenseClaims')"
                                     fieldName="includeExpenseClaims" />
                             </div>
-                            <div class="col-4 mb-2 firstRow">
+                            <div class="col-3 mb-2 firstRow">
                                 <x-forms.checkbox fieldId="addTimelogs" :fieldLabel="__('payroll::modules.payroll.addTimelogs')" fieldName="addTimelogs" />
                             </div>
-                            <div class="col-4 mb-2 firstRow">
+                            <div class="col-3 mb-2 firstRow">
                                 <x-forms.checkbox fieldId="useAttendance" :popover="__('payroll::messages.useAttendance')" :fieldLabel="__('payroll::modules.payroll.useAttendance')"
                                     fieldName="useAttendance" />
+                            </div>
+                            <div class="col-3 mb-2 firstRow">
+                                <x-forms.checkbox fieldId="selectAllEmployee" :popover="__('payroll::messages.selectAllEmployeeMsg')" :fieldLabel="__('payroll::modules.payroll.selectAllEmployee')"
+                                    fieldName="selectAllEmployee"/>
                             </div>
                             <div class="col-md-4 mb-4">
                                 <label class="f-14 text-dark-grey mb-12 my-3"
                                     for="{{ $field->name . '_' . $field->id }}">{{ $field->label }}</label>
                                 <select class="form-control select-picker" name="{{ $field->name }}"
-                                    id="{{ $field->name . '_' . $field->id }}" data-container="body" data-live-search="true">
+                                    id="{{ $field->name . '_' . $field->id }}" data-container="body"
+                                    data-live-search="true">
                                     <option value="all">@lang('app.all')</option>
 
                                     @foreach ($field->values as $value)
@@ -201,7 +206,7 @@
             // }
         });
 
-        $("#{{ $field->name . '_' . $field->id }}").change(function () {
+        $("#{{ $field->name . '_' . $field->id }}").change(function() {
             var fieldId = $(this).val();
             var cycle = $('#payrollCycle').val();
 
@@ -209,11 +214,11 @@
                 type: "GET",
                 url: "{{ route('payroll.get-employee') }}",
                 data: {
-                    cycleId : cycle,
+                    cycleId: cycle,
                     fieldId: fieldId,
                     _token: "{{ csrf_token() }}"
                 },
-                success: function (response) {
+                success: function(response) {
                     if (response.status == 'success') {
                         $('#selectEmployee').html(response.data);
                         $('#selectEmployee').selectpicker('refresh');
@@ -248,6 +253,15 @@
         }
 
         $('#selectEmployee').selectpicker();
+
+        $("#selectAllEmployee").change(function () {
+            let selectedValues = $(this).prop('checked');
+            if (selectedValues) {
+                $("#selectEmployee").find("option").prop("selected", true);
+            } else {
+                $("#selectEmployee").find("option").prop("selected", false);
+            }
+        })
 
         $('#useAttendance').change(function() {
             if ($('#useAttendance').prop('checked')) {

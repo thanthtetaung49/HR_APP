@@ -41,7 +41,6 @@ class ImportEmployeeSalaryJob implements ShouldQueue
         $this->row = $row;
         $this->columns = $columns;
         $this->company = $company;
-
     }
 
     /**
@@ -51,9 +50,10 @@ class ImportEmployeeSalaryJob implements ShouldQueue
      */
     public function handle()
     {
-        if ($this->isColumnExists('email') && $this->isColumnExists('basic_salary') &&
-        $this->isColumnExists('technical_allowance') && $this->isColumnExists('living_cost_allowance') &&
-        $this->isColumnExists('special_allowance') && $this->isColumnExists('other_detection')
+        if (
+            $this->isColumnExists('email') && $this->isColumnExists('basic_salary') &&
+            $this->isColumnExists('technical_allowance') && $this->isColumnExists('living_cost_allowance') &&
+            $this->isColumnExists('special_allowance') && $this->isColumnExists('other_detection')
         ) {
 
             // user that have employee role
@@ -76,24 +76,29 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $deposit = $this->isColumnExists('deposit') ? $this->getColumnValue('deposit') : 0;
                     $loan = $this->isColumnExists('loan') ? $this->getColumnValue('loan') : 0;
 
+                    $allowance = Allowance::firstOrNew(['user_id' => $user->id]);
+                    $detection = Detection::firstOrNew(['user_id' => $user->id]);
 
-                    $allowance = new Allowance();
-                    $allowance->user_id = $user->id;
-                    $allowance->basic_salary = $basic_salary;
-                    $allowance->technical_allowance = $technical_allowance;
-                    $allowance->living_cost_allowance = $living_cost_allowance;
-                    $allowance->special_allowance = $special_allowance;
+                    if (!$allowance->exists) {
+                        $allowance->basic_salary = $basic_salary;
+                    }
 
+                    $allowance->fill([
+                        'technical_allowance' => $technical_allowance,
+                        'living_cost_allowance' => $living_cost_allowance,
+                        'special_allowance' => $special_allowance,
+                    ]);
 
-                    $detection = new Detection();
-                    $detection->user_id = $user->id;
-                    $detection->other_detection = $other_detection;
-                    $detection->credit_sales = $credit_sales;
-                    $detection->deposit = $deposit;
-                    $detection->loan = $loan;
+                    $detection->fill([
+                        'other_detection' => $other_detection,
+                        'credit_sales' => $credit_sales,
+                        'deposit' => $deposit,
+                        'loan' => $loan,
+                    ]);
 
                     $allowance->save();
                     $detection->save();
+
 
                     DB::commit();
                 } catch (InvalidFormatException $e) {

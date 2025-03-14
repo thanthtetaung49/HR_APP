@@ -24,7 +24,6 @@ $content = "<div class='d-flex align-items-center text-left'>
     } 
 
     @endphp
-
     <option @selected($selected) data-content="{!! $content !!}" value="{{ $userID ?? $user->id }}">
         {{ $user->name_salutation }}
     </option>

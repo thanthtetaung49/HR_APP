@@ -2,5 +2,5 @@
     'headingTitle' => __('app.importExcel') . ' ' . __('app.menu.salary'),
     'processRoute' => route('employee-salary.import.process'),
     'backRoute' => route('employee-salary.index'),
-    'backButtonText' => __('app.backToAttendance'),
+    'backButtonText' => __('app.backToEmployeeSalary'),
 ])

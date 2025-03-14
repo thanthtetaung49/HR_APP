@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'selectAllEmployeeMsg' => 'Please Select All Employee',
     'noPaymentMethodAdded' => 'No salary payment method added.',
     'noSalaryComponentsAdded' => 'No salary components added.',
     'noSalaryGroupAdded' => 'No salary group added.',

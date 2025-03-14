@@ -6,6 +6,10 @@ use Maatwebsite\Excel\Concerns\ToArray;
 
 class EmployeeSalaryImport implements ToArray
 {
+    public function __construct()
+    {
+
+    }
 
     public static function fields(): array
     {

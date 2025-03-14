@@ -169,6 +169,20 @@
                                         </td>
                                     </tr>
 
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.offDayHolidaySalary')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($offDayHolidaySalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.totalNonWorkingDaySalary')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($totalNonWorkingDaySalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
                                     {{-- @foreach ($earnings as $key => $item)
                                         @if ($key == 'Time Logs')
                                             <tr>

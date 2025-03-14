@@ -10,6 +10,7 @@ use App\Models\Leave;
 use App\Models\Expense;
 use App\Models\Holiday;
 use App\Models\Allowance;
+use App\Models\Detection;
 use App\Models\Attendance;
 use App\Models\Designation;
 use Carbon\CarbonImmutable;
@@ -20,13 +21,15 @@ use App\Models\EmployeeDetails;
 use App\Models\ExpensesCategory;
 use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\DB;
+use App\Models\EmployeeShiftSchedule;
 use Modules\Payroll\Entities\SalaryTds;
 use Modules\Payroll\Entities\SalarySlip;
 use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Entities\OvertimeRequest;
 use App\Http\Controllers\AccountBaseController;
-use App\Models\Detection;
+use App\Models\EmployeeShift;
+use Carbon\CarbonPeriod;
 use Modules\Payroll\DataTables\PayrollDataTable;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
@@ -230,6 +233,40 @@ class PayrollController extends AccountBaseController
         $attLateAfterFifteenMinutes = 0;
         $attBreakTime = $breakTimeLateMonth->count();
 
+        $holidayCountInMonth = Holiday::whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->count();
+
+        $totalLeaveCountInMonth = Leave::where('user_id',  $this->salarySlip->user_id)
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        $offDaysCountInMonth = 0;
+
+        foreach ($period as $index => $date) {
+            $dateIndex = $date->dayOfWeekIso;
+
+            $date = $date->toDateString();
+
+            $employeeShifts = EmployeeShiftSchedule::with('shift')
+                ->where('user_id',  $this->salarySlip->user_id)
+                ->whereDate('date', $date)
+                ->first();
+
+            $office_open_days = json_decode(
+                empty($employeeShifts) ? $attendanceSetting->office_open_days : $employeeShifts->shift->office_open_days
+            );
+
+            if (!in_array($dateIndex, $office_open_days)) {
+                $offDaysCountInMonth++;
+            }
+        }
+
+        $totalNonWorkingDays = $holidayCountInMonth + $offDaysCountInMonth + $totalLeaveCountInMonth;
+
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
 
@@ -269,7 +306,7 @@ class PayrollController extends AccountBaseController
             $this->breakTimeLateDetection = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) * $this->perDaySalary;
         }
 
-    //    dd($this->breakTimeLateDetection,  floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)), $this->perDaySalary, $this->salarySlip?->basic_salary, $daysInMonth);
+        //    dd($this->breakTimeLateDetection,  floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)), $this->perDaySalary, $this->salarySlip?->basic_salary, $daysInMonth);
 
         $this->afterLateDetection = ($attLateAfterFifteenMinutes * $this->perDaySalary);
         $this->leaveWithoutPayDetection = ($leaveWithoutPayInMonth * $this->perDaySalary);
@@ -277,7 +314,7 @@ class PayrollController extends AccountBaseController
 
         $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
-        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->absent;
+        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->absent;
 
         $this->overtimeAllowance = 0;
 
@@ -296,8 +333,15 @@ class PayrollController extends AccountBaseController
         $eveningShiftPresentCount = $this->countEveningShiftPresentByUser($startDate, $endDate, $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
         $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
 
+        // offDay and Holiday Amount Calculation
+        $offDaysAmount = $this->offDay($startDate, $endDate,  $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
+        $holidaysAmount = $this->holiday($startDate, $endDate,  $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
+
         $this->gazattedAllowance = $gazattedPresentCount * 3000;
         $this->eveningShiftAllowance = $eveningShiftPresentCount * 500;
+
+        $this->offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
+        $this->totalNonWorkingDaySalary = $totalNonWorkingDays * $this->perDaySalary;
 
         $this->totalAllowance =  $this->salarySlip->gross_salary;
 
@@ -528,10 +572,12 @@ class PayrollController extends AccountBaseController
         $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
         $eveningShiftPresentCout = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
 
+        // offDay and Holiday Amount Calculation
+        $offDaysAmount = $this->offDay($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+        $holidaysAmount = $this->holiday($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+
         $gazattedAllowance = $gazattedPresentCount * 3000;
         $eveningShiftAllowance = $eveningShiftPresentCout * 500;
-
-        $totalBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance + $specialAllowance + $overtimeAmount + $gazattedAllowance + $eveningShiftAllowance;
 
         $subQuery = Attendance::select(
             'clock_in_time',
@@ -597,6 +643,47 @@ class PayrollController extends AccountBaseController
         $attLateAfterFifteenMinutes = 0;
         $attBreakTime = $breakTimeLateMonth->count();
 
+        $holidayCountInMonth = Holiday::whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->count();
+
+        $totalLeaveCountInMonth = Leave::where('user_id',  $userId)
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        $offDaysCountInMonth = 0;
+
+        foreach ($period as $index => $date) {
+            $dateIndex = $date->dayOfWeekIso;
+
+            $date = $date->toDateString();
+
+            $employeeShifts = EmployeeShiftSchedule::with('shift')
+                ->where('user_id', $userId)
+                ->whereDate('date', $date)
+                ->first();
+
+            $office_open_days = json_decode(
+                empty($employeeShifts) ? $attendanceSetting->office_open_days : $employeeShifts->shift->office_open_days
+            );
+
+            if (!in_array($dateIndex, $office_open_days)) {
+                $offDaysCountInMonth++;
+            }
+        }
+
+        $totalNonWorkingDays = $holidayCountInMonth + $offDaysCountInMonth + $totalLeaveCountInMonth;
+
+        $offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
+        $totalNonWorkingDaySalary = $totalNonWorkingDays * $perDaySalary;
+
+        $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $overtimeAmount + $gazattedAllowance + $eveningShiftAllowance;
+
+        // earning calculation
+        $totalBasicSalary = $basicSalary + $allowanceCalculation + $offDayHolidaySalary + $totalNonWorkingDaySalary;
 
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
@@ -613,7 +700,6 @@ class PayrollController extends AccountBaseController
                 $attLateAfterFifteenMinutes += 1;
             }
         }
-
 
         $absentDetection = $absentInMonth * $perDaySalary;
         $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
@@ -655,7 +741,7 @@ class PayrollController extends AccountBaseController
         $userAllowance->save();
         $userDetection->save();
 
-         // $grossEarning = $request->basic_salary;
+        // $grossEarning = $request->basic_salary;
         // $totalDeductions = 0;
         // $reimbursement = $request->expense_claims;
         // $earningsName = $request->earnings_name;
@@ -908,6 +994,40 @@ class PayrollController extends AccountBaseController
         $attLateAfterFifteenMinutes = 0;
         $attBreakTime = $breakTimeLateMonth->count();
 
+        $holidayCountInMonth = Holiday::whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->count();
+
+        $totalLeaveCountInMonth = Leave::whereIn('user_id', $request->employee_id)
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        $offDaysCountInMonth = 0;
+
+        foreach ($period as $index => $date) {
+            $dateIndex = $date->dayOfWeekIso;
+
+            $date = $date->toDateString();
+
+            $employeeShifts = EmployeeShiftSchedule::with('shift')
+                ->where('user_id', $request->employee_id)
+                ->whereDate('date', $date)
+                ->first();
+
+            $office_open_days = json_decode(
+                empty($employeeShifts) ? $attendanceSetting->office_open_days : $employeeShifts->shift->office_open_days
+            );
+
+            if (!in_array($dateIndex, $office_open_days)) {
+                $offDaysCountInMonth++;
+            }
+        }
+
+        $totalNonWorkingDays = $holidayCountInMonth + $offDaysCountInMonth + $totalLeaveCountInMonth;
+
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
 
@@ -943,6 +1063,10 @@ class PayrollController extends AccountBaseController
 
             $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
             $eveningShiftPresentCout = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+
+            // offDay and Holiday Amount Calculation
+            $offDaysAmount = $this->offDay($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+            $holidaysAmount = $this->holiday($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
 
             if ($endDate->greaterThan($joiningDate)) {
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
@@ -1002,6 +1126,9 @@ class PayrollController extends AccountBaseController
 
                 $basicSalary = $payableSalary;
 
+                $offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
+                $totalNonWorkingDaySalary = $totalNonWorkingDays * $perDaySalary;
+
                 // dd([
                 //     "perDaySalary" => $perDaySalary,
                 //     "payableSalary" => $payableSalary,
@@ -1016,10 +1143,12 @@ class PayrollController extends AccountBaseController
                 // dd($absentInMonth, $perDaySalary);
 
                 // detection calculation
-                $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection + $absentDetection;
+                $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection + $monthlyOtherDetection?->credit_sales + $monthlyOtherDetection?->deposit + $monthlyOtherDetection?->loan + $absentDetection;
 
-                // allowance calculation
-                $totalBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance + $specialAllowance + $overtimeAmount + $gazattedAllowance + $eveningShiftAllowance;
+                $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $overtimeAmount + $gazattedAllowance + $eveningShiftAllowance;
+
+                // earning calculation
+                $totalBasicSalary = $basicSalary + $allowanceCalculation + $offDayHolidaySalary + $totalNonWorkingDaySalary;
 
                 // dd([
                 //     'basicSalary' => $basicSalary,
@@ -1028,7 +1157,9 @@ class PayrollController extends AccountBaseController
                 //     'specialAllowance' => $specialAllowance,
                 //     'overtimeAllowance' => $overtimeAmount,
                 //     'gazattedAllowant' => $gazattedAllowance,
-                //     'eveningShiftAllowance' => $eveningShiftAllowance
+                //     'eveningShiftAllowance' => $eveningShiftAllowance,
+                //     'offDayHolidaySalary' => $offDayHolidaySalary,
+                //     'nonWorkingDaySalary' => $totalNonWorkingDaySalary
                 // ]);
 
                 $netSalary = $totalBasicSalary - $totalDetection;
@@ -1649,6 +1780,40 @@ class PayrollController extends AccountBaseController
         $attLateAfterFifteenMinutes = 0;
         $attBreakTime = $breakTimeLateMonth->count();
 
+        $holidayCountInMonth = Holiday::whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->count();
+
+        $totalLeaveCountInMonth = Leave::where('user_id',  $this->salarySlip->user_id)
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+
+        $offDaysCountInMonth = 0;
+
+        foreach ($period as $index => $date) {
+            $dateIndex = $date->dayOfWeekIso;
+
+            $date = $date->toDateString();
+
+            $employeeShifts = EmployeeShiftSchedule::with('shift')
+                ->where('user_id',  $this->salarySlip->user_id)
+                ->whereDate('date', $date)
+                ->first();
+
+            $office_open_days = json_decode(
+                empty($employeeShifts) ? $attendanceSetting->office_open_days : $employeeShifts->shift->office_open_days
+            );
+
+            if (!in_array($dateIndex, $office_open_days)) {
+                $offDaysCountInMonth++;
+            }
+        }
+
+        $totalNonWorkingDays = $holidayCountInMonth + $offDaysCountInMonth + $totalLeaveCountInMonth;
+
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
 
@@ -1694,7 +1859,7 @@ class PayrollController extends AccountBaseController
 
         $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
-        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->absent;
+        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->absent;
 
         $this->overtimeAllowance = 0;
 
@@ -1713,8 +1878,15 @@ class PayrollController extends AccountBaseController
         $eveningShiftPresentCount = $this->countEveningShiftPresentByUser($startDate, $endDate, $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
         $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
 
+        // offDay and Holiday Amount Calculation
+        $offDaysAmount = $this->offDay($startDate, $endDate,  $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
+        $holidaysAmount = $this->holiday($startDate, $endDate,  $this->salarySlip->user_id, $holidayData); // Getting Attendance Data
+
         $this->gazattedAllowance = $gazattedPresentCount * 3000;
         $this->eveningShiftAllowance = $eveningShiftPresentCount * 500;
+
+        $this->offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
+        $this->totalNonWorkingDaySalary = $totalNonWorkingDays * $this->perDaySalary;
 
         $this->totalAllowance =  $this->salarySlip->gross_salary;
 
@@ -2107,20 +2279,94 @@ class PayrollController extends AccountBaseController
         return (isset($totalPresent[0]->presentCount)) ? ($totalPresent[0]->presentCount / 2) : 0;
     }
 
-    // public function countGazattedPresentByUser($startDate, $endDate, $userId, $holidayData)
-    // {
-    //     $totalPresent = Attendance::select(
-    //         DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount'),
-    //         DB::raw('COUNT(DISTINCT CASE WHEN DAYOFWEEK(attendances.clock_in_time) IN (1,7) THEN DATE(attendances.clock_in_time) END) as weekendCount')
-    //     )
-    //         ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
-    //         ->where('half_day', 'no')
-    //         ->where('user_id', $userId)
-    //         ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
-    //         ->get();
+    public function offDay($startDate, $endDate, $userId, $holidayData)
+    {
+        $holidayDates = Holiday::whereDate('date', '>=', $startDate)
+            ->whereDate('date', '<=', $endDate)
+            ->pluck('date')
+            ->toArray();
 
-    //     return $totalPresent[0]->weekendCount;
-    // }
+        $attendance = Attendance::select(
+            DB::raw('DISTINCT DATE(attendances.clock_in_time) as date'),
+            'attendances.employee_shift_id',
+            'employee_details.overtime_hourly_rate',
+            DB::raw('TIMESTAMPDIFF(HOUR, MIN(attendances.clock_in_time), MAX(attendances.clock_out_time)) as total_hours'),
+        )
+            ->leftJoin('users', 'users.id', '=', 'attendances.user_id')
+            ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+            ->where('attendances.half_day', 'no')
+            ->where('attendances.user_id', $userId)
+            ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+            ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayDates)
+            ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
+            ->get();
+
+        $offDaysAmount = 0;
+
+        foreach ($attendance as $data) {
+            $overtimeDate = CarbonImmutable::parse($data->date);
+            $dateIndex = $overtimeDate->dayOfWeekIso;
+            $overtime_hourly_rate = $data->overtime_hourly_rate;
+            $total_hours = $data->total_hours;
+
+            $shift = EmployeeShift::where('id', $data->employee_shift_id)->first();
+            $office_open_days = json_decode($shift->office_open_days);
+
+            if (!in_array($dateIndex, $office_open_days)) {
+                if ($data->total_hours <= 8) {
+                    $offDaysAmount += $overtime_hourly_rate * $total_hours * 2;
+                } else {
+                    $offDaysAmount += $overtime_hourly_rate * 8 * 2;
+                }
+            }
+        }
+
+        return $offDaysAmount;
+    }
+
+    public function holiday($startDate, $endDate, $userId, $holidayData)
+    {
+        $attendance = Attendance::select(
+            DB::raw('DISTINCT DATE(attendances.clock_in_time) as date'),
+            'attendances.employee_shift_id',
+            'employee_details.overtime_hourly_rate',
+            DB::raw('TIMESTAMPDIFF(HOUR, MIN(attendances.clock_in_time), MAX(attendances.clock_out_time)) as total_hours')
+        )
+            ->leftJoin('users', 'users.id', '=', 'attendances.user_id')
+            ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+            ->where('attendances.half_day', 'no')
+            ->where('attendances.user_id', $userId)
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('holidays')
+                    ->whereRaw('DATE(holidays.date) = DATE(attendances.clock_in_time)');
+            })
+            ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+            ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
+            ->get();
+
+        $holidaysAmount = 0;
+
+        foreach ($attendance as $data) {
+            $overtimeDate = CarbonImmutable::parse($data->date);
+            $dateIndex = $overtimeDate->dayOfWeekIso;
+            $overtime_hourly_rate = $data->overtime_hourly_rate;
+            $total_hours = $data->total_hours;
+
+            $shift = EmployeeShift::where('id', $data->employee_shift_id)->first();
+            $office_open_days = json_decode($shift->office_open_days);
+
+            // 1 is not offDays and 2 is offDays
+            $multiplier = in_array($dateIndex, $office_open_days) ? 1 : 2;
+            $hours = ($total_hours <= 8) ? $total_hours : 8;
+
+            $holidaysAmount = ($multiplier * $overtime_hourly_rate) * $hours * 2;
+        }
+
+        return $holidaysAmount;
+    }
 
     public function countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData)
     {
