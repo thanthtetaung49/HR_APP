@@ -88,11 +88,9 @@ class ImportAttendanceJob implements ShouldQueue
                         $clockInCount = Attendance::where('user_id', $user->id)
                             ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
                             ->count();
-                        // dd('not strict', $clockInCount);
                     }
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
-                        // dd($attendanceSettings->clockin_in_day, $clockInCount, $this->half_day_late);
 
                         if ($attendanceSettings->halfday_mark_time) {
                             $halfDayTimes = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time, $this->company->timezone);

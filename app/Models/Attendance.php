@@ -266,7 +266,7 @@ class Attendance extends BaseModel
 
             return false;
         });
-
+        
         return $attendance;
     }
 

@@ -374,7 +374,11 @@ class AttendanceController extends AccountBaseController
             )
         );
 
+        // dd($attendance->clock_in_time, $attendance->clock_out_time, $attendance->toArray());
+
         $this->attendanceActivity = Attendance::userAttendanceByDate($attendance->clock_in_time, $attendance->clock_in_time, $attendance->user_id);
+
+        // dd($this->attendanceActivity->toArray());
 
         $this->attendanceActivity->load('shift');
 
@@ -432,6 +436,8 @@ class AttendanceController extends AccountBaseController
         $this->totalTime = CarbonInterval::formatHuman($this->totalTime, true);
 
         $this->attendance = $attendance;
+
+        // dd($this->startTime, $this->endTime, $this->totalTime);
 
         return view('attendances.ajax.show', $this->data);
     }
@@ -559,6 +565,8 @@ class AttendanceController extends AccountBaseController
         $date = $carbonDate->format('Y-m-d');
         $clockIn = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->clock_in_time, $this->company->timezone);
 
+        // dd($clockIn, $clockIn->copy()->timezone(config('app.timezone')));
+
         $attendanceSettings = EmployeeShiftSchedule::with('shift')->where('user_id', $request->user_id)->where('date', $clockIn)->first();
 
         if ($attendanceSettings) {
@@ -601,8 +609,6 @@ class AttendanceController extends AccountBaseController
 
         $employeeShiftId = $this->attendanceSettings->id;
 
-        // dd($employeeShiftId);
-
         $shiftStartTime = $clockIn->format('Y-m-d') . ' ' . $this->attendanceSettings->office_start_time;
 
         if (Carbon::parse($this->attendanceSettings->office_start_time)->gt(Carbon::parse($this->attendanceSettings->office_end_time))) {
@@ -631,12 +637,14 @@ class AttendanceController extends AccountBaseController
             }
         }
 
+        // dd($clockIn, $clockOut );
+
         if (!is_null($attendance) && !$request->user_id) {
             $attendance->update([
                 'user_id' => $request->user_id,
-                'clock_in_time' => $clockIn->copy()->timezone(config('app.timezone')),
+                'clock_in_time' => $clockIn,
                 'clock_in_ip' => $request->clock_in_ip,
-                'clock_out_time' => $clockOut?->copy()->timezone(config('app.timezone')),
+                'clock_out_time' =>$clockOut ?? null,
                 'clock_out_ip' => $request->clock_out_ip,
                 'working_from' => $request->working_from,
                 'location_id' => $request->location,
@@ -665,9 +673,9 @@ class AttendanceController extends AccountBaseController
             if ($clockInCount < $this->attendanceSettings->clockin_in_day || $request->user_id) {
                 Attendance::create([
                     'user_id' => $request->user_id,
-                    'clock_in_time' => $clockIn->copy()->timezone(config('app.timezone')),
+                    'clock_in_time' => $clockIn,
                     'clock_in_ip' => $request->clock_in_ip,
-                    'clock_out_time' => $clockOut?->copy()->timezone(config('app.timezone')),
+                    'clock_out_time' => $clockOut ?? null,
                     'clock_out_ip' => $request->clock_out_ip,
                     'working_from' => $request->working_from,
                     'location_id' => $request->location,

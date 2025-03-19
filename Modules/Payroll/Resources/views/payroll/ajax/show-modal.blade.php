@@ -121,21 +121,21 @@
                                     </tr>
 
                                     <tr>
-                                        <td>@lang('payroll::modules.payroll.actualBasicSalary')</td>
+                                        <td>@lang('payroll::modules.payroll.actualBasicSalary') for {{ $month }} </td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($payableSalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
                                     <tr>
-                                        <td>@lang('payroll::modules.payroll.technicalAllowance')</td>
+                                        <td>@lang('payroll::modules.payroll.technicalAllowance') for {{ $month }}</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($technicalAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
                                     <tr>
-                                        <td>@lang('payroll::modules.payroll.livingCostAllowance')</td>
+                                        <td>@lang('payroll::modules.payroll.livingCostAllowance') for {{ $month }}</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($livingCostAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
@@ -145,6 +145,13 @@
                                         <td>@lang('payroll::modules.payroll.Overtime')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($overtimeAmount, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.offDayHolidaySalary')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($offDayHolidaySalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
@@ -162,26 +169,21 @@
                                         </td>
                                     </tr>
 
-                                    <tr>
+                                    {{-- <tr>
                                         <td>@lang('payroll::modules.payroll.specialAllowance')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($specialAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
-                                    </tr>
+                                    </tr> --}}
 
-                                    <tr>
-                                        <td>@lang('payroll::modules.payroll.offDayHolidaySalary')</td>
-                                        <td class="text-right text-uppercase">
-                                            {{ currency_format($offDayHolidaySalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
-                                        </td>
-                                    </tr>
 
-                                    <tr>
+
+                                    {{-- <tr>
                                         <td>@lang('payroll::modules.payroll.totalNonWorkingDaySalary')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($totalNonWorkingDaySalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
-                                    </tr>
+                                    </tr> --}}
 
                                     {{-- @foreach ($earnings as $key => $item)
                                         @if ($key == 'Time Logs')
