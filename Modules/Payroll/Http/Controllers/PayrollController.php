@@ -2242,9 +2242,7 @@ class PayrollController extends AccountBaseController
             ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
             ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
             ->get();
-
-        // dd('offDay', $attendance->toArray());
-
+            
         $offDaysAmount = 0;
 
         foreach ($attendance as $data) {
@@ -2253,15 +2251,7 @@ class PayrollController extends AccountBaseController
 
             $hours = ($total_hours <= 8) ? $total_hours : 8;
             $offDaysAmount += $overtime_hourly_rate * $hours * 2;
-
-            // dump([
-            //     'offDaysAmount' => $offDaysAmount,
-            //     'overtime_hourly_rate' => $overtime_hourly_rate,
-            //     'hours' => $hours
-            // ]);
         }
-
-        // dd($offDaysAmount);
 
         return $offDaysAmount;
     }
@@ -2289,8 +2279,6 @@ class PayrollController extends AccountBaseController
             ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
             ->get();
 
-        // dd('holiday', $attendance->toArray());
-
         $holidaysAmount = 0;
 
         foreach ($attendance as $data) {
@@ -2299,14 +2287,7 @@ class PayrollController extends AccountBaseController
 
             $hours = ($total_hours <= 8) ? $total_hours : 8;
             $holidaysAmount += $overtime_hourly_rate * $hours * 2;
-            // dump([
-            //     'holidayAmount' => $holidaysAmount,
-            //     'overtime_hourly_rate' => $overtime_hourly_rate,
-            //     'hours' => $hours
-            // ]);
         }
-
-        // dd($holidaysAmount);
 
         return $holidaysAmount;
     }
