@@ -17,6 +17,7 @@ use Carbon\CarbonInterval;
 use App\Models\Designation;
 use App\Scopes\ActiveScope;
 use App\Traits\ImportExcel;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use App\Models\EmployeeShift;
 use App\Models\CompanyAddress;
@@ -31,6 +32,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Models\EmployeeShiftSchedule;
 use App\Exports\AttendanceByMemberExport;
 use App\Http\Requests\ClockIn\ClockInRequest;
+use App\Http\Controllers\AccountBaseController;
 use App\Http\Requests\Attendance\StoreAttendance;
 use App\Http\Requests\Admin\Employee\ImportRequest;
 use App\Http\Requests\Attendance\StoreBulkAttendance;
@@ -725,15 +727,24 @@ class AttendanceController extends AccountBaseController
         $ant = []; // Array For attendance Data indexed by similar date
         $dateWiseData = []; // Array For Combine Data
 
-        $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth()->startOfDay();
-        $endDate = $startDate->copy()->endOfMonth()->endOfDay();
+        $month = $request->month;
+
+        $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->subMonth()->setDay(26)->startOfDay();
+        $endDate =  Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->setDay(25);
+
+        $lastDayOfMonth = $startDate->copy()->lastOfMonth()->startOfDay();
+        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 26);
+        $totalWorkingDays = $daysInMonth;
+
+        // $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth()->startOfDay();
+        // $endDate = $startDate->copy()->endOfMonth()->endOfDay();
         $userId = $request->userId;
 
         $attendances = Attendance::userAttendanceByDate($startDate, $endDate, $userId); // Getting Attendance Data
         $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
         $userId = $request->userId;
 
-        $totalWorkingDays = $startDate->daysInMonth;
+        // $totalWorkingDays = $startDate->daysInMonth;
 
         $totalWorkingDays = $totalWorkingDays - count($holidays);
         $daysPresent = Attendance::countDaysPresentByUser($startDate, $endDate, $userId);

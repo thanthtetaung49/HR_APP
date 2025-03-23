@@ -254,7 +254,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.actualBasicSalary') for {{ $month }}</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($payableSalary, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($basicSalaryPerMonth, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
