@@ -164,6 +164,12 @@ class PayrollController extends AccountBaseController
         $startDate = Carbon::parse($this->salarySlip->salary_from);
         $endDate = $startDate->clone()->parse($this->salarySlip->salary_to);
 
+        $employeeDetails = EmployeeDetails::where('user_id', $this->salarySlip->user_id)->first();
+        $joiningDate = Carbon::parse($employeeDetails->joining_date);
+        $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date) : null;
+
+        // dd($startDate, $endDate, $joiningDate, $exitDate);
+
         $subQuery = Attendance::select(
             'clock_in_time',
             DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(clock_in_time) ORDER BY clock_in_time ASC) as row_num')
@@ -284,9 +290,18 @@ class PayrollController extends AccountBaseController
         $this->perDaySalary =  $this->salarySlip?->basic_salary / $daysInMonth;
         $this->payableSalary = $this->perDaySalary * $this->salarySlip?->pay_days;
 
-        $employeeData = $this->employeeData($startDate, $endDate, $this->salarySlip->user_id);
-
+        $employeeData = $this->employeeData($startDate->clone(), $endDate->clone(), $this->salarySlip->user_id);
         $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
+
+        if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
+            $daysDifference = $joiningDate->diffInDays($endDate) + 1;
+            $this->basicSalaryPerMonth = $daysDifference *  $this->perDaySalary;
+        }
+
+        if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
+            $daysDifference = $startDate->diffInDays($exitDate) + 1;
+            $this->basicSalaryPerMonth = $daysDifference *  $this->perDaySalary;
+        }
 
         $totalLateTime = $attLateBeforeFifteenMinutes + $attBreakTime;
         $this->breakTimeLateCount = floor($totalLateTime / 3);
@@ -544,17 +559,30 @@ class PayrollController extends AccountBaseController
         $lastDayOfMonth = $startDate->clone()->lastOfMonth();
         $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 26);
 
+        $userId = $salarySlip->user_id;
         $perDaySalary = $salarySlip->basic_salary / $daysInMonth;
         $payableSalary = $perDaySalary * $salarySlip->pay_days;
         $basicSalary = $payableSalary;
+        $employeeDetails = EmployeeDetails::where('user_id', $userId)->first();
+
+        $joiningDate = Carbon::parse($employeeDetails->joining_date);
+        $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date) : null;
+
         $basicSalaryInMonth = $salarySlip->basic_salary;
 
         $technicalAllowance = $request->technical_allowance;
         $livingCostAllowance = $request->living_cost_allowance;
         $specialAllowance = $request->special_allowance;
-        $userId = $salarySlip->user_id;
 
-        $employeeDetails = EmployeeDetails::where('user_id', $userId)->first();
+        if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
+            $daysDifference = $joiningDate->diffInDays($endDate) + 1;
+            $basicSalaryInMonth = $daysDifference * $perDaySalary;
+        }
+
+        if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
+            $daysDifference = $startDate->diffInDays($exitDate) + 1;
+            $basicSalaryInMonth = $daysDifference * $perDaySalary;
+        }
 
         $overtimeAmount = OvertimeRequest::where('user_id', $userId)
             ->where('status', 'accept')
@@ -677,15 +705,8 @@ class PayrollController extends AccountBaseController
 
         $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $gazattedAllowance + $eveningShiftAllowance;
 
-        $earnings = $allowanceCalculation + $overtimeAmount + $offDayHolidaySalary + $totalNonWorkingDaySalary;
+        $earnings = $allowanceCalculation + $overtimeAmount + $offDayHolidaySalary;
         $totalBasicSalary = $basicSalaryInMonth + $earnings;
-
-        // dd($totalBasicSalary);
-
-        // $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $overtimeAmount + $gazattedAllowance + $eveningShiftAllowance;
-
-        // // earning calculation
-        // $totalBasicSalary = $basicSalary + $allowanceCalculation + $offDayHolidaySalary + $totalNonWorkingDaySalary;
 
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
@@ -936,8 +957,9 @@ class PayrollController extends AccountBaseController
         foreach ($users as $user) {
             $userId = $user->id;
             $employeeDetails = EmployeeDetails::where('user_id', $userId)->first();
-            $joiningDate = Carbon::parse($employeeDetails->joining_date)->setTimezone($this->company->timezone);
-            $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date)->setTimezone($this->company->timezone) : null;
+            $joiningDate = Carbon::parse($employeeDetails->joining_date);
+
+            $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date) : null;
 
             $payDays = $daysInMonth;
 
@@ -1067,17 +1089,19 @@ class PayrollController extends AccountBaseController
             if ($endDate->greaterThan($joiningDate)) {
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
 
+                // dd($joiningDate, $useAttendance, $startDate->setTimezone($this->company->timezone));
+
                 // Check Joining date of the employee
-                if (!$useAttendance && $joiningDate->greaterThan($startDate)) {
-                    $daysDifference = $joiningDate->diffInDays($startDate);
-                    $payDays = ($payDays - $daysDifference);
-                }
+                // if (!$useAttendance && $joiningDate->greaterThan($startDate)) {
+                //     $daysDifference = $joiningDate->diffInDays($startDate);
+                //     $payDays = ($payDays - $daysDifference);
+                // }
 
                 // Check Exit date of the employee
-                if (!$useAttendance && (!is_null($exitDate) && $endDate->greaterThan($exitDate))) {
-                    $daysDifference = $endDate->diffInDays($exitDate);
-                    $payDays = ($payDays - $daysDifference);
-                }
+                // if (!$useAttendance && (!is_null($exitDate) && $endDate->greaterThan($exitDate))) {
+                //     $daysDifference = $endDate->diffInDays($exitDate);
+                //     $payDays = ($payDays - $daysDifference);
+                // }
 
                 $monthCur = $endDate->month;
                 $curMonthDays = Carbon::parse('01-' . $monthCur . '-' . $year);
@@ -1108,6 +1132,17 @@ class PayrollController extends AccountBaseController
                 $daysInMonth = ($daysInMonth != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $daysInMonth;
 
                 $basicSalaryInMonth = $monthlySalary?->basic_salary;
+                $perDaySalary = $basicSalaryInMonth / $daysInMonth;
+
+                if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
+                    $daysDifference = $joiningDate->diffInDays($endDate) + 1;
+                    $basicSalaryInMonth = $daysDifference * $perDaySalary;
+                }
+
+                if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
+                    $daysDifference = $startDate->diffInDays($exitDate) + 1;
+                    $basicSalaryInMonth = $daysDifference * $perDaySalary;
+                }
 
                 foreach ($additionalSalaries as $additionalSalary) {
                     if ($additionalSalary->type == 'increment') {
@@ -1117,7 +1152,6 @@ class PayrollController extends AccountBaseController
                     }
                 }
 
-                $perDaySalary = $basicSalaryInMonth / $daysInMonth;
                 $payableSalary = $perDaySalary * $payDays;
 
                 $basicSalary = $payableSalary;
@@ -1146,7 +1180,7 @@ class PayrollController extends AccountBaseController
 
                 $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $gazattedAllowance + $eveningShiftAllowance;
 
-                $earnings = $allowanceCalculation + $overtimeAmount + $offDayHolidaySalary + $totalNonWorkingDaySalary;
+                $earnings = $allowanceCalculation + $overtimeAmount + $offDayHolidaySalary;
 
                 // dd([
                 //     'earnings' => $earnings,
@@ -1858,9 +1892,22 @@ class PayrollController extends AccountBaseController
         $this->perDaySalary =  $this->salarySlip?->basic_salary / $daysInMonth;
         $this->payableSalary = $this->perDaySalary * $this->salarySlip?->pay_days;
 
-        $employeeData = $this->employeeData($startDate, $endDate, $this->salarySlip->user_id);
+        $employeeDetails = EmployeeDetails::where('user_id', $this->salarySlip->user_id)->first();
+        $joiningDate = Carbon::parse($employeeDetails->joining_date);
+        $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date) : null;
 
+        $employeeData = $this->employeeData($startDate->clone(), $endDate->clone(), $this->salarySlip->user_id);
         $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
+
+        if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
+            $daysDifference = $joiningDate->diffInDays($endDate) + 1;
+            $this->basicSalaryPerMonth = $daysDifference *  $this->perDaySalary;
+        }
+
+        if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
+            $daysDifference = $startDate->diffInDays($exitDate) + 1;
+            $this->basicSalaryPerMonth = $daysDifference *  $this->perDaySalary;
+        }
 
         $totalLateTime = $attLateBeforeFifteenMinutes + $attBreakTime;
         $this->breakTimeLateCount = floor($totalLateTime / 3);

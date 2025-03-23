@@ -142,6 +142,13 @@
                                     </tr>
 
                                     <tr>
+                                        <td>@lang('payroll::modules.payroll.specialAllowance') for {{ $month }}</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($specialAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
                                         <td>@lang('payroll::modules.payroll.Overtime')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($overtimeAmount, $currency->currency ? $currency->currency->id : company()->currency->id) }}
@@ -168,14 +175,6 @@
                                             {{ currency_format($eveningShiftAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
-
-                                    {{-- <tr>
-                                        <td>@lang('payroll::modules.payroll.specialAllowance')</td>
-                                        <td class="text-right text-uppercase">
-                                            {{ currency_format($specialAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
-                                        </td>
-                                    </tr> --}}
-
 
 
                                     {{-- <tr>

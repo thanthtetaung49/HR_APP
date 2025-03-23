@@ -261,7 +261,6 @@
                             </td>
                         </tr>
 
-
                         <tr>
                             <td>@lang('payroll::modules.payroll.technicalAllowance') for {{ $month }}</td>
                             <td align="right" class="text-uppercase">
@@ -275,6 +274,15 @@
                             <td>@lang('payroll::modules.payroll.livingCostAllowance') for {{ $month }}</td>
                             <td align="right" class="text-uppercase">
                                 {{ currency_format($livingCostAllowance, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.specialAllowance') for {{ $month }}</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($specialAllowance, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -319,17 +327,6 @@
                                 ) !!}
                             </td>
                         </tr>
-                        {{-- <tr>
-                            <td>@lang('payroll::modules.payroll.specialAllowance')</td>
-                            <td align="right" class="text-uppercase">
-                                {{ currency_format($specialAllowance, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
-                                {!! htmlentities(
-                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
-                                ) !!}
-                            </td>
-                        </tr> --}}
-
-
 
                         {{-- <tr>
                             <td>@lang('payroll::modules.payroll.totalNonWorkingDaySalary')</td>
