@@ -152,7 +152,7 @@ class PayrollController extends AccountBaseController
             $this->basicSalary = $perday * 14;
         }
 
-        $this->netSalary = $this->salarySlip->net_salary;
+        // $this->netSalary = $this->salarySlip->net_salary;
         $this->acutalBasicSalary = $this->salarySlip->monthly_salary;
         $this->technicalAllowance = $this->salarySlip->user->userAllowances?->technical_allowance;
         $this->livingCostAllowance = $this->salarySlip->user->userAllowances?->living_cost_allowance;
@@ -293,11 +293,13 @@ class PayrollController extends AccountBaseController
         $employeeData = $this->employeeData($startDate->clone(), $endDate->clone(), $this->salarySlip->user_id);
         $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
 
+        // joining
         if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
             $daysDifference = $joiningDate->diffInDays($endDate) + 1;
             $this->basicSalaryPerMonth = $daysDifference *  $this->perDaySalary;
         }
 
+        // exit
         if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
             $daysDifference = $startDate->diffInDays($exitDate) + 1;
             $this->basicSalaryPerMonth = $daysDifference *  $this->perDaySalary;
@@ -359,7 +361,18 @@ class PayrollController extends AccountBaseController
         $this->offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
         $this->totalNonWorkingDaySalary = $totalNonWorkingDays * $this->perDaySalary;
 
-        $this->totalAllowance =  $this->salarySlip->gross_salary;
+        $allowanceCalculation = $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance + $this->gazattedAllowance + $this->eveningShiftAllowance;
+
+        $earnings = $allowanceCalculation + $this->overtimeAmount + $this->offDayHolidaySalary;
+
+        // earning calculation
+        $this->totalAllowance = $this->basicSalaryPerMonth  + $earnings;
+
+        $this->netSalary =$this->totalAllowance  - $this->totalDetection;
+
+        // dd($this->netSalary);
+
+        // $this->totalAllowance =  $this->salarySlip->gross_salary;
 
         // $earn = [];
 
@@ -1134,15 +1147,21 @@ class PayrollController extends AccountBaseController
                 $basicSalaryInMonth = $monthlySalary?->basic_salary;
                 $perDaySalary = $basicSalaryInMonth / $daysInMonth;
 
+                // joining date
                 if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
                     $daysDifference = $joiningDate->diffInDays($endDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
+                    // dd('Joining date', $daysDifference);
                 }
 
+                // exist date
                 if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
                     $daysDifference = $startDate->diffInDays($exitDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
+                    // dd('exist date', $daysDifference);
                 }
+
+                // dd('normal');
 
                 foreach ($additionalSalaries as $additionalSalary) {
                     if ($additionalSalary->type == 'increment') {
@@ -1763,7 +1782,7 @@ class PayrollController extends AccountBaseController
             $this->basicSalary = $perday * 14;
         }
 
-        $this->netSalary = $this->salarySlip->net_salary;
+        // $this->netSalary = $this->salarySlip->net_salary;
         $this->acutalBasicSalary = $this->salarySlip->monthly_salary;
         $this->technicalAllowance = $this->salarySlip->user->userAllowances?->technical_allowance;
         $this->livingCostAllowance = $this->salarySlip->user->userAllowances?->living_cost_allowance;
@@ -1955,7 +1974,16 @@ class PayrollController extends AccountBaseController
         $this->offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
         $this->totalNonWorkingDaySalary = $totalNonWorkingDays * $this->perDaySalary;
 
-        $this->totalAllowance =  $this->salarySlip->gross_salary;
+          $allowanceCalculation = $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance + $this->gazattedAllowance + $this->eveningShiftAllowance;
+
+        $earnings = $allowanceCalculation + $this->overtimeAmount + $this->offDayHolidaySalary;
+
+        // earning calculation
+        $this->totalAllowance = $this->basicSalaryPerMonth  + $earnings;
+
+        $this->netSalary =$this->totalAllowance  - $this->totalDetection;
+
+        // $this->totalAllowance =  $this->salarySlip->gross_salary;
 
         $this->payrollSetting = PayrollSetting::first();
         $this->extraFields = [];
