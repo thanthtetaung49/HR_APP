@@ -290,6 +290,12 @@
                                             {{ currency_format($monthlyOtherDetection?->loan, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.ssb')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($monthlyOtherDetection?->ssb, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
 
 
                                     <tr>

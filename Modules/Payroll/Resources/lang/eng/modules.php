@@ -67,6 +67,7 @@ return array(
         'creditSales' => 'Credit Sales',
         'deposit' => 'Deposit',
         'loan' => 'Loan',
+        'ssb' => 'SSB',
         'leaveWithoutPayDetection' => 'Leave Without Pay Detection',
         'totalAllowance' => 'Total Allowance',
         'paid' => 'Paid',

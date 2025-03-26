@@ -24,6 +24,7 @@ return new class extends Migration
             $table->integer('credit_sales');
             $table->integer('deposit');
             $table->integer('loan');
+            $table->integer('ssb');
             $table->string('type')->default('initial');
             $table->timestamps();
         });

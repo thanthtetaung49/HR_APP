@@ -321,7 +321,7 @@ class PayrollController extends AccountBaseController
 
         $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
-        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->absent;
+        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->monthlyOtherDetection?->ssb + $this->absent;
         $this->overtimeAllowance = 0;
 
         // dd([
@@ -742,7 +742,7 @@ class PayrollController extends AccountBaseController
         $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         // totalDetections
-        $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $request->other_detection + $request->credit_sales +  $request->deposit +  $request->loan + $absentDetection;
+        $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $request->other_detection + $request->credit_sales +  $request->deposit +  $request->loan + $request->ssb + $absentDetection;
 
         // netSalary
         $netSalary = $totalBasicSalary - $totalDetection;
@@ -774,6 +774,7 @@ class PayrollController extends AccountBaseController
         $userDetection->credit_sales = $request->credit_sales;
         $userDetection->deposit = $request->deposit;
         $userDetection->loan = $request->loan;
+        $userDetection->ssb = $request->ssb;
 
         $salarySlip->save();
         $userAllowance->save();
@@ -1144,6 +1145,7 @@ class PayrollController extends AccountBaseController
 
                 $daysInMonth = ($daysInMonth != 30 && $payrollCycleData->cycle == 'semimonthly') ? 30 : $daysInMonth;
 
+                $fixedBasicSalary = $monthlySalary?->basic_salary;
                 $basicSalaryInMonth = $monthlySalary?->basic_salary;
                 $perDaySalary = $basicSalaryInMonth / $daysInMonth;
 
@@ -1151,17 +1153,13 @@ class PayrollController extends AccountBaseController
                 if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
                     $daysDifference = $joiningDate->diffInDays($endDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
-                    // dd('Joining date', $daysDifference);
                 }
 
                 // exist date
                 if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
                     $daysDifference = $startDate->diffInDays($exitDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
-                    // dd('exist date', $daysDifference);
                 }
-
-                // dd('normal');
 
                 foreach ($additionalSalaries as $additionalSalary) {
                     if ($additionalSalary->type == 'increment') {
@@ -1185,7 +1183,7 @@ class PayrollController extends AccountBaseController
                 $absentDetection = $absentInMonth * $perDaySalary * 2;
 
                 // detection calculation
-                $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection + $monthlyOtherDetection?->credit_sales + $monthlyOtherDetection?->deposit + $monthlyOtherDetection?->loan + $absentDetection;
+                $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection + $monthlyOtherDetection?->credit_sales + $monthlyOtherDetection?->deposit + $monthlyOtherDetection?->loan + $monthlyOtherDetection?->ssb + $absentDetection;
 
                 // dd([
                 //     'lwp' => $totalLeaveWithoutPay * $perDaySalary,
@@ -1247,8 +1245,8 @@ class PayrollController extends AccountBaseController
                     'user_id' => $userId,
                     'currency_id' => $payrollSetting->currency_id,
                     'salary_group_id' => 1, // null
-                    'basic_salary' => round(($basicSalaryInMonth), 2),
-                    'monthly_salary' => round($basicSalary, 2),
+                    'basic_salary' => round(($fixedBasicSalary), 2),
+                    'monthly_salary' => round($basicSalaryInMonth, 2),
                     'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary), 2),
                     'gross_salary' => round($totalBasicSalary, 2), // null
                     'total_deductions' => round(($totalDetection), 2),
@@ -1943,7 +1941,7 @@ class PayrollController extends AccountBaseController
 
         $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
-        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->absent;
+        $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->monthlyOtherDetection?->ssb + $this->absent;
 
         $this->overtimeAllowance = 0;
 

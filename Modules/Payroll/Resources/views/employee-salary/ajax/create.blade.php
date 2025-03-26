@@ -274,13 +274,19 @@
                                 </div>
                                 <div class="col-lg-3 col-md-3">
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.creditSales')" fieldName="credit_sales" fieldId="credit_sales"
-                                        :fieldPlaceholder="__('payroll::modules.payroll.creditSales')"/>
-                                </div> <div class="col-lg-3 col-md-3">
+                                        :fieldPlaceholder="__('payroll::modules.payroll.creditSales')" />
+                                </div>
+                                <div class="col-lg-3 col-md-3">
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.deposit')" fieldName="deposit" fieldId="deposit"
-                                        :fieldPlaceholder="__('payroll::modules.payroll.deposit')"/>
-                                </div> <div class="col-lg-3 col-md-3">
+                                        :fieldPlaceholder="__('payroll::modules.payroll.deposit')" />
+                                </div>
+                                <div class="col-lg-3 col-md-3">
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.Loan')" fieldName="loan" fieldId="loan"
-                                        :fieldPlaceholder="__('payroll::modules.payroll.Loan')"/>
+                                        :fieldPlaceholder="__('payroll::modules.payroll.Loan')" />
+                                </div>
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.ssb')" fieldName="ssb" fieldId="ssb"
+                                        :fieldPlaceholder="__('payroll::modules.payroll.ssb')" />
                                 </div>
                             </div>
 

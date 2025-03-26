@@ -17,7 +17,8 @@ return array(
         'otherDetection' => 'Other Detection',
         'creditSales' => 'Credit Sales',
         'deposit' => 'Deposit',
-        'loan' => 'Loan'
+        'loan' => 'Loan',
+        'ssb' => 'SSB'
     ),
     'dashboard' => array(
         'totalClients' => 'Total Clients',

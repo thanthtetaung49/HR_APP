@@ -102,6 +102,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection->credit_sales = $request->credit_sales;
         $detection->deposit = $request->deposit;
         $detection->loan = $request->loan;
+        $detection->ssb = $request->ssb;
 
         $detection->save();
 
@@ -786,6 +787,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection->credit_sales = $request->credit_sales;
         $detection->deposit = $request->deposit;
         $detection->loan = $request->loan;
+        $detection->ssb = $request->ssb;
         $detection->save();
 
         // $salary = EmployeeMonthlySalary::where('id', $id)->where('type', 'initial')->first();

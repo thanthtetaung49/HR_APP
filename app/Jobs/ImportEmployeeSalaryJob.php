@@ -75,6 +75,7 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $credit_sales = $this->isColumnExists('credit_sales') ? $this->getColumnValue('credit_sales') : 0;
                     $deposit = $this->isColumnExists('deposit') ? $this->getColumnValue('deposit') : 0;
                     $loan = $this->isColumnExists('loan') ? $this->getColumnValue('loan') : 0;
+                    $ssb = $this->isColumnExists('ssb') ? $this->getColumnValue('ssb') : 0;
 
                     $allowance = Allowance::firstOrNew(['user_id' => $user->id]);
                     $detection = Detection::firstOrNew(['user_id' => $user->id]);
@@ -94,6 +95,7 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                         'credit_sales' => $credit_sales,
                         'deposit' => $deposit,
                         'loan' => $loan,
+                        'ssb' => $ssb
                     ]);
 
                     $allowance->save();
