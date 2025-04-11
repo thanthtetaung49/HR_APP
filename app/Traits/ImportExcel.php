@@ -3,15 +3,18 @@
 namespace App\Traits;
 
 use Carbon\Carbon;
+use App\Models\User;
 use ReflectionClass;
 use App\Helper\Files;
+use function Psl\Type\nullable;
+use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\Bus;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Models\EmployeeShiftSchedule;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Session;
 use Maatwebsite\Excel\HeadingRowImport;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
-use function Psl\Type\nullable;
 
 trait ImportExcel
 {
@@ -113,26 +116,53 @@ trait ImportExcel
             }
         }
 
-
         Session::put('leads_count', count($excelData));
 
         foreach ($excelData as $index => $row) {
+            $email = $row[0];
+
+            $user = User::where('email', $email)->whereHas('roles', function ($q) {
+                $q->where('name', 'employee');
+            })->first();
+
             $date = Carbon::parse($row[1])->format('Y-m-d');
 
             $clockIn = Carbon::parse($formattedData[$date]['clock_in_time']);
             $clockOut = Carbon::parse($formattedData[$date]['clock_out_time'])->clone()->addMinutes(45);
 
+            $employeeShift = EmployeeShiftSchedule::with('shift')
+                ->where('user_id', $user->id)
+                ->whereDate('date', $clockIn)
+                ->first();
+
+            $showClockIn = AttendanceSetting::first();
+
+            $attendanceSettings = $this->attendanceShiftData($showClockIn);
+
+            if (isset($employeeShift)) {
+                $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
+            } else {
+                $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
+            }
+
+            $halfday_mark_time = Carbon::parse($halfday_mark_time);
+
             $half_day_date = "";
 
-            if ($clockIn->greaterThan($clockOut)) {
-                $half_day_date = "yes";
+            if ($clockIn->lt($halfday_mark_time)) {
+                if ($clockIn->gt($clockOut)) {
+                    $half_day_date = "yes";
+                } else {
+                    $half_day_date = "no";
+                }
             } else {
-                $half_day_date = "no";
+                $half_day_date = "yes";
             }
 
             $jobs[] = (new $importJobClass($row, $columns, company(), $half_day_date));
         }
 
+        // dd('stop');
 
         $batch = Bus::batch($jobs)->onConnection('database')->onQueue($importClassName)->name($importClassName)->dispatch();
 
@@ -141,7 +171,8 @@ trait ImportExcel
         return $batch;
     }
 
-    public function importSalaryJobProcess($request, $importClass, $importJobClass) {
+    public function importSalaryJobProcess($request, $importClass, $importJobClass)
+    {
         // get class name from $importClass
         $importClassName = (new ReflectionClass($importClass))->getShortName();
 
@@ -174,4 +205,48 @@ trait ImportExcel
         return $batch;
     }
 
+    public function attendanceShiftData($defaultAttendanceSettings)
+    {
+        $checkPreviousDayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
+            ->where('date', now($this->company->timezone)->subDay()->toDateString())
+            ->first();
+
+        $checkTodayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
+            ->where('date', now(company()->timezone)->toDateString())
+            ->first();
+
+        $backDayFromDefault = Carbon::parse(now($this->company->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_start_time, $this->company->timezone);
+
+        $backDayToDefault = Carbon::parse(now($this->company->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_end_time, $this->company->timezone);
+
+        if ($backDayFromDefault->gt($backDayToDefault)) {
+            $backDayToDefault->addDay();
+        }
+
+        $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', now($this->company->timezone)->toDateTimeString(), 'UTC');
+
+        if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
+            $attendanceSettings = $checkPreviousDayShift;
+        } else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
+            $attendanceSettings = $defaultAttendanceSettings;
+        } else if (
+            $checkTodayShift &&
+            ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time)
+                || $nowTime->gt($checkTodayShift->shift_end_time)
+                || (!$nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) && $defaultAttendanceSettings->show_clock_in_button == 'no'))
+        ) {
+            $attendanceSettings = $checkTodayShift;
+        } else if ($checkTodayShift && !is_null($checkTodayShift->shift->early_clock_in)) {
+            $attendanceSettings = $checkTodayShift;
+        } else {
+            $attendanceSettings = $defaultAttendanceSettings;
+        }
+
+
+        if (isset($attendanceSettings->shift)) {
+            return $attendanceSettings->shift;
+        }
+
+        return $attendanceSettings;
+    }
 }

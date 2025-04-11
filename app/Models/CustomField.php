@@ -92,31 +92,28 @@ class CustomField extends BaseModel
 
         foreach ($customFields as $customField) {
             $datatables->addColumn($customField->name, function ($row) use ($fieldData, $customField, $relation) {
-
                 $finalData = $fieldData->filter(function ($value) use ($customField, $row, $relation) {
-                    return ($value->custom_field_id == $customField->id) && ($value->model_id == ($relation ? $row->{$relation}->id : $row->id));
+                    return (
+                        isset($customField->id) && $value->custom_field_id == $customField->id
+                        && isset($row->id) && $value->model_id == ($relation ? optional($row->{$relation})->id : $row->id)
+                    );
                 })->first();
 
+                if (!$finalData) {
+                    return '--';
+                }
+
                 if ($customField->type == 'select') {
-                    $data = $customField->values;
-                    $data = json_decode($data); // string to array
-
-                    $index = intval($finalData->value); // Ensure it's a valid number
-                    return $finalData ? (
-                        ($index >= 0 && $index < count($data))
-                        ? $data[$index]
-                        : '--'
-                    ) : '--';
-
-
-                    // return $finalData ? (($finalData->value >= 0 && $finalData->value != null) ? $data[$finalData->value] : '--') : '--';
+                    $data = json_decode($customField->values, true);
+                    $index = intval($finalData->value);
+                    return ($index >= 0 && $index < count($data)) ? $data[$index] : '--';
                 }
 
                 if ($customField->type == 'file') {
-                    return $finalData ? '<a href="' . asset_url_local_s3('custom_fields/' . $finalData->value) . '" target="__blank" class="text-dark-grey">' . __('app.storageSetting.viewFile') . '</a>' : '--';
+                    return '<a href="' . asset_url_local_s3('custom_fields/' . $finalData->value) . '" target="__blank" class="text-dark-grey">' . __('app.storageSetting.viewFile') . '</a>';
                 }
 
-                return $finalData ? $finalData->value : '--';
+                return $finalData->value;
             });
 
             // This will use for datatable raw column

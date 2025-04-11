@@ -72,18 +72,32 @@ class ImportAttendanceJob implements ShouldQueue
                     // $late = $this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes' ? 'yes' : 'no';
                     $half_day = $this->isColumnExists('half_day') && str($this->getColumnValue('half_day'))->lower() == 'yes' ? 'yes' : 'no';
 
+                    $employeeShift = EmployeeShiftSchedule::with('shift')
+                        ->where('user_id', $user->id)
+                        ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
+                        ->first();
+
                     $showClockIn = AttendanceSetting::first();
 
                     $attendanceSettings = $this->attendanceShift($showClockIn);
 
-                    $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
-                    $endTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
+                    if (isset($employeeShift)) {
+                        $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
+                        $endTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_end_time;
+                        $lateMarkDuration = $employeeShift->shift->late_mark_duration;
+                        $employeeShiftId = $employeeShift->employee_shift_id;
+                    } else {
+                        $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+                        $endTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
+                        $lateMarkDuration = $attendanceSettings->late_mark_duration;
+                        $employeeShiftId = $attendanceSettings->id;
+                    }
+
                     $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
                     $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $endTimestamp, $this->company->timezone);
 
                     if ($attendanceSettings->shift_type == 'strict') {
                         $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);
-                        // dd($attendanceSettings->shift_type, $clockInCount);
                     } else {
                         $clockInCount = Attendance::where('user_id', $user->id)
                             ->whereDate('clock_in_time', Carbon::parse($clock_in_time)->toDateString())
@@ -91,18 +105,14 @@ class ImportAttendanceJob implements ShouldQueue
                     }
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
-
                         if ($attendanceSettings->halfday_mark_time) {
                             $halfDayTimes = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time, $this->company->timezone);
                         }
 
                         // Check maximum attendance in a day
-                        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time, $this->company->timezone);
+                        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $officeStartTime->format('H:i:s'), $this->company->timezone);
 
-                        $lateTime = $officeStartTime->addMinutes($attendanceSettings->late_mark_duration);
-
-                        $checkTodayAttendance = Attendance::where('user_id', $user->id)
-                            ->where(DB::raw('DATE(attendances.clock_in_time)'), '=', Carbon::parse($clock_in_time)->format('Y-m-d'))->first();
+                        $lateTime = $officeStartTime->addMinutes($lateMarkDuration);
 
                         $attendance = new Attendance();
                         $attendance->user_id = $user->id;
@@ -122,29 +132,28 @@ class ImportAttendanceJob implements ShouldQueue
                             } else {
                                 $attendance->late = 'no';
                             }
-                        }
+                        };
 
                         $attendance->half_day = $half_day;
-
-                        $employeeShift = EmployeeShiftSchedule::with('shift')
-                            ->where('user_id', $user->id)
-                            ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
-                            ->first();
-
-                        $attendanceSettings = $this->attendanceShift($showClockIn);
+                        $attendance->employee_shift_id = $employeeShiftId;
 
                         if (isset($employeeShift)) {
-                            $attendance->employee_shift_id = $employeeShift->employee_shift_id;
+                            $officeStartTime =  $employeeShift->shift->office_start_time;
+                            $officeEndTime =  $employeeShift->shift->office_end_time;
                         } else {
-                            $attendance->employee_shift_id = $attendanceSettings->id;
+                            $officeStartTime = $attendanceSettings->office_start_time;
+                            $officeEndTime = $attendanceSettings->office_end_time;
                         }
 
-                        $attendance->shift_start_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+                        $attendance->shift_start_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $officeStartTime;
 
-                        if (Carbon::parse($attendanceSettings->office_start_time, $this->company->timezone)->gt(Carbon::parse($attendanceSettings->office_end_time, $this->company->timezone))) {
-                            $attendance->shift_end_time = $attendance->clock_in_time->addDay()->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
+                        $clockInOfficeStartTime = $attendance->clock_in_time->format('Y-m-d') . ' ' . $officeStartTime;
+                        $clockInOfficeEndTime = $attendance->clock_in_time->format('Y-m-d') . ' ' . $officeEndTime;
+
+                        if (Carbon::parse($clockInOfficeStartTime, $this->company->timezone)->gt($clockInOfficeEndTime, $this->company->timezone)) {
+                            $attendance->shift_end_time = $attendance->clock_in_time->addDay()->format('Y-m-d') . ' ' . $officeEndTime;
                         } else {
-                            $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
+                            $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $officeEndTime;
                         }
 
                         $attendance->half_day_late = $this->half_day_late;

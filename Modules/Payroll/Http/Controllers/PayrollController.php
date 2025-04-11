@@ -152,6 +152,7 @@ class PayrollController extends AccountBaseController
             $this->basicSalary = $perday * 14;
         }
 
+
         // $this->netSalary = $this->salarySlip->net_salary;
         $this->acutalBasicSalary = $this->salarySlip->monthly_salary;
         $this->technicalAllowance = $this->salarySlip->user->userAllowances?->technical_allowance;
@@ -167,8 +168,6 @@ class PayrollController extends AccountBaseController
         $employeeDetails = EmployeeDetails::where('user_id', $this->salarySlip->user_id)->first();
         $joiningDate = Carbon::parse($employeeDetails->joining_date);
         $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date) : null;
-
-        // dd($startDate, $endDate, $joiningDate, $exitDate);
 
         $subQuery = Attendance::select(
             'clock_in_time',
@@ -219,8 +218,6 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
-        // dd($this->salarySlip->user_id, $startDate, $endDate, $absentInMonth);
-
         $leaveWithoutPayInMonth = Leave::with(['type' => function ($query) {
             return $query->select('paid', 'type_name');
         }])->where('user_id',  $this->salarySlip->user_id)
@@ -243,12 +240,13 @@ class PayrollController extends AccountBaseController
             ->where('employee_shift_id', 1)
             ->get();
 
-        $offDaysDates = $offDays->pluck('date')->toArray();
+            $offDaysDates = $offDays->pluck('date')->toArray();
 
         $holidayCountInMonth = Holiday::whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
             ->whereNotIn('date', $offDaysDates)
             ->count();
+
 
         $totalLeaveCountInMonth = Leave::with(['type' => function ($query) {
             return $query->select('paid', 'type_name');
@@ -2474,7 +2472,7 @@ class PayrollController extends AccountBaseController
         $totalPresent = Attendance::select(
             DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
         )
-            ->whereIn('employee_shift_id', [4, 5]) // 4 and 5 are evening  shift
+            ->whereIn('employee_shift_id', [4, 5, 6, 7]) // 4, 5, 6 and 7 are evening  shift
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->toDateString())
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->toDateString())
             ->where('half_day', 'no')
