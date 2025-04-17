@@ -29,18 +29,20 @@ class ImportAttendanceJob implements ShouldQueue
     private $columns;
     private $company;
     private $half_day_late;
+    private $break_time_loop;
 
     /**
      * Create a new job instance.
      *
      * @return void
      */
-    public function __construct($row, $columns, $company = null, $half_day_late = null)
+    public function __construct($row, $columns, $company = null, $half_day_late = null, $break_time_loop = null)
     {
         $this->row = $row;
         $this->columns = $columns;
         $this->company = $company;
         $this->half_day_late = $half_day_late;
+        $this->break_time_loop = $break_time_loop;
     }
 
     /**
@@ -64,12 +66,11 @@ class ImportAttendanceJob implements ShouldQueue
                 try {
                     $now = now($this->company->timezone);
 
-                    $clock_in_time = Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_in_time'))->timezone('UTC')->format('Y-m-d H:i:s');
+                    $clock_in_time = Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_in_time'))->format('Y-m-d H:i:s');
                     $clock_in_ip = $this->isColumnExists('clock_in_ip') ? $this->getColumnValue('clock_in_ip') : '127.0.0.1';
-                    $clock_out_time = $this->isColumnExists('clock_out_time') ? Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_out_time'))->timezone('UTC')->format('Y-m-d H:i:s') : null;
+                    $clock_out_time = $this->isColumnExists('clock_out_time') ? Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_out_time'))->format('Y-m-d H:i:s') : null;
                     $clock_out_ip = $this->isColumnExists('clock_out_ip') ? $this->getColumnValue('clock_out_ip') : null;
-                    $working_from = $this->isColumnExists('working_from') ? $this->getColumnValue('working_from') : 'office';
-                    // $late = $this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes' ? 'yes' : 'no';
+                    $work_from_type = $this->isColumnExists('working_from') ? $this->getColumnValue('working_from') : 'office';
                     $half_day = $this->isColumnExists('half_day') && str($this->getColumnValue('half_day'))->lower() == 'yes' ? 'yes' : 'no';
 
                     $employeeShift = EmployeeShiftSchedule::with('shift')
@@ -120,19 +121,22 @@ class ImportAttendanceJob implements ShouldQueue
                         $attendance->clock_in_ip = $clock_in_ip;
                         $attendance->clock_out_time = $clock_out_time;
                         $attendance->clock_out_ip = $clock_out_ip;
-
-                        $attendance->working_from = $working_from;
+                        $attendance->work_from_type = $work_from_type;
                         $attendance->location_id = $user->employeeDetail->company_address_id;
 
-                        if ($this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes') {
-                            $attendance->late = 'yes';
-                        } else {
-                            if (Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone)->greaterThan($lateTime)) {
+                        if ($this->break_time_loop == 1) {
+                            $isLateMarked = $this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes';
+                            $clockInCarbon = Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone);
+
+                            if ($isLateMarked || $clockInCarbon->greaterThan($lateTime)) {
                                 $attendance->late = 'yes';
                             } else {
                                 $attendance->late = 'no';
                             }
-                        };
+                        } else {
+                            $attendance->late = 'no';
+                        }
+
 
                         $attendance->half_day = $half_day;
                         $attendance->employee_shift_id = $employeeShiftId;

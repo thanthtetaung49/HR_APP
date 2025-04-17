@@ -104,6 +104,11 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                         </x-forms.select>
                     </div>
 
+                    <div class="col-lg-2 col-md-6">
+                        <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.attendance.breakTime')" fieldName="breakTime"
+                            fieldId="breakTime" />
+                    </div>
+
                 </div>
 
                 <div class="row">

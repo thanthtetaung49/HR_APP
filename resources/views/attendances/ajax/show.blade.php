@@ -47,12 +47,12 @@
                         <h6 class="f-13">@lang('modules.attendance.clock_in')</h6>
                         {{-- <p class="mb-0">{{ $startTime->translatedFormat(company()->time_format) }} </p> --}}
                         <P class="mb-0">
-                            {{ \Carbon\Carbon::parse($startTime, company()->timezone)->setTimezone('UTC')->format('g:i a') }}
+                            {{ \Carbon\Carbon::parse($startTime, company()->timezone)->format('g:i a') }}
                         </P>
                     </div>
                     @php
-                        $start = \Carbon\Carbon::parse($startTime, company()->timezone)->setTimezone('UTC');
-                        $end = \Carbon\Carbon::parse($endTime, company()->timezone)->setTimezone('UTC');
+                        $start = \Carbon\Carbon::parse($startTime, company()->timezone);
+                        $end = \Carbon\Carbon::parse($endTime, company()->timezone);
                         $hoursDiff = $start->diffInHours($end);
                     @endphp
                     <div class="punch-info">
@@ -65,7 +65,7 @@
                         <h6 class="f-13">@lang('modules.attendance.clock_out')</h6>
                         <p class="mb-0">
                             {{-- {{ $endTime != '' ? $endTime->translatedFormat(company()->time_format) : '' }} --}}
-                            {{ $endTime != '' ? \Carbon\Carbon::parse($endTime, company()->timezone)->setTimezone('UTC')->format('g:i a') : '' }}
+                            {{ $endTime != '' ? \Carbon\Carbon::parse($endTime, company()->timezone)->format('g:i a') : '' }}
 
                             @if (isset($notClockedOut))
                                 (@lang('modules.attendance.notClockOut'))
@@ -108,7 +108,7 @@
                                         <i class="fa fa-clock"></i>
                                         {{-- {{ $item->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }} --}}
 
-                                        {{ \Carbon\Carbon::parse($item->clock_in_time, company()->timezone)->setTimezone('UTC')->format('Y-m-d g:i a') }}
+                                        {{ \Carbon\Carbon::parse($item->clock_in_time, company()->timezone)->format('Y-m-d g:i a') }}
 
                                         @if ($item->work_from_type != '')
                                             @if ($item->work_from_type == 'other')
@@ -159,7 +159,7 @@
                                         @if (!is_null($item->clock_out_time))
                                             {{-- {{ $item->clock_out_time->timezone(company()->timezone)->translatedFormat(company()->date_format . ' ' . company()->time_format) }} --}}
 
-                                            {{ \Carbon\Carbon::parse($item->clock_out_time, company()->timezone)->setTimezone('UTC')->format('Y-m-d g:i a') }}
+                                            {{ \Carbon\Carbon::parse($item->clock_out_time, company()->timezone)->format('Y-m-d g:i a') }}
 
                                             @if ($item->auto_clock_out)
                                                 <i class="fa fa-sign-out-alt ml-2"></i>

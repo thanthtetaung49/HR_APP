@@ -44,7 +44,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                 <x-forms.text class="a-timepicker" :fieldLabel="__('modules.attendance.clock_in')"
                                     :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_in_time"
                                     fieldId="clock-in-time" fieldRequired="true"
-                                    :fieldValue="(!is_null($row->clock_in_time)) ? \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $row->clock_in_time)->timezone('UTC')->translatedFormat(company()->time_format) : ''" />
+                                    :fieldValue="(!is_null($row->clock_in_time)) ? \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $row->clock_in_time)->translatedFormat(company()->time_format) : ''" />
                             </div>
                         </div>
 
@@ -74,7 +74,7 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                 <x-forms.text :fieldLabel="__('modules.attendance.clock_out')"
                                     :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_out_time"
                                     fieldId="clock-out"
-                                    :fieldValue="(!is_null($row->clock_out_time)) ? \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $row->clock_out_time)->timezone('UTC')->translatedFormat(company()->time_format) : ''" />
+                                    :fieldValue="(!is_null($row->clock_out_time)) ? \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $row->clock_out_time)->translatedFormat(company()->time_format) : ''" />
                             </div>
                         </div>
 
@@ -134,6 +134,18 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                                 <option @if ($row->work_from_type == 'other') selected @endif value="other">@lang('modules.attendance.other')</option>
                             </x-forms.select>
                         </div>
+
+                        @if ($row->total_clock_in == 0)
+                            <div class="col-lg-2 col-md-6">
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->half_day_late == 'yes')"
+                                    :fieldLabel="__('modules.attendance.breakTime')" fieldName="breakTime"
+                                    fieldId="breakTime" />
+                            </div>
+                        @elseif ($row->half_day_late == 'yes')
+                            <div class="col-lg-2 col-md-6 mt-5">
+                                <span class="badge badge-secondary">@lang('app.breakTime')</span>
+                            </div>
+                        @endif
 
                     </div>
 
@@ -219,69 +231,8 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                 var url = "{{route('attendances.update', $row->id)}}";
                 saveAttendanceForm(url);
             @else
-                var url = "{{ route('attendances.check_half_day') }}";
-                $.easyAjax({
-                    url: url,
-                    type: "POST",
-                    container: '#attendance-container',
-                    blockUI: true,
-                    disableButton: true,
-                    buttonSelector: "#save-attendance",
-                    data: $('#attendance-container').serialize(),
-                    success: function (response) {
-                        url = "{{route('attendances.store')}}";
-                        if (response.halfDayExist == true && response.requestedHalfDay == 'no' && response.halfDayDurEnd == 'no') {
-                            Swal.fire({
-                                title: "@lang('messages.sweetAlertTitle')",
-                                text: "@lang('messages.halfDayAlreadyApplied')",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                focusConfirm: false,
-                                confirmButtonText: "@lang('messages.rejectIt')",
-                                cancelButtonText: "@lang('app.cancel')",
-                                customClass: {
-                                    confirmButton: 'btn btn-primary mr-3',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                showClass: {
-                                    popup: 'swal2-noanimation',
-                                    backdrop: 'swal2-noanimation'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    saveAttendanceForm(url);
-                                }
-                            });
-
-                        } else if (response.fullDayExist == true && response.requestedFullDay == 'no') {
-                            Swal.fire({
-                                title: "@lang('messages.sweetAlertTitle')",
-                                text: "@lang('messages.fullDayAlreadyApplied')",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                focusConfirm: false,
-                                confirmButtonText: "@lang('messages.rejectIt')",
-                                cancelButtonText: "@lang('app.cancel')",
-                                customClass: {
-                                    confirmButton: 'btn btn-primary mr-3',
-                                    cancelButton: 'btn btn-secondary'
-                                },
-                                showClass: {
-                                    popup: 'swal2-noanimation',
-                                    backdrop: 'swal2-noanimation'
-                                },
-                                buttonsStyling: false
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    saveAttendanceForm();
-                                }
-                            });
-                        }else {
-                            saveAttendanceForm(url);
-                        }
-                    }
-                });
+                var url = "{{route('attendances.store')}}";
+                saveAttendanceForm(url);
             @endif
         });
     });

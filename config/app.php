@@ -117,8 +117,8 @@ return [
     |
     */
 
-    'timezone' => env('DB_TIMEZONE', 'UTC'),
-    'cron_timezone' => env('CRON_TIMEZONE', 'UTC'),
+    'timezone' => env('DB_TIMEZONE', 'Asia/Yangon'),
+    'cron_timezone' => env('CRON_TIMEZONE', 'Asia/Yangon'),
 
     /*
     |--------------------------------------------------------------------------

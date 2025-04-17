@@ -120,6 +120,7 @@ trait ImportExcel
 
         foreach ($excelData as $index => $row) {
             $email = $row[0];
+            $breakTimeLoop = $index + 1;
 
             $user = User::where('email', $email)->whereHas('roles', function ($q) {
                 $q->where('name', 'employee');
@@ -147,22 +148,22 @@ trait ImportExcel
 
             $halfday_mark_time = Carbon::parse($halfday_mark_time);
 
-            $half_day_date = "";
+            $half_day_late = "";
 
-            if ($clockIn->lt($halfday_mark_time)) {
-                if ($clockIn->gt($clockOut)) {
-                    $half_day_date = "yes";
+            if ($breakTimeLoop == 2) {
+                if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
+                    $half_day_late = 'yes';
+                } elseif ($clockIn->lt($halfday_mark_time)) {
+                    $half_day_late = 'no';
                 } else {
-                    $half_day_date = "no";
+                    $half_day_late = 'yes';
                 }
             } else {
-                $half_day_date = "yes";
+                $half_day_late = 'no';
             }
 
-            $jobs[] = (new $importJobClass($row, $columns, company(), $half_day_date));
+            $jobs[] = (new $importJobClass($row, $columns, company(), $half_day_late, $breakTimeLoop));
         }
-
-        // dd('stop');
 
         $batch = Bus::batch($jobs)->onConnection('database')->onQueue($importClassName)->name($importClassName)->dispatch();
 

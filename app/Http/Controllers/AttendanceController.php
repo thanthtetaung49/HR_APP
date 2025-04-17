@@ -529,6 +529,7 @@ class AttendanceController extends AccountBaseController
         $attendance->late = ($request->has('late')) ? 'yes' : 'no';
         $attendance->half_day = ($request->has('halfday')) ? 'yes' : 'no';
         $attendance->half_day_type = ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null;
+        $attendance->half_day_late = ($request->has('breakTime')) ? 'yes' : 'no';
         $attendance->save();
 
         return Reply::success(__('messages.attendanceSaveSuccess'));
@@ -639,8 +640,6 @@ class AttendanceController extends AccountBaseController
             }
         }
 
-        // dd($clockIn, $clockOut );
-
         if (!is_null($attendance) && !$request->user_id) {
             $attendance->update([
                 'user_id' => $request->user_id,
@@ -656,7 +655,8 @@ class AttendanceController extends AccountBaseController
                 'shift_end_time' => $shiftEndTime,
                 'late' => ($request->has('late')) ? 'yes' : 'no',
                 'half_day' => ($request->has('halfday')) ? 'yes' : 'no',
-                'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null
+                'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null,
+                'half_day_late' => ($request->has('breakTime')) ? 'yes' : 'no'
             ]);
         } else {
             $leave = Leave::where([
@@ -687,7 +687,8 @@ class AttendanceController extends AccountBaseController
                     'shift_end_time' => $shiftEndTime,
                     'work_from_type' => $request->work_from_type,
                     'half_day' => ($request->has('halfday')) ? 'yes' : 'no',
-                    'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null
+                    'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null,
+                    'half_day_late' => ($request->has('breakTime')) ? 'yes' : 'no'
                 ]);
             } else {
                 return Reply::error(__('messages.maxClockin'));
