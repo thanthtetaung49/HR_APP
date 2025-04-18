@@ -1,0 +1,141 @@
+public function checkHalfDay(Request $request)
+    {
+        dd($request->all());
+        $halfDayDurationEnded = null; // Yes  ? not on half day &  No ? on half day
+
+        if ($request->type == 'bulkMark') {
+            $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth();
+            $endDate = $startDate->copy()->endOfMonth();
+            $period = CarbonPeriod::create($startDate, $endDate);
+
+            $dates = [];
+
+            foreach ($period as $date) {
+                $dates[] = $date;
+            }
+
+            if ($request->has('user_id') && $request->user_id !== null) {
+                $leaves = Leave::whereIn('user_id', $request->user_id)
+                    ->whereIn('leave_date', $dates)
+                    ->where('status', '!=', 'rejected')
+                    ->whereIn('duration', ['half day', 'single', 'multiple'])
+                    ->get();
+            }
+
+            if (isset($leaves) && $leaves->isNotEmpty()) {
+                foreach ($leaves as $leave) {
+
+                    if ($leave->duration === 'half day') {
+                        $userShifts = User::findOrFail($leave->user_id)->shifts()->whereDate('date', $leave->leave_date)->get();
+                        if ($userShifts->isNotEmpty()) {
+                            $halfDayDurationEnded = $this->halfDayShiftCheck($leave, true, $userShifts);
+                        } else {
+                            $halfDayDurationEnded = $this->halfDayShiftCheck($leave, false);
+                        }
+                    }
+
+                    $halfDay = $leave->duration == 'half day' ? 'no' : 'yes';
+                    $this->halfDayExist = $leave->duration == 'half day';
+                    $this->requestedHalfDay = $halfDay;
+                    $this->halfDayDurEnd = $halfDayDurationEnded;
+
+                    $fullDay = ($leave->duration == 'single' || $leave->duration == 'multiple') ? 'no' : 'yes';
+                    $this->fullDayExist = $leave->duration == 'single' || $leave->duration == 'multiple';
+                    $this->requestedFullDay = $fullDay;
+
+                    $this->user = $leave->user->name;
+                }
+            }
+
+            return reply::dataOnly($this->data);
+        } else {
+            $leave = Leave::where([
+                ['user_id', $request->user_id],
+                ['leave_date', $request->attendance_date]
+            ])->where('status', '!=', 'rejected')
+                ->whereIn('duration', ['half day', 'single', 'multiple'])->first();
+
+            if (isset($leave)) {
+
+                if ($leave->duration === 'half day') {
+                    $userShifts = User::findOrFail($leave->user_id)->shifts()->whereDate('date', $leave->leave_date)->get();
+                    if ($userShifts->isNotEmpty()) {
+                        $halfDayDurationEnded = $this->halfDayShiftCheck($leave, true, $userShifts);
+                    } else {
+                        $halfDayDurationEnded = $this->halfDayShiftCheck($leave, false);
+                    }
+                }
+
+                $halfDay = $leave->duration == 'half day' ? 'no' : 'yes';
+                $this->halfDayExist = $leave->duration == 'half day' ? true : false;
+                $this->requestedHalfDay = $halfDay;
+                $this->halfDayDurEnd = $halfDayDurationEnded;
+
+                $fullDay = ($leave->duration == 'single' || $leave->duration == 'multiple') ? 'no' : 'yes';
+                $this->fullDayExist = ($leave->duration == 'single' || $leave->duration == 'multiple') ? true : false;
+                $this->requestedFullDay = $fullDay;
+
+                $this->user = $leave->user->name;
+            }
+
+            return reply::dataOnly($this->data);
+        }
+    }
+
+public function update(ClockInRequest $request, $id)
+    {
+        $attendance = Attendance::findOrFail($id);
+        $carbonDate = Carbon::parse($request->attendance_date, $this->company->timezone);
+
+        $date = $carbonDate->format('Y-m-d');
+        $clockIn = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->clock_in_time, $this->company->timezone);
+
+        if ($request->clock_out_time != '') {
+            $clockOut = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->clock_out_time, $this->company->timezone);
+
+            if ($clockIn->gt($clockOut) && !is_null($clockOut)) {
+                $clockOut = $clockOut->addDay();
+            }
+        } else {
+            $clockOut = null;
+        }
+
+        $attendances = Attendance::where('user_id', $request->user_id)
+            ->whereDate('clock_in_time', $date)
+            ->get();
+
+        $recordBeingEdited = $attendances->find($id);
+
+        $conflictingAttendance = $attendances->filter(function ($item) use ($clockIn, $clockOut, $recordBeingEdited) {
+            if ($item->id === $recordBeingEdited->id) {
+                return false;
+            }
+
+            $clockInTime = $item->clock_in_time->timezone($this->company->timezone);
+            $clockOutTime = $item->clock_out_time->timezone($this->company->timezone);
+
+            return (
+                ($clockInTime->lt($clockOut) && $clockOutTime->gt($clockIn))
+            );
+        })->first();
+
+        if ($conflictingAttendance) {
+            return Reply::error(__('messages.attendanceMarked'));
+        }
+
+        $attendance->user_id = $request->user_id;
+        $attendance->clock_in_time = $clockIn->copy()->timezone(config('app.timezone'));
+        $attendance->clock_in_ip = $request->clock_in_ip;
+        $attendance->clock_out_time = $clockOut?->copy()->timezone(config('app.timezone'));
+        $attendance->auto_clock_out = 0;
+        $attendance->clock_out_ip = $request->clock_out_ip;
+        $attendance->working_from = $request->working_from;
+        $attendance->work_from_type = $request->work_from_type;
+        $attendance->location_id = $request->location;
+        $attendance->late = ($request->has('late')) ? 'yes' : 'no';
+        $attendance->half_day = ($request->has('halfday')) ? 'yes' : 'no';
+        $attendance->half_day_type = ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null;
+        $attendance->save();
+
+        return Reply::success(__('messages.attendanceSaveSuccess'));
+    }
