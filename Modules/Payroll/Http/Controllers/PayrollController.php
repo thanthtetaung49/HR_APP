@@ -240,7 +240,7 @@ class PayrollController extends AccountBaseController
             ->where('employee_shift_id', 1)
             ->get();
 
-            $offDaysDates = $offDays->pluck('date')->toArray();
+        $offDaysDates = $offDays->pluck('date')->toArray();
 
         $holidayCountInMonth = Holiday::whereDate('date', '>=', $startDate)
             ->whereDate('date', '<=', $endDate)
@@ -263,8 +263,20 @@ class PayrollController extends AccountBaseController
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
 
-            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+            $employeeShift = EmployeeShiftSchedule::with('shift')
+                ->where('user_id', $this->salarySlip->user_id)
+                ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
+                ->first();
 
+            $attendanceSettings = $this->attendanceShift($attendanceSetting);
+
+            if (isset($employeeShift)) {
+                $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
+            } else {
+                $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+            }
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
 
             $lateTime = $officeStartTime->clone()->addMinutes(15);
 
@@ -366,7 +378,7 @@ class PayrollController extends AccountBaseController
         // earning calculation
         $this->totalAllowance = $this->basicSalaryPerMonth  + $earnings;
 
-        $this->netSalary =$this->totalAllowance  - $this->totalDetection;
+        $this->netSalary = $this->totalAllowance  - $this->totalDetection;
 
         // dd($this->netSalary);
 
@@ -722,7 +734,20 @@ class PayrollController extends AccountBaseController
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
 
-            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+            $employeeShift = EmployeeShiftSchedule::with('shift')
+                ->where('user_id', $userId)
+                ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
+                ->first();
+
+            $attendanceSettings = $this->attendanceShift($attendanceSetting);
+
+            if (isset($employeeShift)) {
+                $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
+            } else {
+                $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+            }
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
 
             $lateTime = $officeStartTime->clone()->addMinutes(15);
 
@@ -1017,7 +1042,6 @@ class PayrollController extends AccountBaseController
                 ->where('half_day_late', 'yes')
                 ->get();
 
-
             $absentInMonth = Leave::with(['type' => function ($query) {
                 return $query->select('paid', 'type_name');
             }])->where('user_id', $userId)
@@ -1046,7 +1070,20 @@ class PayrollController extends AccountBaseController
             foreach ($attendanceLateInMonth as $key => $attendanceLate) {
                 $clock_in_time = $attendanceLate->clock_in_time;
 
-                $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+                $employeeShift = EmployeeShiftSchedule::with('shift')
+                    ->where('user_id', $user->id)
+                    ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
+                    ->first();
+
+                $attendanceSettings = $this->attendanceShift($attendanceSetting);
+
+                if (isset($employeeShift)) {
+                    $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
+                } else {
+                    $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+                }
+
+                $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
 
                 $lateTime = $officeStartTime->clone()->addMinutes(15);
 
@@ -1242,7 +1279,7 @@ class PayrollController extends AccountBaseController
                 $data = [
                     'user_id' => $userId,
                     'currency_id' => $payrollSetting->currency_id,
-                    'salary_group_id' => 1, // null
+                    'salary_group_id' => null, // null
                     'basic_salary' => round(($fixedBasicSalary), 2),
                     'monthly_salary' => round($basicSalaryInMonth, 2),
                     'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary), 2),
@@ -1273,6 +1310,8 @@ class PayrollController extends AccountBaseController
                 if (is_null($userSlip) || (!is_null($userSlip) && $userSlip->status != 'paid')) {
                     SalarySlip::create($data);
                 }
+
+
 
                 // $salaryGroup = EmployeeSalaryGroup::with('salary_group.components', 'salary_group.components.component')
                 //     ->where('user_id', $userId)
@@ -1462,6 +1501,8 @@ class PayrollController extends AccountBaseController
                 // }
             }
         }
+
+        // dd('stop');
 
         return Reply::dataOnly(['status' => 'success']);
     }
@@ -1882,8 +1923,20 @@ class PayrollController extends AccountBaseController
         foreach ($attendanceLateInMonth as $key => $attendanceLate) {
             $clock_in_time = $attendanceLate->clock_in_time;
 
-            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSetting->office_start_time);
+            $employeeShift = EmployeeShiftSchedule::with('shift')
+                ->where('user_id', $this->salarySlip->user_id)
+                ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
+                ->first();
 
+            $attendanceSettings = $this->attendanceShift($attendanceSetting);
+
+            if (isset($employeeShift)) {
+                $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
+            } else {
+                $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
+            }
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
 
             $lateTime = $officeStartTime->clone()->addMinutes(15);
 
@@ -1970,14 +2023,14 @@ class PayrollController extends AccountBaseController
         $this->offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
         $this->totalNonWorkingDaySalary = $totalNonWorkingDays * $this->perDaySalary;
 
-          $allowanceCalculation = $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance + $this->gazattedAllowance + $this->eveningShiftAllowance;
+        $allowanceCalculation = $this->technicalAllowance + $this->livingCostAllowance + $this->specialAllowance + $this->gazattedAllowance + $this->eveningShiftAllowance;
 
         $earnings = $allowanceCalculation + $this->overtimeAmount + $this->offDayHolidaySalary;
 
         // earning calculation
         $this->totalAllowance = $this->basicSalaryPerMonth  + $earnings;
 
-        $this->netSalary =$this->totalAllowance  - $this->totalDetection;
+        $this->netSalary = $this->totalAllowance  - $this->totalDetection;
 
         // $this->totalAllowance =  $this->salarySlip->gross_salary;
 
@@ -2672,5 +2725,50 @@ class PayrollController extends AccountBaseController
             'totalWorkingDays' => $totalWorkingDays,
             'absentDays' => $daysAbsent
         ];
+    }
+
+    public function attendanceShift($defaultAttendanceSettings)
+    {
+        $checkPreviousDayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
+            ->where('date', now($this->company->timezone)->subDay()->toDateString())
+            ->first();
+
+        $checkTodayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
+            ->where('date', now(company()->timezone)->toDateString())
+            ->first();
+
+        $backDayFromDefault = Carbon::parse(now($this->company->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_start_time, $this->company->timezone);
+
+        $backDayToDefault = Carbon::parse(now($this->company->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_end_time, $this->company->timezone);
+
+        if ($backDayFromDefault->gt($backDayToDefault)) {
+            $backDayToDefault->addDay();
+        }
+
+        $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', now($this->company->timezone)->toDateTimeString(), 'UTC');
+
+        if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
+            $attendanceSettings = $checkPreviousDayShift;
+        } else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
+            $attendanceSettings = $defaultAttendanceSettings;
+        } else if (
+            $checkTodayShift &&
+            ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time)
+                || $nowTime->gt($checkTodayShift->shift_end_time)
+                || (!$nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) && $defaultAttendanceSettings->show_clock_in_button == 'no'))
+        ) {
+            $attendanceSettings = $checkTodayShift;
+        } else if ($checkTodayShift && !is_null($checkTodayShift->shift->early_clock_in)) {
+            $attendanceSettings = $checkTodayShift;
+        } else {
+            $attendanceSettings = $defaultAttendanceSettings;
+        }
+
+
+        if (isset($attendanceSettings->shift)) {
+            return $attendanceSettings->shift;
+        }
+
+        return $attendanceSettings;
     }
 }

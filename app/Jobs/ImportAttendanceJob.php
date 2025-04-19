@@ -85,12 +85,10 @@ class ImportAttendanceJob implements ShouldQueue
                     if (isset($employeeShift)) {
                         $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
                         $endTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_end_time;
-                        $lateMarkDuration = $employeeShift->shift->late_mark_duration;
                         $employeeShiftId = $employeeShift->employee_shift_id;
                     } else {
                         $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
                         $endTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
-                        $lateMarkDuration = $attendanceSettings->late_mark_duration;
                         $employeeShiftId = $attendanceSettings->id;
                     }
 
@@ -113,7 +111,7 @@ class ImportAttendanceJob implements ShouldQueue
                         // Check maximum attendance in a day
                         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $officeStartTime->format('H:i:s'), $this->company->timezone);
 
-                        $lateTime = $officeStartTime->addMinutes($lateMarkDuration);
+                        $lateTime = $officeStartTime->addMinutes(15);
 
                         $attendance = new Attendance();
                         $attendance->user_id = $user->id;
@@ -136,7 +134,6 @@ class ImportAttendanceJob implements ShouldQueue
                         } else {
                             $attendance->late = 'no';
                         }
-
 
                         $attendance->half_day = $half_day;
                         $attendance->employee_shift_id = $employeeShiftId;
