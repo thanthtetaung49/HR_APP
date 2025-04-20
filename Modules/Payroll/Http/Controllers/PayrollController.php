@@ -2462,6 +2462,9 @@ class PayrollController extends AccountBaseController
 
     public function holiday($startDate, $endDate, $userId, $holidayData)
     {
+        $attendanceSetting = AttendanceSetting::first();
+        $attendanceSettings = $this->attendanceShift($attendanceSetting);
+
         $attendance = Attendance::select(
             DB::raw('DISTINCT DATE(attendances.clock_in_time) as date'),
             'attendances.employee_shift_id',
@@ -2479,6 +2482,7 @@ class PayrollController extends AccountBaseController
                     ->whereRaw('DATE(holidays.date) = DATE(attendances.clock_in_time)');
             })
             ->where('attendances.employee_shift_id', '!=', 1) // employee_shift_id 1 must be offDay
+            ->where('attendances.employee_shift_id', $attendanceSettings->id )
             ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
             ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
             ->get();
