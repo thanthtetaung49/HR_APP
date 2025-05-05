@@ -1804,7 +1804,7 @@ class PayrollController extends AccountBaseController
             ->findOrFail($id);
         $this->company = $this->salarySlip->company;
 
-        $carbonMonth = Carbon::createFromFormat('m', $this->salarySlip->month);
+        $carbonMonth = Carbon::createFromFormat('m', $this->salarySlip->month)->addMonths(1);
         $this->month = $carbonMonth->format('M');
 
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
@@ -2059,7 +2059,7 @@ class PayrollController extends AccountBaseController
         $pdf->setOption('enable_php', true);
         $pdf->setOptions(['isHtml5ParserEnabled' => true, 'isRemoteEnabled' => true]);
 
-        $month = Carbon::createFromFormat('m', $this->salarySlip->month)->translatedFormat('F');
+        $month = Carbon::createFromFormat('m', $this->salarySlip->month)->addMonths(1)->translatedFormat('F');
 
         $pdf->loadView('payroll::payroll.pdfview', $this->data);
         $filename = $this->salarySlip->user->employeeDetail->employee_id . '-' . $month . '-' . $this->salarySlip->year;
