@@ -130,7 +130,7 @@ class PayrollController extends AccountBaseController
         $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method', 'payroll_cycle', 'user.userAllowances')
             ->findOrFail($id);
 
-        $carbonMonth = Carbon::createFromFormat('m', $this->salarySlip->month);
+        $carbonMonth = Carbon::createFromFormat('m', $this->salarySlip->month)->addMonths(1);
         $this->month = $carbonMonth->format('M');
 
         abort_403(!($viewPermission == 'all'
@@ -301,7 +301,8 @@ class PayrollController extends AccountBaseController
         $this->payableSalary = $this->perDaySalary * $this->salarySlip?->pay_days;
 
         $employeeData = $this->employeeData($startDate->clone(), $endDate->clone(), $this->salarySlip->user_id);
-        $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
+        // $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
+        $this->basicSalaryPerMonth = $this->salarySlip?->basic_salary;
 
         // joining
         if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
@@ -1965,7 +1966,9 @@ class PayrollController extends AccountBaseController
         $exitDate = (!is_null($employeeDetails->last_date)) ? Carbon::parse($employeeDetails->last_date) : null;
 
         $employeeData = $this->employeeData($startDate->clone(), $endDate->clone(), $this->salarySlip->user_id);
-        $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
+        // $this->basicSalaryPerMonth = ($employeeData['daysPresent'] + $employeeData['absentDays']) * $this->perDaySalary;
+
+        $this->basicSalaryPerMonth = $this->salarySlip?->basic_salary;
 
         if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
             $daysDifference = $joiningDate->diffInDays($endDate) + 1;
