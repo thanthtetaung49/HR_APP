@@ -150,17 +150,17 @@ trait ImportExcel
 
             $half_day_late = "";
 
-            if ($breakTimeLoop == 2) {
-                if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
-                    $half_day_late = 'yes';
-                } elseif ($clockIn->lt($halfday_mark_time)) {
-                    $half_day_late = 'no';
-                } else {
-                    $half_day_late = 'yes';
-                }
-            } else {
+            if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
+                $half_day_late = 'yes';
+            } elseif ($clockIn->lt($halfday_mark_time)) {
                 $half_day_late = 'no';
+            } else {
+                $half_day_late = 'yes';
             }
+            // if ($breakTimeLoop == 2) {
+            // } else {
+            //     $half_day_late = 'no';
+            // }
 
             $jobs[] = (new $importJobClass($row, $columns, company(), $half_day_late, $breakTimeLoop));
         }

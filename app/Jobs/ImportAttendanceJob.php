@@ -41,7 +41,7 @@ class ImportAttendanceJob implements ShouldQueue
         $this->row = $row;
         $this->columns = $columns;
         $this->company = $company;
-        $this->half_day_late = $half_day_late;
+        $this->half_day_late = $half_day_late; // break time late
         $this->break_time_loop = $break_time_loop;
     }
 
@@ -69,7 +69,7 @@ class ImportAttendanceJob implements ShouldQueue
                     $clock_in_time = Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_in_time'))->format('Y-m-d H:i:s');
                     $clock_in_ip = $this->isColumnExists('clock_in_ip') ? $this->getColumnValue('clock_in_ip') : '127.0.0.1';
                     $clock_out_time = $this->isColumnExists('clock_out_time') ? Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_out_time'))->format('Y-m-d H:i:s') : null;
-                    $clock_out_ip = $this->isColumnExists('clock_out_ip') ? $this->getColumnValue('clock_out_ip') : null;
+                    $clock_out_ip = $this->isColumnExists('clock_out_ip') ? $this->getColumnValue('clock_out_ip') : '127.0.0.1';
                     $work_from_type = $this->isColumnExists('working_from') ? $this->getColumnValue('working_from') : 'office';
                     $half_day = $this->isColumnExists('half_day') && str($this->getColumnValue('half_day'))->lower() == 'yes' ? 'yes' : 'no';
 
@@ -122,18 +122,20 @@ class ImportAttendanceJob implements ShouldQueue
                         $attendance->work_from_type = $work_from_type;
                         $attendance->location_id = $user->employeeDetail->company_address_id;
 
-                        if ($this->break_time_loop == 1) {
-                            $isLateMarked = $this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes';
-                            $clockInCarbon = Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone);
+                        $isLateMarked = $this->isColumnExists('late') && str($this->getColumnValue('late'))->lower() == 'yes';
+                        $clockInCarbon = Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time, $this->company->timezone);
 
-                            if ($isLateMarked || $clockInCarbon->greaterThan($lateTime)) {
-                                $attendance->late = 'yes';
-                            } else {
-                                $attendance->late = 'no';
-                            }
+                        if ($isLateMarked || $clockInCarbon->greaterThan($lateTime)) {
+                            $attendance->late = 'yes';
                         } else {
                             $attendance->late = 'no';
                         }
+                        // if ($this->break_time_loop == 1) {
+                        // } else {
+                        //     $attendance->late = 'no';
+                        // }
+
+                        // dd($attendance->late);
 
                         $attendance->half_day = $half_day;
                         $attendance->employee_shift_id = $employeeShiftId;
@@ -157,6 +159,7 @@ class ImportAttendanceJob implements ShouldQueue
                             $attendance->shift_end_time = $attendance->clock_in_time->format('Y-m-d') . ' ' . $officeEndTime;
                         }
 
+                        // half_day_late is same as break time late
                         $attendance->half_day_late = $this->half_day_late;
 
                         $attendance->save();
