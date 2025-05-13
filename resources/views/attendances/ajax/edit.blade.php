@@ -56,10 +56,10 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
                         @if ($row->total_clock_in == 0)
                             <div class="col-lg-4 col-md-6">
-                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->late == 'yes')"
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->late == 'yes' && $row->number_of_rows == 1)"
                                     :fieldLabel="__('modules.attendance.late')" fieldName="late" fieldId="lateday" />
                             </div>
-                        @elseif ($row->late == 'yes')
+                        @elseif ($row->late == 'yes' && $row->number_of_rows == 1)
                             <div class="col-lg-2 col-md-6 mt-5">
                                 <span class="badge badge-secondary">@lang('modules.attendance.late')</span>
                             </div>
@@ -135,13 +135,15 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                             </x-forms.select>
                         </div>
 
+                        {{-- {{ $row }} --}}
+
                         @if ($row->total_clock_in == 0)
                             <div class="col-lg-2 col-md-6">
-                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->half_day_late == 'yes')"
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->break_time_late == 'yes' && $row->number_of_rows == 2)"
                                     :fieldLabel="__('modules.attendance.breakTime')" fieldName="breakTime"
                                     fieldId="breakTime" />
                             </div>
-                        @elseif ($row->half_day_late == 'yes')
+                        @elseif ($row->break_time_late == 'yes' && $row->number_of_rows == 2)
                             <div class="col-lg-2 col-md-6 mt-5">
                                 <span class="badge badge-secondary">@lang('app.breakTime')</span>
                             </div>

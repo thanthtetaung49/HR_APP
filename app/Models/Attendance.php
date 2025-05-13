@@ -23,7 +23,7 @@ use Illuminate\Support\Facades\DB;
  * @property string $working_from
  * @property string $late
  * @property string $half_day
- * @property string $half_day_late
+ * @property string $break_time_late
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property int|null $added_by
@@ -266,7 +266,7 @@ class Attendance extends BaseModel
 
             return false;
         });
-        
+
         return $attendance;
     }
 

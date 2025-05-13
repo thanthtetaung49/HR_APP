@@ -194,26 +194,25 @@ class PayrollController extends AccountBaseController
 
         $halfDay = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
-            "late",
             "half_day_late",
             "half_day",
-            "clock_in_time",
-            "half_day_type"
+            "half_day_type",
+            "clock_in_time"
         )
             ->where('user_id', $this->salarySlip->user_id)
             ->whereDate('clock_in_time', '>=', $startDate)
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $totalHalfDayCount = $halfDay->count();
+        $HalfDayCountInMonth = $halfDay->count();
 
-        $halfDayLateCount = $halfDay->where('late', 'yes')
+        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
             ->get()
             ->count();
 
         $breakTimeLateMonth = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
-            "half_day_late",
+            "break_time_late",
             "clock_in_time"
         )
             ->where('user_id', $this->salarySlip->user_id)
@@ -224,7 +223,7 @@ class PayrollController extends AccountBaseController
                     ->fromSub($subQuery, 'ranked')
                     ->where('row_num', 2);
             })
-            ->where('half_day_late', 'yes')
+            ->where('break_time_late', 'yes')
             ->get();
 
         $absentInMonth = Leave::with([
@@ -248,6 +247,8 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
+
+        $leaveWithoutPayInMonth = $leaveWithoutPayInMonth + ($HalfDayCountInMonth / 2);
 
         $totalLeaveWithoutPay = 0;
 
@@ -331,7 +332,8 @@ class PayrollController extends AccountBaseController
         $this->overtimeAmount = OvertimeRequest::where('user_id', $this->salarySlip->user_id)
             ->where('status', 'accept')
             ->whereDate('date', '>=', $startDate)
-            ->whereDate('date', '<=', $endDate)->sum('amount');
+            ->whereDate('date', '<=', $endDate)
+            ->sum('amount');
 
         $this->perDaySalary = $this->salarySlip?->basic_salary / $daysInMonth;
         $this->payableSalary = $this->perDaySalary * $this->salarySlip?->pay_days;
@@ -366,7 +368,7 @@ class PayrollController extends AccountBaseController
 
         $this->absent = $absentInMonth * $this->perDaySalary * 2;
 
-        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + ($totalHalfDayCount / 2) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->monthlyOtherDetection?->ssb + $this->absent;
         $this->overtimeAllowance = 0;
@@ -680,7 +682,7 @@ class PayrollController extends AccountBaseController
 
         $breakTimeLateMonth = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
-            "half_day_late",
+            "break_time_late",
             "clock_in_time"
         )
             ->where('user_id', $userId)
@@ -691,7 +693,7 @@ class PayrollController extends AccountBaseController
                     ->fromSub($subQuery, 'ranked')
                     ->where('row_num', 2);
             })
-            ->where('half_day_late', 'yes')
+            ->where('break_time_late', 'yes')
             ->get();
 
         $attendanceLateInMonth = Attendance::select(
@@ -711,20 +713,19 @@ class PayrollController extends AccountBaseController
 
         $halfDay = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
-            "late",
             "half_day_late",
             "half_day",
-            "clock_in_time",
-            "half_day_type"
+            "half_day_type",
+            "clock_in_time"
         )
             ->where('user_id', $userId)
             ->whereDate('clock_in_time', '>=', $startDate)
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $totalHalfDayCount = $halfDay->count();
+        $HalfDayCountInMonth = $halfDay->count();
 
-        $halfDayLateCount = $halfDay->where('late', 'yes')
+        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
             ->get()
             ->count();
 
@@ -738,6 +739,8 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
+
+        $leaveWithoutPayInMonth = $leaveWithoutPayInMonth + ($HalfDayCountInMonth / 2);
 
         $absentInMonth = Leave::with([
             'type' => function ($query) {
@@ -830,7 +833,7 @@ class PayrollController extends AccountBaseController
 
         $absentDetection = $absentInMonth * $perDaySalary * 2;
 
-        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + ($totalHalfDayCount / 2) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         // totalDetections
         $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $request->other_detection + $request->credit_sales + $request->deposit + $request->loan + $request->ssb + $absentDetection;
@@ -1094,28 +1097,29 @@ class PayrollController extends AccountBaseController
                 })
                 ->get();
 
+            // dd($attendanceLateInMonth->toArray());
+
             $halfDay = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),
-                "late",
                 "half_day_late",
                 "half_day",
-                "clock_in_time",
-                "half_day_type"
+                "half_day_type",
+                "clock_in_time"
             )
                 ->where('user_id', $userId)
                 ->whereDate('clock_in_time', '>=', $startDate)
                 ->whereDate('clock_in_time', '<=', $endDate)
                 ->where('half_day', 'yes');
 
-            $totalHalfDayCount = $halfDay->count();
+            $HalfDayCountInMonth = $halfDay->count();
 
-            $halfDayLateCount = $halfDay->where('late', 'yes')
+            $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
                 ->get()
                 ->count();
 
             $breakTimeLateMonth = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),
-                "half_day_late",
+                "break_time_late",
                 "clock_in_time"
             )
                 ->where('user_id', $userId)
@@ -1126,8 +1130,10 @@ class PayrollController extends AccountBaseController
                         ->fromSub($subQuery, 'ranked')
                         ->where('row_num', 2);
                 })
-                ->where('half_day_late', 'yes')
+                ->where('break_time_late', 'yes')
                 ->get();
+
+            // dd($breakTimeLateMonth->toArray());
 
             $absentInMonth = Leave::with([
                 'type' => function ($query) {
@@ -1150,6 +1156,14 @@ class PayrollController extends AccountBaseController
                 ->whereDate('leave_date', '>=', $startDate)
                 ->whereDate('leave_date', '<=', $endDate)
                 ->count();
+
+            $leaveWithoutPayInMonth = $leaveWithoutPayInMonth + ($HalfDayCountInMonth / 2);
+
+            // dd([
+            //     'totalLwp' => $totalLeaveWithoutPayInMonth,
+            //     'lwpInMonth' => $leaveWithoutPayInMonth,
+            //     'halfDayCountInMonth' => ($HalfDayCountInMonth / 2)
+            // ]);
 
             $totalLeaveWithoutPay = 0;
 
@@ -1194,7 +1208,15 @@ class PayrollController extends AccountBaseController
                 }
             }
 
-            $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + ($totalHalfDayCount / 2) + $leaveWithoutPayInMonth;
+            $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
+
+            // dd([
+            //     'before15' => $attLateBeforeFifteenMinutes,
+            //     'after15' => $attLateAfterFifteenMinutes,
+            //     'break' => $attBreakTime,
+            //     'lwpInMonth' => $leaveWithoutPayInMonth,
+            //     'total' => $totalLeaveWithoutPay
+            // ]);
 
             // dd([
             //     'before15' => $attLateBeforeFifteenMinutes,
@@ -1328,12 +1350,15 @@ class PayrollController extends AccountBaseController
                 // detection calculation
                 $totalDetection = ($totalLeaveWithoutPay * $perDaySalary) + $monthlyOtherDetection?->other_detection + $monthlyOtherDetection?->credit_sales + $monthlyOtherDetection?->deposit + $monthlyOtherDetection?->loan + $monthlyOtherDetection?->ssb + $absentDetection;
 
+                // dd($perDaySalary);
+
                 // dd([
                 //     'lwp' => $totalLeaveWithoutPay * $perDaySalary,
                 //     'otherDetection' => $monthlyOtherDetection?->other_detection,
                 //     'creditSales' => $monthlyOtherDetection?->credit_sales,
                 //     'deposit' => $monthlyOtherDetection?->deposit,
                 //     'loan' => $monthlyOtherDetection?->loan,
+                //     'ssb' => $monthlyOtherDetection?->ssb,
                 //     'absent' => $absentDetection
                 // ]);
 
@@ -1964,26 +1989,25 @@ class PayrollController extends AccountBaseController
 
         $halfDay = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
-            "late",
             "half_day_late",
             "half_day",
-            "clock_in_time",
-            "half_day_type"
+            "half_day_type",
+            "clock_in_time"
         )
             ->where('user_id', $this->salarySlip->user_id)
             ->whereDate('clock_in_time', '>=', $startDate)
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $totalHalfDayCount = $halfDay->count();
+        $HalfDayCountInMonth = $halfDay->count();
 
-        $halfDayLateCount = $halfDay->where('late', 'yes')
+        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
             ->get()
             ->count();
 
         $breakTimeLateMonth = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
-            "half_day_late",
+            "break_time_late",
             "clock_in_time"
         )
             ->where('user_id', $this->salarySlip->user_id)
@@ -1994,7 +2018,7 @@ class PayrollController extends AccountBaseController
                     ->fromSub($subQuery, 'ranked')
                     ->where('row_num', 2);
             })
-            ->where('half_day_late', 'yes')
+            ->where('break_time_late', 'yes')
             ->get();
 
         $absentInMonth = Leave::with([
@@ -2017,6 +2041,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
+        $leaveWithoutPayInMonth = $leaveWithoutPayInMonth + ($HalfDayCountInMonth / 2);
 
         $totalLeaveWithoutPay = 0;
 
@@ -2131,7 +2156,7 @@ class PayrollController extends AccountBaseController
         $this->leaveWithoutPayDetection = ($leaveWithoutPayInMonth * $this->perDaySalary);
         $this->absent = $absentInMonth * $this->perDaySalary * 2;
 
-        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + ($totalHalfDayCount / 2) + $leaveWithoutPayInMonth;
+        $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
         $this->totalDetection = ($totalLeaveWithoutPay * $this->perDaySalary) + $this->monthlyOtherDetection?->other_detection + $this->monthlyOtherDetection?->credit_sales + $this->monthlyOtherDetection?->deposit + $this->monthlyOtherDetection?->loan + $this->monthlyOtherDetection?->ssb + $this->absent;
 

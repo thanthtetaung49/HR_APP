@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
-            $table->enum('break_time_late', ['yes', 'no'])->default('no')->after('late');
+            $table->enum('half_day_late', ['yes', 'no'])->default('no')->after('late');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('attendances', function (Blueprint $table) {
-            $table->dropColumn('break_time_late');
+            $table->dropColumn('half_day_late');
         });
     }
 };

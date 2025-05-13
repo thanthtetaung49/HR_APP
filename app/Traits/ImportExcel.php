@@ -107,11 +107,27 @@ trait ImportExcel
 
         $formattedData = [];
 
-        foreach ($groupedData as $date => $records) {
-            if (key($records) == 0 || key($records) == 1) {
-                $formattedData[$date] = [
-                    "clock_in_time" => $records[1]["clock_in_time"],
-                    "clock_out_time" => $records[0]["clock_out_time"],
+        $finalData = [];
+
+        foreach ($groupedData as $dailyRecords) {
+            foreach ($dailyRecords as $record) {
+                $email = $record['email'];
+                $date = date('Y-m-d', strtotime($record['clock_in_time'] ?? $record['clock_out_time']));
+
+                $formattedData[$email][$date][] = $record;
+            }
+        }
+
+        foreach ($formattedData as $email => $dates) {
+            foreach ($dates as $date => $records) {
+                usort($records, function ($a, $b) {
+                    return strtotime($a['clock_in_time'] ?? $a['clock_out_time']) <=> strtotime($b['clock_in_time'] ?? $b['clock_out_time']);
+                });
+
+                $finalData[] = [
+                    'email' => $email,
+                    'clock_out_time' => $records[0]['clock_out_time'] ?? null,
+                    'clock_in_time' => $records[1]['clock_in_time'] ?? null
                 ];
             }
         }
@@ -120,7 +136,6 @@ trait ImportExcel
 
         foreach ($excelData as $index => $row) {
             $email = $row[0];
-            $breakTimeLoop = $index + 1;
 
             $user = User::where('email', $email)->whereHas('roles', function ($q) {
                 $q->where('name', 'employee');
@@ -128,41 +143,55 @@ trait ImportExcel
 
             $date = Carbon::parse($row[1])->format('Y-m-d');
 
-            $clockIn = Carbon::parse($formattedData[$date]['clock_in_time']);
-            $clockOut = Carbon::parse($formattedData[$date]['clock_out_time'])->clone()->addMinutes(45);
+            foreach ($finalData as $data) {
+                $finalEmail = $data['email'];
+                $finalDate = Carbon::parse($data['clock_in_time'])->format('Y-m-d');
 
-            $employeeShift = EmployeeShiftSchedule::with('shift')
-                ->where('user_id', $user->id)
-                ->whereDate('date', $clockIn)
-                ->first();
+                $checkEmailDate = ($email == $finalEmail) && ($date == $finalDate);
 
-            $showClockIn = AttendanceSetting::first();
+                if ($checkEmailDate) {
+                    $clockIn = Carbon::parse($data['clock_in_time']);
+                    $clockOut = Carbon::parse($data['clock_out_time'])
+                        ->clone()
+                        ->addMinutes(45);
 
-            $attendanceSettings = $this->attendanceShiftData($showClockIn);
+                    $employeeShift = EmployeeShiftSchedule::with('shift')
+                        ->where('user_id', $user->id)
+                        ->whereDate('date', $clockIn)
+                        ->first();
 
-            if (isset($employeeShift)) {
-                $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
-            } else {
-                $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
+                    $showClockIn = AttendanceSetting::first();
+
+                    $attendanceSettings = $this->attendanceShiftData($showClockIn);
+
+                    if (isset($employeeShift)) {
+                        $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
+                    } else {
+                        $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
+                    }
+
+                    $halfday_mark_time = Carbon::parse($halfday_mark_time);
+
+                    $break_time_late = "";
+
+                    if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
+                        $break_time_late = 'yes';
+                    } elseif ($clockIn->lt($halfday_mark_time)) {
+                        $break_time_late = 'no';
+                    } else {
+                        $break_time_late = 'yes';
+                    }
+
+                    // \Log::info('data', [
+                    //     'clock_in' => $clockIn->toDateTimeString(),
+                    //     'clock_out' => $clockOut->toDateTimeString(),
+                    //     'email' => $email,
+                    //     'late_status' => $break_time_late
+                    // ]);
+
+                    $jobs[] = (new $importJobClass($row, $columns, company(), $break_time_late));
+                }
             }
-
-            $halfday_mark_time = Carbon::parse($halfday_mark_time);
-
-            $half_day_late = "";
-
-            if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
-                $half_day_late = 'yes';
-            } elseif ($clockIn->lt($halfday_mark_time)) {
-                $half_day_late = 'no';
-            } else {
-                $half_day_late = 'yes';
-            }
-            // if ($breakTimeLoop == 2) {
-            // } else {
-            //     $half_day_late = 'no';
-            // }
-
-            $jobs[] = (new $importJobClass($row, $columns, company(), $half_day_late, $breakTimeLoop));
         }
 
         $batch = Bus::batch($jobs)->onConnection('database')->onQueue($importClassName)->name($importClassName)->dispatch();

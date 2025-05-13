@@ -58,7 +58,7 @@
                     <div class="punch-info">
                         <div class="punch-hours f-13">
                             {{-- <span>{{ $totalTime }}</span> --}}
-                           <span>{{ $hoursDiff }} h</span>
+                            <span>{{ $hoursDiff }} h</span>
                         </div>
                     </div>
                     <div class="border rounded p-3 bg-light">
@@ -121,28 +121,29 @@
                                             @endif
                                         @endif
 
-                                        @if ($item->late == 'yes' && $loop->first)
+                                        @php
+                                            $showLateIcon =
+                                                ($item->late == 'yes' && $loop->first) ||
+                                                ($item->break_time_late == 'yes' && $loop->iteration == 2) ||
+                                                ($item->half_day == 'yes' && $item->half_day_late == 'yes');
+                                        @endphp
+
+                                        @if ($showLateIcon)
                                             <i class="fa fa-exclamation-triangle ml-2"></i>
                                             @lang('modules.attendance.late')
-                                        @else
-                                            @if ($item->half_day_late == 'yes' && $loop->iteration == 2)
-                                                <i class="fa fa-exclamation-triangle ml-2"></i>
-                                                @lang('modules.attendance.late')
+                                        @endif
+
+                                        @if ($item->half_day === 'yes')
+                                            <i class="fa fa-sign-out-alt ml-2"></i>
+                                            @lang('modules.attendance.halfDay')
+
+                                            @if (in_array($item->half_day_type, ['first_half', 'second_half']))
+                                                <span>
+                                                    ( @lang('modules.leaves.' . ($item->half_day_type === 'first_half' ? '1stHalf' : '2ndHalf')) )
+                                                </span>
                                             @endif
                                         @endif
 
-                                        @if ($item->half_day == 'yes')
-                                            <i class="fa fa-sign-out-alt ml-2"></i>
-                                            @lang('modules.attendance.halfDay')
-                                            <span>
-                                                @if ($item->half_day_type == 'first_half')
-                                                    ( @lang('modules.leaves.1stHalf') )
-                                                @elseif ($item->half_day_type == 'second_half')
-                                                    ( @lang('modules.leaves.2ndHalf') )
-                                                @else
-                                                @endif
-                                            </span>
-                                        @endif
 
 
                                         @if ($item->latitude != '' && $item->longitude != '')

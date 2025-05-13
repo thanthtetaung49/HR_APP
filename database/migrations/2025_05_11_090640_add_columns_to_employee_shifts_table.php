@@ -11,8 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->enum('break_time_late', ['yes', 'no'])->default('no')->after('late');
+        Schema::table('employee_shifts', function (Blueprint $table) {
+            $table->time('half_day_office_start_time')
+                    ->after('office_end_time')
+                    ->nullable();
         });
     }
 
@@ -21,8 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('attendances', function (Blueprint $table) {
-            $table->dropColumn('break_time_late');
+        Schema::table('employee_shifts', function (Blueprint $table) {
+            $table->dropColumn('half_day_office_start_time');
         });
     }
 };
