@@ -204,8 +204,6 @@ class PayrollController extends AccountBaseController
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $HalfDayCountInMonth = $halfDay->count();
-
         $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
             ->get()
             ->count();
@@ -231,8 +229,9 @@ class PayrollController extends AccountBaseController
                 return $query->select('paid', 'type_name');
             }
         ])->where('user_id', $this->salarySlip->user_id)
-            ->where('leave_type_id', 7)
-            ->where('paid', 0)
+            ->where('leave_type_id', 7) // absent in month
+            ->where('paid', 0) // paid leave
+            ->where('status', 'approved')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
@@ -242,8 +241,22 @@ class PayrollController extends AccountBaseController
                 return $query->select('paid', 'type_name');
             }
         ])->where('user_id', $this->salarySlip->user_id)
-            ->where('leave_type_id', 6)
-            ->where('paid', 0)
+            ->where('leave_type_id', 6) // leave without pay
+            ->where('paid', 0) // paid leave
+            ->where('status', 'approved')
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $HalfDayCountInMonth = Leave::with([
+            'type' => function ($query) {
+                return $query->select('paid', 'type_name');
+            }
+        ])->where('user_id', $this->salarySlip->user_id)
+            ->where('leave_type_id', 6) // leave without pay
+            ->where('paid', 0) // paid leave
+            ->where('duration', 'half day') // half day
+            ->where('status', 'approved')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
@@ -723,10 +736,20 @@ class PayrollController extends AccountBaseController
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $HalfDayCountInMonth = $halfDay->count();
-
         $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
             ->get()
+            ->count();
+
+        $absentInMonth = Leave::with([
+            'type' => function ($query) {
+                return $query->select('paid', 'type_name');
+            }
+        ])->where('user_id', $userId)
+            ->where('leave_type_id', 7) // absent in month
+            ->where('paid', 0) // paid leave
+            ->where('status', 'approved')
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
         $leaveWithoutPayInMonth = Leave::with([
@@ -734,24 +757,27 @@ class PayrollController extends AccountBaseController
                 return $query->select('paid', 'type_name');
             }
         ])->where('user_id', $userId)
-            ->where('leave_type_id', 6)
-            ->where('paid', 0)
+            ->where('leave_type_id', 6) // leave without pay
+            ->where('paid', 0) // paid leave
+            ->where('status', 'approved')
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $HalfDayCountInMonth = Leave::with([
+            'type' => function ($query) {
+                return $query->select('paid', 'type_name');
+            }
+        ])->where('user_id', $userId)
+            ->where('leave_type_id', 6) // leave without pay
+            ->where('paid', 0) // paid leave
+            ->where('duration', 'half day') // half day
+            ->where('status', 'approved')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
         $leaveWithoutPayInMonth = $leaveWithoutPayInMonth + ($HalfDayCountInMonth / 2);
-
-        $absentInMonth = Leave::with([
-            'type' => function ($query) {
-                return $query->select('paid', 'type_name');
-            }
-        ])->where('user_id', $userId)
-            ->where('leave_type_id', 7)
-            ->where('paid', 0)
-            ->whereDate('leave_date', '>=', $startDate)
-            ->whereDate('leave_date', '<=', $endDate)
-            ->count();
 
         $totalLeaveWithoutPay = 0;
 
@@ -1097,8 +1123,6 @@ class PayrollController extends AccountBaseController
                 })
                 ->get();
 
-            // dd($attendanceLateInMonth->toArray());
-
             $halfDay = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),
                 "half_day_late",
@@ -1110,8 +1134,6 @@ class PayrollController extends AccountBaseController
                 ->whereDate('clock_in_time', '>=', $startDate)
                 ->whereDate('clock_in_time', '<=', $endDate)
                 ->where('half_day', 'yes');
-
-            $HalfDayCountInMonth = $halfDay->count();
 
             $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
                 ->get()
@@ -1133,15 +1155,14 @@ class PayrollController extends AccountBaseController
                 ->where('break_time_late', 'yes')
                 ->get();
 
-            // dd($breakTimeLateMonth->toArray());
-
             $absentInMonth = Leave::with([
                 'type' => function ($query) {
                     return $query->select('paid', 'type_name');
                 }
             ])->where('user_id', $userId)
-                ->where('leave_type_id', 7)
-                ->where('paid', 0)
+                ->where('leave_type_id', 7) // absent in month
+                ->where('paid', 0) // paid leave
+                ->where('status', 'approved')
                 ->whereDate('leave_date', '>=', $startDate)
                 ->whereDate('leave_date', '<=', $endDate)
                 ->count();
@@ -1151,8 +1172,22 @@ class PayrollController extends AccountBaseController
                     return $query->select('paid', 'type_name');
                 }
             ])->where('user_id', $userId)
-                ->where('leave_type_id', 6)
-                ->where('paid', 0)
+                ->where('leave_type_id', 6) // leave without pay
+                ->where('paid', 0) // paid leave
+                ->where('status', 'approved')
+                ->whereDate('leave_date', '>=', $startDate)
+                ->whereDate('leave_date', '<=', $endDate)
+                ->count();
+
+            $HalfDayCountInMonth = Leave::with([
+                'type' => function ($query) {
+                    return $query->select('paid', 'type_name');
+                }
+            ])->where('user_id', $userId)
+                ->where('leave_type_id', 6) // leave without pay
+                ->where('paid', 0) // paid leave
+                ->where('duration', 'half day') // half day
+                ->where('status', 'approved')
                 ->whereDate('leave_date', '>=', $startDate)
                 ->whereDate('leave_date', '<=', $endDate)
                 ->count();
@@ -1999,8 +2034,6 @@ class PayrollController extends AccountBaseController
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $HalfDayCountInMonth = $halfDay->count();
-
         $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
             ->get()
             ->count();
@@ -2026,7 +2059,9 @@ class PayrollController extends AccountBaseController
                 return $query->select('paid', 'type_name');
             }
         ])->where('user_id', $this->salarySlip->user_id)
-            ->where('leave_type_id', 7)
+            ->where('leave_type_id', 7) // absent in month
+            ->where('paid', 0) // paid leave
+            ->where('status', 'approved')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
@@ -2036,7 +2071,22 @@ class PayrollController extends AccountBaseController
                 return $query->select('paid', 'type_name');
             }
         ])->where('user_id', $this->salarySlip->user_id)
-            ->where('leave_type_id', 6)
+            ->where('leave_type_id', 6) // leave without pay
+            ->where('paid', 0) // paid leave
+            ->where('status', 'approved')
+            ->whereDate('leave_date', '>=', $startDate)
+            ->whereDate('leave_date', '<=', $endDate)
+            ->count();
+
+        $HalfDayCountInMonth = Leave::with([
+            'type' => function ($query) {
+                return $query->select('paid', 'type_name');
+            }
+        ])->where('user_id', $this->salarySlip->user_id)
+            ->where('leave_type_id', 6) // leave without pay
+            ->where('paid', 0) // paid leave
+            ->where('duration', 'half day') // half day
+            ->where('status', 'approved')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
