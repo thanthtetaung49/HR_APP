@@ -145,7 +145,7 @@ trait ImportExcel
 
             foreach ($finalData as $data) {
                 $finalEmail = $data['email'];
-                $finalDate = Carbon::parse($data['clock_in_time'])->format('Y-m-d');
+                $finalDate = Carbon::parse($data['clock_out_time'])->format('Y-m-d');
 
                 $checkEmailDate = ($email == $finalEmail) && ($date == $finalDate);
 
@@ -172,7 +172,7 @@ trait ImportExcel
 
                     $halfday_mark_time = Carbon::parse($halfday_mark_time);
 
-                    $break_time_late = "";
+                    $break_time_late = "no";
 
                     if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
                         $break_time_late = 'yes';
@@ -181,13 +181,6 @@ trait ImportExcel
                     } else {
                         $break_time_late = 'yes';
                     }
-
-                    // \Log::info('data', [
-                    //     'clock_in' => $clockIn->toDateTimeString(),
-                    //     'clock_out' => $clockOut->toDateTimeString(),
-                    //     'email' => $email,
-                    //     'late_status' => $break_time_late
-                    // ]);
 
                     $jobs[] = (new $importJobClass($row, $columns, company(), $break_time_late));
                 }
