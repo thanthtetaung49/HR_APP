@@ -424,6 +424,16 @@
                         </tr>
 
                         <tr>
+                            <td>@lang('payroll::modules.payroll.ssb')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($monthlyOtherDetection?->ssb, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+
+                        <tr>
                             <td>@lang('payroll::modules.payroll.otherDetection')</td>
                             <td align="right" class="text-uppercase">
                                 {{ currency_format($monthlyOtherDetection?->other_detection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}

@@ -190,6 +190,11 @@ class PayrollController extends AccountBaseController
                     ->fromSub($subQuery, 'ranked')
                     ->where('row_num', 1);
             })
+            ->where(function ($query) {
+                $query->where('half_day', '!=', 'yes') # 1st half day = no, null
+                    ->orWhere('half_day', 'yes') # 2nd half day = yes
+                    ->where('half_day_type', 'first_half'); # if half day = yes only take first_half as half_day_type
+            })
             ->get();
 
         $halfDay = Attendance::select(
@@ -204,9 +209,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
-            ->get()
-            ->count();
+        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
 
         $breakTimeLateMonth = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
@@ -236,6 +239,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
+        // normal lwp
         $leaveWithoutPayInMonth = Leave::with([
             'type' => function ($query) {
                 return $query->select('paid', 'type_name');
@@ -244,6 +248,7 @@ class PayrollController extends AccountBaseController
             ->where('leave_type_id', 6) // leave without pay
             ->where('paid', 0) // paid leave
             ->where('status', 'approved')
+            ->where('duration', '!=', 'half day')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
@@ -722,6 +727,11 @@ class PayrollController extends AccountBaseController
                     ->fromSub($subQuery, 'ranked')
                     ->where('row_num', 1);
             })
+            ->where(function ($query) {
+                $query->where('half_day', '!=', 'yes') # 1st half day = no, null
+                    ->orWhere('half_day', 'yes') # 2nd half day = yes
+                    ->where('half_day_type', 'first_half'); # if half day = yes only take first_half as half_day_type
+            })
             ->get();
 
         $halfDay = Attendance::select(
@@ -736,9 +746,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
-            ->get()
-            ->count();
+        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
 
         $absentInMonth = Leave::with([
             'type' => function ($query) {
@@ -752,6 +760,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
+            // normal lwp
         $leaveWithoutPayInMonth = Leave::with([
             'type' => function ($query) {
                 return $query->select('paid', 'type_name');
@@ -760,10 +769,12 @@ class PayrollController extends AccountBaseController
             ->where('leave_type_id', 6) // leave without pay
             ->where('paid', 0) // paid leave
             ->where('status', 'approved')
+            ->where('duration', '!=', 'half day')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
+            // half day lwp
         $HalfDayCountInMonth = Leave::with([
             'type' => function ($query) {
                 return $query->select('paid', 'type_name');
@@ -1108,10 +1119,14 @@ class PayrollController extends AccountBaseController
                 ->whereDate('clock_in_time', '>=', $startDate)
                 ->whereDate('clock_in_time', '<=', $endDate);
 
+            // normal before and after attendance late calculation | half day late calcualtion first half
             $attendanceLateInMonth = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),
                 "late",
-                "clock_in_time"
+                "half_day_late",
+                "half_day",
+                "clock_in_time",
+                "half_day_type"
             )
                 ->where('user_id', $userId)
                 ->whereDate('clock_in_time', '>=', $startDate)
@@ -1121,7 +1136,14 @@ class PayrollController extends AccountBaseController
                         ->fromSub($subQuery, 'ranked')
                         ->where('row_num', 1);
                 })
+                ->where(function ($query) {
+                    $query->where('half_day', '!=', 'yes') # 1st half day = no, null
+                        ->orWhere('half_day', 'yes') # 2nd half day = yes
+                        ->where('half_day_type', 'first_half'); # if half day = yes only take first_half as half_day_type
+                })
                 ->get();
+
+            // dd($attendanceLateInMonth->toArray(), $attendanceLateInMonth->count());
 
             $halfDay = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),
@@ -1135,9 +1157,8 @@ class PayrollController extends AccountBaseController
                 ->whereDate('clock_in_time', '<=', $endDate)
                 ->where('half_day', 'yes');
 
-            $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
-                ->get()
-                ->count();
+            // half day late , second half calculation
+            $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
 
             $breakTimeLateMonth = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),
@@ -1167,6 +1188,7 @@ class PayrollController extends AccountBaseController
                 ->whereDate('leave_date', '<=', $endDate)
                 ->count();
 
+            // normal lwp
             $leaveWithoutPayInMonth = Leave::with([
                 'type' => function ($query) {
                     return $query->select('paid', 'type_name');
@@ -1175,10 +1197,14 @@ class PayrollController extends AccountBaseController
                 ->where('leave_type_id', 6) // leave without pay
                 ->where('paid', 0) // paid leave
                 ->where('status', 'approved')
+                ->where('duration', '!=', 'half day')
                 ->whereDate('leave_date', '>=', $startDate)
                 ->whereDate('leave_date', '<=', $endDate)
                 ->count();
 
+            // dd($leaveWithoutPayInMonth->toArray());
+
+            // half day lwp
             $HalfDayCountInMonth = Leave::with([
                 'type' => function ($query) {
                     return $query->select('paid', 'type_name');
@@ -1192,10 +1218,14 @@ class PayrollController extends AccountBaseController
                 ->whereDate('leave_date', '<=', $endDate)
                 ->count();
 
+            // dd($HalfDayCountInMonth->toArray());
+
             $leaveWithoutPayInMonth = $leaveWithoutPayInMonth + ($HalfDayCountInMonth / 2);
 
+            // dd($leaveWithoutPayInMonth);
+
             // dd([
-            //     'totalLwp' => $totalLeaveWithoutPayInMonth,
+            //     'totalLwp' => $leaveWithoutPayInMonth,
             //     'lwpInMonth' => $leaveWithoutPayInMonth,
             //     'halfDayCountInMonth' => ($HalfDayCountInMonth / 2)
             // ]);
@@ -1207,7 +1237,7 @@ class PayrollController extends AccountBaseController
             $attLateAfterFifteenMinutes = 0;
             $attBreakTime = $breakTimeLateMonth->count();
 
-            // add half day late count
+            // half day late | second half calculation
             if ($halfDayLateCount != 0) {
                 $attLateAfterFifteenMinutes += $halfDayLateCount;
             } else {
@@ -1215,6 +1245,7 @@ class PayrollController extends AccountBaseController
             }
 
             foreach ($attendanceLateInMonth as $key => $attendanceLate) {
+                // $afterAttendanceLate = [];
                 $clock_in_time = $attendanceLate->clock_in_time;
 
                 $employeeShift = EmployeeShiftSchedule::with('shift')
@@ -1240,8 +1271,13 @@ class PayrollController extends AccountBaseController
 
                 if ($clock_in_time->greaterThan($lateTime)) {
                     $attLateAfterFifteenMinutes += 1;
+                    // \Log::info('attendance late after', [
+                    //     'attendance late after' => $attendanceLate
+                    // ]);
                 }
             }
+
+            // dd($attLateAfterFifteenMinutes);
 
             $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
@@ -2013,12 +2049,18 @@ class PayrollController extends AccountBaseController
             "clock_in_time"
         )
             ->where('user_id', $this->salarySlip->user_id)
+            ->whereNull('half_day_type') # half day type = null | half day = no
             ->whereDate('clock_in_time', '>=', $startDate)
             ->whereDate('clock_in_time', '<=', $endDate)
             ->whereIn('clock_in_time', function ($query) use ($subQuery) {
                 $query->select('clock_in_time')
                     ->fromSub($subQuery, 'ranked')
                     ->where('row_num', 1);
+            })
+            ->where(function ($query) {
+                $query->where('half_day', '!=', 'yes') # 1st half day = no, null
+                    ->orWhere('half_day', 'yes') # 2nd half day = yes
+                    ->where('half_day_type', 'first_half'); # if half day = yes only take first_half as half_day_type
             })
             ->get();
 
@@ -2034,9 +2076,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('clock_in_time', '<=', $endDate)
             ->where('half_day', 'yes');
 
-        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')
-            ->get()
-            ->count();
+        $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
 
         $breakTimeLateMonth = Attendance::select(
             DB::raw("DATE(clock_in_time) as presentDate"),
@@ -2066,6 +2106,7 @@ class PayrollController extends AccountBaseController
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
+        // normal lwp
         $leaveWithoutPayInMonth = Leave::with([
             'type' => function ($query) {
                 return $query->select('paid', 'type_name');
@@ -2074,10 +2115,12 @@ class PayrollController extends AccountBaseController
             ->where('leave_type_id', 6) // leave without pay
             ->where('paid', 0) // paid leave
             ->where('status', 'approved')
+            ->where('duration', '!=', 'half day')
             ->whereDate('leave_date', '>=', $startDate)
             ->whereDate('leave_date', '<=', $endDate)
             ->count();
 
+        // half day lwp
         $HalfDayCountInMonth = Leave::with([
             'type' => function ($query) {
                 return $query->select('paid', 'type_name');

@@ -516,6 +516,7 @@ class AttendanceController extends AccountBaseController
 
         $halfDayStartTime = null;
 
+        // half day
         if (isset($employeeShift)) {
             $halfDayStartTime = $employeeShift->shift->half_day_office_start_time;
         } else {
@@ -531,7 +532,8 @@ class AttendanceController extends AccountBaseController
 
         $halfDayLateStatus = 'no';
 
-        if ($clockIn->gt($halfDayLateTime)) {
+        // half day late second half calculation
+        if ($clockIn->gt($halfDayLateTime) && $request->half_day_duration = 'second_half') {
             $halfDayLateStatus = 'yes';
         }
 
@@ -582,6 +584,12 @@ class AttendanceController extends AccountBaseController
         $attendance->half_day_late = $halfDayLateStatus;
         $attendance->half_day_type = ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null;
         $attendance->break_time_late = ($request->has('breakTime')) ? 'yes' : 'no';
+
+        // dd([
+        //     'status' => 'success',
+        //     'attendance' => $attendance->toArray()
+        // ]);
+
         $attendance->save();
 
         return Reply::success(__('messages.attendanceSaveSuccess'));
@@ -616,6 +624,7 @@ class AttendanceController extends AccountBaseController
 
     public function store(StoreAttendance $request)
     {
+        // dd($request->all());
         $carbonDate = Carbon::parse($request->attendance_date, $this->company->timezone);
         $date = $carbonDate->format('Y-m-d');
         $clockIn = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->clock_in_time, $this->company->timezone);
