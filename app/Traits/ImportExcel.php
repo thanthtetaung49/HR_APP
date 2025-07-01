@@ -149,7 +149,8 @@ trait ImportExcel
 
                 $checkEmailDate = ($email == $finalEmail) && ($date == $finalDate);
 
-                if ($checkEmailDate) {
+                if (!empty($user) && $checkEmailDate) {
+
                     $clockIn = Carbon::parse($data['clock_in_time']);
                     $clockOut = Carbon::parse($data['clock_out_time'])
                         ->clone()
@@ -169,6 +170,8 @@ trait ImportExcel
                     } else {
                         $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
                     }
+
+
 
                     $halfday_mark_time = Carbon::parse($halfday_mark_time);
 
