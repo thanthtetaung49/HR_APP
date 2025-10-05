@@ -16,6 +16,16 @@
                         @lang('modules.manPower.addTitle')</h4>
                     <div class="row p-20">
                         <div class="col-md-4">
+                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.budgetYear')">
+                            </x-forms.text>
+
+                            @error('budget_year')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
                             <x-forms.text fieldId="man_power_setup" :fieldLabel="__('app.menu.manPowerSetup')" fieldName="man_power_setup"
                                 fieldRequired="true" :fieldPlaceholder="__('placeholders.manPowerSetup')">
                             </x-forms.text>

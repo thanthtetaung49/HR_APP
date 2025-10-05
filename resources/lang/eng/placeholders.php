@@ -1,6 +1,7 @@
 <?php
 
 return array(
+    'budgetYear' => 'Budget Year',
     'manPowerSetup' => 'Man Power Setup',
     'maxBasicSalary' => 'Max Basic Salary',
     'knowledgeBase' => 'Update your profile picture',

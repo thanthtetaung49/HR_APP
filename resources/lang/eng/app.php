@@ -147,6 +147,7 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'budgetYear' => 'Budget Year',
         'manPowerReport' => 'Man Power Report',
         'manPower' => 'Man Power',
         'manPowerSetup' => 'Man Power Setup',

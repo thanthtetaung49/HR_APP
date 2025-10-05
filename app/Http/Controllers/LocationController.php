@@ -36,7 +36,6 @@ class LocationController extends AccountBaseController
         $viewPermission = user()->permission('view_department');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
-
         $this->locations = Location::get();
 
         return $dataTable->render('location.index', $this->data);
@@ -47,10 +46,6 @@ class LocationController extends AccountBaseController
 
         $this->view = 'location.ajax.create';
         $this->data['pageTitle'] = 'Add Location';
-
-        if (request()->model == true) {
-            return view('location.create_location', $this->data);
-        }
 
         return view('location.create', $this->data);
     }
@@ -70,6 +65,7 @@ class LocationController extends AccountBaseController
     public function show($id)
     {
         $this->location = Location::findOrFail($id);
+        $this->data['pageTitle'] = 'Show Location';
 
         $this->view = 'location.ajax.show';
 
@@ -83,6 +79,7 @@ class LocationController extends AccountBaseController
     public function edit($id)
     {
         $this->location = Location::findOrFail($id);
+        $this->data['pageTitle'] = 'Edit Location';
 
         return view('location.ajax.edit', $this->data);
     }

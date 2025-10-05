@@ -17,6 +17,7 @@ return new class extends Migration
             $table->integer('man_power_basic_salary')->nullable();
             $table->unsignedInteger('team_id')->index();
             $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade')->onUpdate('cascade');
+            $table->string('budget_year')->nullable();
             $table->timestamps();
         });
     }

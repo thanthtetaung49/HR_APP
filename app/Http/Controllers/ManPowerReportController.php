@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\ManPowerReportDataTable;
-use App\Helper\Reply;
-use App\Models\ManPowerReport;
 use App\Models\Team;
+use App\Helper\Reply;
+use App\Models\Location;
 use Illuminate\Http\Request;
+use App\Models\ManPowerReport;
 use Illuminate\Support\Facades\Validator;
+use App\DataTables\ManPowerReportDataTable;
 
 class ManPowerReportController extends AccountBaseController
 {
@@ -35,6 +36,13 @@ class ManPowerReportController extends AccountBaseController
 
         $this->reports = ManPowerReport::get();
         $this->data['departments'] = Team::get();
+        $this->data['locations'] = Location::get();
+        $this->data['budgetYears'] = ManPowerReport::select('budget_year')
+            ->distinct()
+            ->orderBy('budget_year', 'desc')
+            ->get()
+            ->pluck('budget_year');
+
 
         return $dataTable->render('man-power-reports.index', $this->data);
     }
@@ -48,10 +56,6 @@ class ManPowerReportController extends AccountBaseController
         $this->data['pageTitle'] = 'Add Man Power';
         $this->data['departments'] = Team::get();
 
-        if (request()->model == true) {
-            return view('man-power-reports.createManPower', $this->data);
-        }
-
         return view('man-power-reports.create', $this->data);
     }
 
@@ -63,17 +67,20 @@ class ManPowerReportController extends AccountBaseController
         $man_power_setup = $request->man_power_setup;
         $man_power_basic_salary = $request->man_power_basic_salary;
         $team_id = $request->team_id;
+        $budget_year = $request->budget_year;
 
         Validator::make($request->all(), [
             'man_power_setup' => 'required',
             'man_power_basic_salary' => 'required',
             'team_id' => 'required',
+            'budget_year' => 'required|date_format:Y',
         ])->validate();
 
         ManPowerReport::create([
             'man_power_setup' => $man_power_setup,
             'man_power_basic_salary' => $man_power_basic_salary,
             'team_id' => $team_id,
+            'budget_year' => $budget_year
         ]);
 
         return redirect()->route('man-power-reports.index');
@@ -85,7 +92,7 @@ class ManPowerReportController extends AccountBaseController
     public function show(string $id)
     {
         $this->reports = ManPowerReport::findOrFail($id);
-        $this->data['pageTitle'] = 'Add Man Power';
+        $this->data['pageTitle'] = 'Show Man Power';
         $this->data['departments'] = Team::get();
 
         $this->view = 'man-power-reports.ajax.show';
@@ -103,6 +110,7 @@ class ManPowerReportController extends AccountBaseController
     public function edit(string $id)
     {
         $this->reports = ManPowerReport::findOrFail($id);
+        $this->data['pageTitle'] = 'Edit Man Power';
         $this->data['departments'] = Team::get();
 
         return view('man-power-reports.ajax.edit', $this->data);
@@ -119,12 +127,14 @@ class ManPowerReportController extends AccountBaseController
             'man_power_setup' => 'required',
             'man_power_basic_salary' => 'required',
             'team_id' => 'required',
+            'budget_year' => 'required|date_format:Y',
         ])->validate();
 
         $reports->update([
             'man_power_setup' => $request->man_power_setup,
             'man_power_basic_salary' => $request->man_power_basic_salary,
-            'team_id' => $request->team_id
+            'team_id' => $request->team_id,
+            'budget_year' => $request->budget_year
         ]);
 
         return redirect()->route('man-power-reports.index');
