@@ -69,6 +69,12 @@ class DepartmentDataTable extends BaseDataTable
                     return '<h5 class="mb-0 f-13 text-darkest-grey"><a href="' . route('departments.show', [$row->id]) . '" class="openRightModal">' . $row->team_name . '</a></h5>';
                 }
             )
+            ->editColumn(
+                'department_type',
+                function ($row) {
+                    return $row->department_type;
+                }
+            )
             ->editColumn('parent_id', function ($row) {
                 // get name of parent department
                 $parent = Team::where('id', $row->parent_id)->first();
@@ -172,6 +178,7 @@ class DepartmentDataTable extends BaseDataTable
             ],
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.name') => ['data' => 'name', 'name' => 'team_name', 'title' => __('app.name')],
+            __('app.departmentType') => ['data' => 'department_type', 'name' => 'department_type', 'title' => __('app.departmentType')],
             __('modules.department.parentDepartment') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('modules.department.parentDepartment')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
@@ -181,5 +188,4 @@ class DepartmentDataTable extends BaseDataTable
                 ->addClass('text-right pr-20')
         ];
     }
-
 }

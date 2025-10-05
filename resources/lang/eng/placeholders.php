@@ -1,6 +1,8 @@
 <?php
 
 return array(
+    'manPowerSetup' => 'Man Power Setup',
+    'maxBasicSalary' => 'Max Basic Salary',
     'knowledgeBase' => 'Update your profile picture',
     'writeshortcode' => 'Project unique short code',
     'taskshortcode' => 'Task unique short code',

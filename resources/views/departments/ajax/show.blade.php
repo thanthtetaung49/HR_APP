@@ -1,6 +1,6 @@
 @php
-$editDepartmentPermission = user()->permission('edit_department');
-$deleteDepartmentPermission = user()->permission('delete_department');
+    $editDepartmentPermission = user()->permission('edit_department');
+    $deleteDepartmentPermission = user()->permission('delete_department');
 @endphp
 
 <div id="department-section">
@@ -14,31 +14,29 @@ $deleteDepartmentPermission = user()->permission('delete_department');
                         </div>
                         <div class="col-md-2 col-2 text-right">
                             <div class="dropdown">
-                                    <button
-                                        class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
-                                        type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        <i class="fa fa-ellipsis-h"></i>
-                                    </button>
-                                    <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
-                                        aria-labelledby="dropdownMenuLink" tabindex="0">
-                                        @if($editDepartmentPermission == 'all')
-                                            <a class="dropdown-item openRightModal"
+                                <button class="btn btn-lg f-14 px-2 py-1 text-dark-grey  rounded  dropdown-toggle"
+                                    type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fa fa-ellipsis-h"></i>
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
+                                    aria-labelledby="dropdownMenuLink" tabindex="0">
+                                    @if ($editDepartmentPermission == 'all')
+                                        <a class="dropdown-item openRightModal"
                                             data-redirect-url="{{ url()->previous() }}"
                                             href="{{ route('departments.edit', $department->id) }}">@lang('app.edit')</a>
-                                        @endif
-                                        @if($deleteDepartmentPermission == 'all')
-                                            <a class="dropdown-item delete-department">@lang('app.delete')</a>
-                                        @endif
-                                    </div>
+                                    @endif
+                                    @if ($deleteDepartmentPermission == 'all')
+                                        <a class="dropdown-item delete-department">@lang('app.delete')</a>
+                                    @endif
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <x-cards.data-row :label="__('app.name')" :value="$department->team_name"
-                        html="true" />
-                    <x-cards.data-row :label="__('app.parentId').' '. __('app.name')" :value="($parent) ? $parent->team_name : '-'"
-                        html="true" />
+                    <x-cards.data-row :label="__('app.name')" :value="$department->team_name" html="true" />
+                    <x-cards.data-row :label="__('app.parentId') . ' ' . __('app.name')" :value="$parent ? $parent->team_name : '-'" html="true" />
+                    <x-cards.data-row :label="__('app.departmentType') . ' ' . __('app.name')" :value="$parent ? $parent->department_type : '-'" html="true" />
                 </div>
             </div>
         </div>

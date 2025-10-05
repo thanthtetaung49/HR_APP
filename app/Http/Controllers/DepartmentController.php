@@ -76,6 +76,7 @@ class DepartmentController extends AccountBaseController
         $group->parent_id = $request->parent_id;
         $group->designation_ids = json_encode($request->designation_id);
         $group->location_id = $request->location;
+        $group->department_type = $request->department_type;
         $group->save();
 
         $this->departments = Team::allDepartments();
@@ -146,6 +147,7 @@ class DepartmentController extends AccountBaseController
         $group->parent_id = $request->parent_id ?? null;
         $group->location_id = $request->location;
         $group->designation_ids = json_encode($request->designation_id);
+        $group->department_type = $request->department_type;
         $group->save();
 
         $redirectUrl = route('departments.index');

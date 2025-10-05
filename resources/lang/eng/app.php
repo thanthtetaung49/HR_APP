@@ -131,6 +131,7 @@ return array(
     'quantityExceed' => 'Quantity Exceed',
     'SorryTheQuantityExceedsFor' => 'Sorry, the quantity exceeds for',
     'doItLater' => 'Do It Later',
+    'manPowerDetails' => 'Man Power Detail',
     'months' => array(
         'January' => 'January',
         'February' => 'February',
@@ -146,6 +147,10 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'manPowerReport' => 'Man Power Report',
+        'manPower' => 'Man Power',
+        'manPowerSetup' => 'Man Power Setup',
+        'maxBasicSalary' => 'Max Basic Salary',
         'location' => 'Location',
         'units' => 'Units',
         'prefixSettings' => 'Prefix Settings',
@@ -593,6 +598,7 @@ return array(
     'estimate' => 'Estimate',
     'zero' => 'Zero',
     'designation' => 'Designation',
+    'departmentType' => 'Department Type',
     'company_name' => 'Company Name',
     'thanks' => 'Thanks',
     'invoiceNumber' => 'Invoice Number',

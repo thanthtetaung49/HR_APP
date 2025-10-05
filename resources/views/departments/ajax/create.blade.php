@@ -1,5 +1,5 @@
 <style>
-    .mt{
+    .mt {
         margin-top: -4px;
     }
 </style>
@@ -10,7 +10,7 @@
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('modules.department.addTitle')</h4>
-                <div class="row p-20">
+                <div class="row pl-20 pr-20 pt-20">
                     <div class="col-md-3">
                         <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="team_name"
                             fieldRequired="true" :fieldPlaceholder="__('placeholders.department')">
@@ -25,7 +25,7 @@
                             <select class="form-control select-picker mt" name="parent_id" id="parent_id"
                                 data-live-search="true">
                                 <option value="">--</option>
-                                @foreach($departments as $department)
+                                @foreach ($departments as $department)
                                     <option value="{{ $department->id }}">{{ $department->team_name }}</option>
                                 @endforeach
                             </select>
@@ -36,10 +36,10 @@
                         <x-forms.label class="my-3" fieldId="location_id" :fieldLabel="__('app.location')" fieldName="location">
                         </x-forms.label>
                         <x-forms.input-group>
-                            <select class="form-control select-picker mt" name="location" id="location_id" 
+                            <select class="form-control select-picker mt" name="location" id="location_id"
                                 data-live-search="true">
                                 <option value="">--</option>
-                                @foreach($locations as $location)
+                                @foreach ($locations as $location)
                                     <option value="{{ $location->id }}">{{ $location->location_name }}</option>
                                 @endforeach
                             </select>
@@ -47,21 +47,36 @@
                     </div>
 
                     <div class="col-md-3">
-                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.designation')" fieldName="designation_label">
+                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.designation')"
+                            fieldName="designation_label">
                         </x-forms.label>
                         <x-forms.input-group>
-                            <select class="form-control select-picker mt" name="designation_id[]" id="designation_id" multiple
-                                data-live-search="true">
-                                <option value="">--</option>
-                            @foreach($designations as $designation)
+                            <select class="form-control select-picker mt" name="designation_id[]" id="designation_id"
+                                multiple data-live-search="true">
+                                <option value="" selected>--</option>
+                                @foreach ($designations as $designation)
                                     <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                                 @endforeach
                             </select>
                         </x-forms.input-group>
                     </div>
+
+                    <div class="col-md-3 pb-3">
+                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.departmentType')"
+                            fieldName="department type">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker mt" name="department_type" id="department_type"
+                                 data-live-search="true">
+                                <option value="">--</option>
+                                <option value="operation" selected>Operation</option>
+                                <option value="supporting">Supporting</option>
+                            </select>
+                        </x-forms.input-group>
+                    </div>
                 </div>
 
-                <x-form-actions>
+                <x-form-actions class="mt-10">
                     <x-forms.button-primary id="save-department-form" class="mr-3" icon="check">@lang('app.save')
                     </x-forms.button-primary>
                     <x-forms.button-cancel :link="route('departments.index')" class="border-0">@lang('app.cancel')
@@ -74,8 +89,7 @@
 </div>
 
 <script>
-
-    $( document ).ready(function() {
+    $(document).ready(function() {
         $(".select-picker").selectpicker();
     });
 
@@ -99,5 +113,4 @@
             }
         })
     });
-
 </script>

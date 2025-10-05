@@ -67,32 +67,17 @@ class LocationController extends AccountBaseController
         return redirect()->route('location.index');
     }
 
-    public function ajaxStore(Request $request) {
-        $location_name = $request->location;
-
-        Validator::make($request->all(), ['location' => 'required'])->validate();
-        Location::create(['location_name' => $location_name]);
-
-        $locations = Location::get();
-
-        return response()->json([
-            'data' => $locations,
-        ]);
-    }
-
     public function show($id)
     {
         $this->location = Location::findOrFail($id);
 
         $this->view = 'location.ajax.show';
 
-        // dd($this->location->toArray());
-
         if (request()->ajax()) {
             return $this->returnAjax($this->view);
         }
 
-        return view('location.create', $this->data);
+        return view('location.show', $this->data);
     }
 
     public function edit($id)

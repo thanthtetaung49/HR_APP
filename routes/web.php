@@ -122,7 +122,7 @@ use App\Http\Controllers\NoticeFileController;
 use App\Http\Controllers\InvoicePaymentDetailController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\LocationController;
-
+use App\Http\Controllers\ManPowerReportController;
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('image/upload', [ImageController::class, 'store'])->name('image.store');
@@ -232,6 +232,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('department/changeParent', [DepartmentController::class, 'changeParent'])->name('department.changeParent');
     Route::get('department/search', [DepartmentController::class, 'searchDepartment'])->name('departments.search');
     Route::get('department/{id}', [DepartmentController::class, 'getMembers'])->name('departments.members');
+
     Route::resource('departments', DepartmentController::class);
 
     Route::post('user-permissions/customPermissions/{id}', [UserPermissionController::class, 'customPermissions'])->name('user-permissions.custom_permissions');
@@ -391,6 +392,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         });
     Route::post('appreciations/apply-quick-action', [AppreciationController::class, 'applyQuickAction'])->name('appreciations.apply_quick_action');
     Route::resource('appreciations', AppreciationController::class);
+
+    /* Man Power Report */
+    Route::resource('man-power-reports', ManPowerReportController::class);
+    Route::post('man-power-reports/apply-quick-action', [ManPowerReportController::class, 'applyQuickAction'])->name('manPowerReports.apply_quick_action');
+
 
     /* KnowledgeBase */
     Route::get('knowledgebase/create/{id?}', [KnowledgeBaseController::class, 'create'])->name('knowledgebase.create');

@@ -1,11 +1,11 @@
-<div id="department-section">
+<div id="manpower-section">
     <div class="row">
         <div class="col-sm-12">
             <div class="card bg-white border-0 b-shadow-4">
                 <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
                     <div class="row">
                         <div class="col-md-10 col-10">
-                            <h3 class="heading-h1">@lang('app.locationDetails')</h3>
+                            <h3 class="heading-h1">@lang('app.manPowerDetails')</h3>
                         </div>
                         <div class="col-md-2 col-2 text-right">
                             <div class="dropdown">
@@ -16,15 +16,17 @@
                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                     aria-labelledby="dropdownMenuLink" tabindex="0">
                                     <a class="dropdown-item" data-redirect-url="{{ url()->previous() }}"
-                                        href="{{ route('location.edit', $location->id) }}">@lang('app.edit')</a>
-                                    <a class="dropdown-item delete-department">@lang('app.delete')</a>
+                                        href="{{ route('man-power-reports.edit', $reports->id) }}">@lang('app.edit')</a>
+                                    <a class="dropdown-item delete-manpower">@lang('app.delete')</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <x-cards.data-row :label="__('app.name')" :value="$location->location_name" html="true" />
+                    <x-cards.data-row :label="__('app.menu.manPowerSetup')" :value="$reports->man_power_setup" html="true" />
+                    <x-cards.data-row :label="__('app.menu.maxBasicSalary')" :value="$reports->man_power_basic_salary" html="true" />
+                    <x-cards.data-row :label="__('app.menu.teams')" :value="$reports->team_id" html="true" />
                 </div>
             </div>
         </div>
@@ -32,7 +34,7 @@
 </div>
 
 <script>
-    $('body').on('click', '.delete-department', function() {
+    $('body').on('click', '.delete-manpower', function() {
         Swal.fire({
             title: "@lang('messages.sweetAlertTitle')",
             text: "@lang('messages.recoverRecord')",
@@ -52,7 +54,7 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                var url = "{{ route('location.delete', $location->id) }}";
+                var url = "{{ route('man-power-reports.destroy', $reports->id) }}";
 
                 var token = "{{ csrf_token() }}";
 

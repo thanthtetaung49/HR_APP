@@ -31,7 +31,7 @@
                     <button type="submit" class="mr-3 btn-primary rounded f-14 p-2">
                         <i class="fa fa-check mr-1"></i>@lang('app.save')
                     </button>
-                    <x-forms.button-cancel :link="route('departments.index')" class="border-0">@lang('app.cancel')
+                    <x-forms.button-cancel :link="route('location.index')" class="border-0">@lang('app.cancel')
                     </x-forms.button-cancel>
                 </x-form-actions>
             </div>

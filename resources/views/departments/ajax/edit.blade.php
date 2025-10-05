@@ -61,13 +61,27 @@
                                 multiple data-live-search="true">
                                 <option value="">--</option>
                                 @foreach ($designations as $designation)
-                                <option value="{{ $designation->id }}"
-                                    @foreach ($selectedDesignations as $selectedDesignation)
+                                    <option value="{{ $designation->id }}"
+                                        @foreach ($selectedDesignations as $selectedDesignation)
                                         @if ($designation->id == $selectedDesignation)
                                             selected
-                                        @endif
-                                    @endforeach>{{ $designation->name }}</option>
+                                        @endif @endforeach>
+                                        {{ $designation->name }}</option>
                                 @endforeach
+                            </select>
+                        </x-forms.input-group>
+                    </div>
+
+                    <div class="col-md-3 pb-3">
+                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.departmentType')"
+                            fieldName="department type">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker mt" name="department_type" id="department_type"
+                                data-live-search="true">
+                                <option value="">--</option>
+                                <option value="operation" @if ($department->department_type === 'operation') selected @endif>Operation</option>
+                                <option value="supporting" @if ($department->department_type === 'supporting') selected @endif>Supporting</option>
                             </select>
                         </x-forms.input-group>
                     </div>
