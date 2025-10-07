@@ -1717,6 +1717,18 @@ return array(
         'title' => 'Man Power',
         'addTitle' => 'Add Man Power',
     ),
+    'subCriteria' => array(
+        'title' => 'Sub Criteria',
+        'addTitle' => 'Add Sub Criteria',
+    ),
+    'criteria' => array(
+        'title' => 'Criteria',
+        'addTitle' => 'Add Criteria',
+    ),
+    'cause' => array(
+        'title' => 'Cause',
+        'addTitle' => 'Add Cause',
+    ),
     'offlinePayment' => array(
         'title' => 'Offline Payment Method',
         'method' => 'Method',

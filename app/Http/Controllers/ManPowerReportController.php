@@ -52,7 +52,6 @@ class ManPowerReportController extends AccountBaseController
      */
     public function create()
     {
-        $this->view = 'man-power-reports.ajax.create';
         $this->data['pageTitle'] = 'Add Man Power';
         $this->data['departments'] = Team::get();
 

@@ -81,11 +81,15 @@
             ($sidebarUserPermissions['view_employees'] != 5 ||
                 $sidebarUserPermissions['view_leave'] != 5 ||
                 $sidebarUserPermissions['view_attendance'] != 5 ||
+                // $sidebarUserPermissions['view_man_power_report'] != 5 ||
+                // $sidebarUserPermissions['view_location'] != 5 ||
                 $sidebarUserPermissions['view_holiday'] != 5) &&
             ($sidebarUserPermissions['view_employees'] != 'none' ||
                 $sidebarUserPermissions['view_leave'] != 'none' ||
                 $sidebarUserPermissions['view_attendance'] != 'none' ||
                 $sidebarUserPermissions['view_holiday'] != 'none' ||
+                // $sidebarUserPermissions['view_man_power_report'] != 'none' ||
+                // $sidebarUserPermissions['view_location'] != 'none' ||
                 $sidebarUserPermissions['view_shift_roster'] != 'none'))
         <x-menu-item icon="people" :text="__('app.menu.hr')">
             <x-slot name="iconPath">
@@ -121,7 +125,9 @@
                     <x-sub-menu-item :link="route('holidays.index')" :text="__('app.menu.holiday')" />
                 @endif
 
-                <x-sub-menu-item :link="route('location.index')" :text="__('app.menu.location')" />
+                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                    <x-sub-menu-item :link="route('location.index')" :text="__('app.menu.location')" />
+                @endif
 
                 @if (isset($sidebarUserPermissions['view_designation']) && $sidebarUserPermissions['view_designation'] == 4)
                     <x-sub-menu-item :link="route('designations.index')" :text="__('app.menu.designation')" />
@@ -139,11 +145,22 @@
                     <x-sub-menu-item :link="route('awards.index')" :text="__('app.menu.appreciation')" />
                 @endif
 
-                @if (in_array('employees', user_modules()) &&
-                        $sidebarUserPermissions['view_employees'] != 5 &&
-                        $sidebarUserPermissions['view_employees'] != 'none')
+                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
                     <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
                 @endif
+
+                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                    <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
+                @endif
+
+                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                    <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.criteria')" />
+                @endif
+
+                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                    <x-sub-menu-item :link="route('causes.index')" :text="__('app.menu.cause')" />
+                @endif
+
 
                 <!-- NAV ITEM - CUSTOM MODULES  -->
                 @foreach ($worksuitePlugins as $item)

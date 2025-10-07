@@ -132,6 +132,8 @@ return array(
     'SorryTheQuantityExceedsFor' => 'Sorry, the quantity exceeds for',
     'doItLater' => 'Do It Later',
     'manPowerDetails' => 'Man Power Detail',
+    'subCriteriaDetails' => 'Sub Criteria Detail',
+    'criteriaDetails' => 'Criteria Detail',
     'months' => array(
         'January' => 'January',
         'February' => 'February',
@@ -147,6 +149,10 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'responsiblePerson' => 'Responsible Person',
+        'cause' => 'Cause',
+        'criteria' => 'Criteria',
+        'subCriteria' => 'Sub Criteria',
         'budgetYear' => 'Budget Year',
         'manPowerReport' => 'Man Power Report',
         'manPower' => 'Man Power',

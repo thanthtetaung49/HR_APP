@@ -1,6 +1,9 @@
 <?php
 
 return array(
+    'responsiblePerson' => 'Responsible Person',
+    'subCriteria' => 'Sub Criteria',
+    'criteria' => 'Criteria',
     'budgetYear' => 'Budget Year',
     'manPowerSetup' => 'Man Power Setup',
     'maxBasicSalary' => 'Max Basic Salary',

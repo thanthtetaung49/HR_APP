@@ -93,6 +93,7 @@ use App\Http\Controllers\ProjectCategoryController;
 use App\Http\Controllers\ProjectTemplateController;
 use App\Http\Controllers\TimelogCalendarController;
 use App\Http\Controllers\AttendanceReportController;
+use App\Http\Controllers\CauseController;
 use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\EmergencyContactController;
 use App\Http\Controllers\EstimateTemplateController;
@@ -104,6 +105,8 @@ use App\Http\Controllers\TicketCustomFormController;
 use App\Http\Controllers\ClientSubCategoryController;
 use App\Http\Controllers\KnowledgeBaseFileController;
 use App\Http\Controllers\ContractDiscussionController;
+use App\Http\Controllers\CrietiaController;
+use App\Http\Controllers\CriteriaController;
 use App\Http\Controllers\DealNoteController;
 use App\Http\Controllers\DiscussionCategoryController;
 use App\Http\Controllers\ProductSubCategoryController;
@@ -123,6 +126,7 @@ use App\Http\Controllers\InvoicePaymentDetailController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ManPowerReportController;
+use App\Http\Controllers\SubCriteriaController;
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('image/upload', [ImageController::class, 'store'])->name('image.store');
@@ -396,6 +400,17 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     /* Man Power Report */
     Route::resource('man-power-reports', ManPowerReportController::class);
     Route::post('man-power-reports/apply-quick-action', [ManPowerReportController::class, 'applyQuickAction'])->name('manPowerReports.apply_quick_action');
+
+    /* Sub criteria */
+    Route::resource('sub-criteria', SubCriteriaController::class);
+    Route::post('sub-criteria/apply-quick-action', [SubCriteriaController::class, 'applyQuickAction'])->name('subCriteria.apply_quick_action');
+
+    /* Crietia */
+    Route::resource('criteria', CriteriaController::class);
+    Route::post('criteria/apply-quick-action', [SubCriteriaController::class, 'applyQuickAction'])->name('criteria.apply_quick_action');
+
+    /* Cause */
+    Route::resource('causes', CauseController::class);
 
 
     /* KnowledgeBase */

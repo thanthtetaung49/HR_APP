@@ -9,15 +9,27 @@
 
     <div class="row p-20">
         <div class="col-sm-12">
-            <x-form action="{{ route('man-power-reports.store') }}" method="POST">
+            <x-form action="{{ route('man-power-reports.update', $reports->id) }}" method="PUT">
                 @csrf
                 <div class="add-client bg-white rounded">
                     <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                         @lang('modules.manPower.addTitle')</h4>
+
                     <div class="row p-20">
+                        {{-- @dump($reports) --}}
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.budgetYear')" :fieldValue="old('budget_year', $reports->budget_year)">
+                            </x-forms.text>
+
+                            @error('budget_year')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
                         <div class="col-md-4">
                             <x-forms.text fieldId="man_power_setup" :fieldLabel="__('app.menu.manPowerSetup')" fieldName="man_power_setup"
-                                fieldRequired="true" :fieldPlaceholder="__('placeholders.manPowerSetup')">
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.manPowerSetup')" :fieldValue="old('man_power_setup', $reports->man_power_setup)">
                             </x-forms.text>
 
                             @error('man_power_setup')
@@ -27,7 +39,7 @@
 
                         <div class="col-md-4">
                             <x-forms.text fieldId="man_power_basic_salary" :fieldLabel="__('app.menu.maxBasicSalary')"
-                                fieldName="man_power_basic_salary" fieldRequired="true" :fieldPlaceholder="__('placeholders.maxBasicSalary')">
+                                fieldName="man_power_basic_salary" fieldRequired="true" :fieldPlaceholder="__('placeholders.maxBasicSalary')" :fieldValue="old('man_power_basic_salary', $reports->man_power_basic_salary)">
                             </x-forms.text>
 
                             @error('man_power_basic_salary')
@@ -44,7 +56,9 @@
                                     data-live-search="true">
                                     <option value="">--</option>
                                     @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                                        <option value="{{ $department->id }}"
+                                            @if ($department->id == $reports->team_id) selected @endif>{{ $department->team_name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
