@@ -127,6 +127,7 @@ use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ManPowerReportController;
 use App\Http\Controllers\SubCriteriaController;
+use App\Http\Controllers\TurnOverReportController;
 
 Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('image/upload', [ImageController::class, 'store'])->name('image.store');
@@ -412,6 +413,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     /* Cause */
     Route::resource('causes', CauseController::class);
     Route::post('causes/apply-quick-action', [CauseController::class, 'applyQuickAction'])->name('causes.apply_quick_action');
+
+    /* Turn Over Report */
+    Route::resource('turn-over-reports', TurnOverReportController::class);
 
 
     /* KnowledgeBase */

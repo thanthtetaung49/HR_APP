@@ -16,7 +16,7 @@ class CauseController extends AccountBaseController
     public function __construct()
     {
         parent::__construct();
-        $this->pageTitle = __('app.menu.criteria');
+        $this->pageTitle = __('app.menu.cause');
 
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('employees', $this->user->modules));
