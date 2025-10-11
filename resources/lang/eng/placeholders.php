@@ -1,6 +1,9 @@
 <?php
 
 return array(
+    'exitsReason' => 'Exit Reason',
+    'actionTaken' => 'Action Taken',
+    'cause' => 'Cause',
     'responsiblePerson' => 'Responsible Person',
     'subCriteria' => 'Sub Criteria',
     'criteria' => 'Criteria',

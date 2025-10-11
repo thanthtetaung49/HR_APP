@@ -49,6 +49,9 @@ class CriteriaDataTable extends BaseDataTable
                  . $li .
                 '</ul>';
             })
+            ->editColumn('responsible_person', function ($criteria) {
+                return $criteria->responsible_person;
+            })
             ->addColumn('action', function ($criteria) {
                 $action = '<div class="task_view">
 <a href="' . route('criteria.show', [$criteria->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
@@ -82,7 +85,15 @@ class CriteriaDataTable extends BaseDataTable
      */
     public function query(Criteria $model): QueryBuilder
     {
-        return $model->newQuery();
+        $model = $model->select('*');
+        $searchText = request()->searchText;
+
+        if (request()->has('searchText') && request()->searchText != '') {
+
+            $model = $model->where('criteria', 'like', '%' . $searchText . '%');
+        }
+
+        return $model;
     }
 
     /**
@@ -123,6 +134,7 @@ class CriteriaDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             'criteria' => ['data' => 'criteria', 'name' => 'criteria', 'title' => __('app.menu.criteria')],
             'sub_criteria' => ['data' => 'sub_criteria', 'name' => 'sub_criteria', 'title' => __('app.menu.subCriteria')],
+             'responsible_person' => ['data' => 'responsible_person', 'name' => 'responsible_person', 'title' => __('app.menu.responsiblePerson')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

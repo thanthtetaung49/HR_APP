@@ -134,6 +134,7 @@ return array(
     'manPowerDetails' => 'Man Power Detail',
     'subCriteriaDetails' => 'Sub Criteria Detail',
     'criteriaDetails' => 'Criteria Detail',
+    'causeDetails' => 'Cause Detail',
     'months' => array(
         'January' => 'January',
         'February' => 'February',
@@ -149,6 +150,11 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'exitsReason' => 'Exit Reason',
+        'actionTaken' => 'Action Taken',
+        'cause' => 'Cause',
+        'quarter' => 'Quarter',
+        'position' => 'Position',
         'responsiblePerson' => 'Responsible Person',
         'cause' => 'Cause',
         'criteria' => 'Criteria',
@@ -605,7 +611,7 @@ return array(
     'estimate' => 'Estimate',
     'zero' => 'Zero',
     'designation' => 'Designation',
-    'departmentType' => 'Department Type',
+    'departmentGroup' => 'Department Group',
     'company_name' => 'Company Name',
     'thanks' => 'Thanks',
     'invoiceNumber' => 'Invoice Number',

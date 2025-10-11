@@ -1,0 +1,176 @@
+<?php
+
+namespace App\DataTables;
+
+use App\Models\Cause;
+use App\Models\EmployeeDetails;
+use Yajra\DataTables\Html\Button;
+use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\EloquentDataTable;
+use Yajra\DataTables\Html\Editor\Editor;
+use Yajra\DataTables\Html\Editor\Fields;
+use Yajra\DataTables\Services\DataTable;
+use Yajra\DataTables\Html\Builder as HtmlBuilder;
+use Illuminate\Database\Eloquent\Builder as QueryBuilder;
+
+class CauseDataTable extends BaseDataTable
+{
+    /**
+     * Build the DataTable class.
+     *
+     * @param QueryBuilder $query Results from query() method.
+     */
+    public function dataTable(QueryBuilder $query): EloquentDataTable
+    {
+        return  datatables()
+            ->eloquent($query)
+            ->addColumn('check', fn($row) => $this->checkBox($row))
+            ->addColumn('rowIndex', function () {
+                static $index = 0;
+                return ++$index; // Incremental row indexedi
+            })
+            ->editColumn('exit_reason', function ($cause) {
+                $employee = new EmployeeDetails();
+                $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+                if ($getCustomFieldGroupsWithFields) {
+                    $fields = $getCustomFieldGroupsWithFields->fields;
+                }
+
+                if (isset($fields) && count($fields) > 0) {
+                    foreach ($fields as $field) {
+                        if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
+                            $options = $field->values;
+                            $exitReason = $options[$cause->exit_reason_id] ?? $cause->exit_reason_id;
+                        }
+                    }
+                }
+
+                return $exitReason;
+            })
+            ->editColumn('action_taken', function ($cause) {
+                return $cause->action_taken;
+            })
+            ->editColumn('criteria', function ($cause) {
+                return $cause->criteria->criteria ?? '';
+            })
+            ->addColumn('action', function ($cause) {
+                $action = '<div class="task_view">
+<a href="' . route('causes.show', [$cause->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
+<div class="dropdown">
+                        <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
+                            id="dropdownMenuLink-' . $cause->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="icon-options-vertical icons"></i>
+                        </a>
+                            <div class="dropdown-menu dropdown-menu-right " aria-labelledby="dropdownMenuLink-' . $cause->id . '" tabindex="0">
+                                <a class="dropdown-item" href="' . route('causes.edit', [$cause->id]) . '">
+                                    <i class="fa fa-edit mr-2"></i>
+                                    ' . trans('app.edit') . '
+                                </a>
+                                <a class="dropdown-item delete-table-row" href="javascript:;" data-cause-id="' . $cause->id . '">
+                                    <i class="fa fa-trash mr-2"></i>
+                                    ' . trans('app.delete') . '
+                                </a>
+                            </div>
+                        </div>
+                    </div>';
+
+                return $action;
+            })
+            ->rawColumns(['action', 'check'])
+            ->setRowId('id')
+            ->addIndexColumn();
+    }
+
+    /**
+     * Get the query source of dataTable.
+     */
+    public function query(Cause $model): QueryBuilder
+    {
+        $model = $model->select('*');
+        $searchText = request()->searchText;
+
+        if (!empty($searchText)) {
+            $employee = new EmployeeDetails();
+            $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+            $exitReasonIds = [];
+
+            if ($getCustomFieldGroupsWithFields && $getCustomFieldGroupsWithFields->fields) {
+                foreach ($getCustomFieldGroupsWithFields->fields as $field) {
+                    if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
+                        foreach ($field->values as $id => $label) {
+                            if (stripos($label, $searchText) !== false) {
+                                $exitReasonIds[] = $id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!empty($exitReasonIds)) {
+                $model = $model->whereIn('exit_reason_id', $exitReasonIds);
+            } else {
+                $model = $model->where('exit_reason_id', 'like', '%' . $searchText . '%');
+            }
+        }
+
+        return $model;
+    }
+
+    /**
+     * Optional method if you want to use the html builder.
+     */
+    public function html(): HtmlBuilder
+    {
+        return $this->builder()
+            ->setTableId('cause-table')
+            ->columns($this->getColumns())
+            ->minifiedAjax()
+            //->dom('Bfrtip')
+            ->orderBy(1)
+            ->selectStyleSingle()
+            ->buttons([
+                Button::make('create'),
+                Button::make('export'),
+                Button::make('print'),
+                Button::make('reset'),
+                Button::make('reload')
+            ]);
+    }
+
+    /**
+     * Get the dataTable columns definition.
+     */
+    public function getColumns(): array
+    {
+        return [
+            'check' => [
+                'title' => '<input type="checkbox" name="select_all_table" id="select-all-table" onclick="selectAllTable(this)">',
+                'exportable' => false,
+                'orderable' => false,
+                'searchable' => false,
+                'visible' => !in_array('client', user_roles())
+            ],
+
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
+            'exit_reason' => ['data' => 'exit_reason', 'name' => 'exit_reason', 'title' => __('app.menu.exitsReason')],
+            'action_taken' => ['data' => 'action_taken', 'name' => 'action_taken', 'title' => __('app.menu.actionTaken')],
+            'criteria' => ['data' => 'criteria', 'name' => 'criteria', 'title' => __('app.menu.criteria')],
+            Column::computed('action', __('app.action'))
+                ->exportable(false)
+                ->printable(false)
+                ->orderable(false)
+                ->searchable(false)
+                ->addClass('text-right pr-20')
+        ];
+    }
+
+    /**
+     * Get the filename for export.
+     */
+    protected function filename(): string
+    {
+        return 'Cause_' . date('YmdHis');
+    }
+}

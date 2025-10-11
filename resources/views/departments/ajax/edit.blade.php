@@ -73,7 +73,7 @@
                     </div>
 
                     <div class="col-md-3 pb-3">
-                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.departmentType')"
+                        <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.departmentGroup')"
                             fieldName="department type">
                         </x-forms.label>
                         <x-forms.input-group>

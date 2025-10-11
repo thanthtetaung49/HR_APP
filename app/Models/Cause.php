@@ -10,4 +10,9 @@ class Cause extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function criteria()
+    {
+        return $this->belongsTo(Criteria::class, 'criteria_id');
+    }
 }

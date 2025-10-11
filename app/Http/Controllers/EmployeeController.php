@@ -23,6 +23,7 @@ use App\Jobs\ImportEmployeeJob;
 use App\Models\Appreciation;
 use App\Models\Attendance;
 use App\Models\AutomateShift;
+use App\Models\Cause;
 use App\Models\Designation;
 use App\Models\EmployeeActivity;
 use App\Models\EmployeeDetails;
@@ -133,6 +134,7 @@ class EmployeeController extends AccountBaseController
         $this->salutations = Salutation::cases();
         $this->companyAddresses = CompanyAddress::all();
         $this->locations = Location::get();
+        $this->cause = Cause::get();
 
         $userRoles = user()->roles->pluck('name')->toArray();
 
@@ -704,6 +706,16 @@ class EmployeeController extends AccountBaseController
                     }
                 }
 
+                // dd($this->employee->employeeDetail->custom_fields_data);
+
+               foreach ($this->fields as $field) {
+                    if ($field->type == 'select'&& $field->name == 'exit-reasons-1') {
+                        $exitReasonId = $this->employee->employeeDetail->custom_fields_data['field_' . $field->id];
+                    }
+               }
+
+                $this->cause = Cause::where('exit_reason_id', $exitReasonId)->first();
+
                 $taskBoardColumn = TaskboardColumn::completeColumn();
 
                 $this->taskCompleted = Task::join('task_users', 'task_users.task_id', '=', 'tasks.id')
@@ -887,6 +899,8 @@ class EmployeeController extends AccountBaseController
                 $this->view = 'employees.ajax.profile';
                 break;
         }
+
+        // dd($this->data);
 
         if (request()->ajax()) {
             $html = view($this->view, $this->data)->render();

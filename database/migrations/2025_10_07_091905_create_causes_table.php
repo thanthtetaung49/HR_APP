@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::create('causes', function (Blueprint $table) {
             $table->id();
-            $table->text('exit_reason')->nullable();
+            $table->text('exit_reason_id')->nullable();
+            $table->foreignId('criteria_id')->constrained('criterias');
+            $table->text('action_taken')->nullable();
             $table->timestamps();
         });
     }

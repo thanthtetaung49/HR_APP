@@ -5,7 +5,7 @@
                 <div class="card-header bg-white  border-bottom-grey  justify-content-between p-20">
                     <div class="row">
                         <div class="col-md-10 col-10">
-                            <h3 class="heading-h1">@lang('app.manPowerDetails')</h3>
+                            <h3 class="heading-h1">@lang('app.causeDetails')</h3>
                         </div>
                         <div class="col-md-2 col-2 text-right">
                             <div class="dropdown">
@@ -16,17 +16,17 @@
                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                     aria-labelledby="dropdownMenuLink" tabindex="0">
                                     <a class="dropdown-item" data-redirect-url="{{ url()->previous() }}"
-                                        href="{{ route('man-power-reports.edit', $reports->id) }}">@lang('app.edit')</a>
-                                    <a class="dropdown-item delete-manpower">@lang('app.delete')</a>
+                                        href="{{ route('causes.edit', $cause->id) }}">@lang('app.edit')</a>
+                                    <a class="dropdown-item delete-cause">@lang('app.delete')</a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="card-body">
-                    <x-cards.data-row :label="__('app.menu.manPowerSetup')" :value="$reports->man_power_setup" html="true" />
-                    <x-cards.data-row :label="__('app.menu.maxBasicSalary')" :value="$reports->man_power_basic_salary" html="true" />
-                    <x-cards.data-row :label="__('app.menu.teams')" :value="$reports->team_id" html="true" />
+                    <x-cards.data-row :label="__('app.menu.exitsReason')" :value="$cause->exit_reason" html="true" />
+                    <x-cards.data-row :label="__('app.menu.criteria')" :value="$cause->criteria->criteria" html="true" />
+                    <x-cards.data-row :label="__('app.menu.actionTaken')" :value="$cause->action_taken" html="true" />
                 </div>
             </div>
         </div>
@@ -34,7 +34,7 @@
 </div>
 
 <script>
-    $('body').on('click', '.delete-manpower', function() {
+    $('body').on('click', '.delete-cause', function() {
         Swal.fire({
             title: "@lang('messages.sweetAlertTitle')",
             text: "@lang('messages.recoverRecord')",
@@ -54,7 +54,7 @@
             buttonsStyling: false
         }).then((result) => {
             if (result.isConfirmed) {
-                var url = "{{ route('man-power-reports.destroy', $reports->id) }}";
+                var url = "{{ route('causes.destroy', $cause->id) }}";
 
                 var token = "{{ csrf_token() }}";
 

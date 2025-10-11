@@ -16,57 +16,21 @@
 
 @section('filter-section')
     <x-filters.filter-box>
-        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
-            <div class="select-status">
-                <select class="form-control select-picker" name="location_id" id="location_id" data-live-search="true" data-size="8">
-                    <option value="all">@lang('app.all')</option>
-                    @foreach ($locations as $location)
-                        <option value="{{ $location->id }}">{{ $location->location_name }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <!-- SEARCH BY TASK START -->
+        <div class="task-search d-flex py-1 pr-lg-2 px-0 border-right-grey align-items-center">
+            <form class="w-100 mr-1 mr-lg-0 mr-md-1 ml-md-1 ml-0 ml-lg-0">
+                <div class="input-group bg-grey rounded">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text border-0 bg-additional-grey">
+                            <i class="fa fa-search f-13 text-dark-grey"></i>
+                        </span>
+                    </div>
+                    <input type="text" class="form-control f-14 p-1 border-additional-grey" id="search-text-field"
+                           placeholder="@lang('app.startTyping')">
+                </div>
+            </form>
         </div>
-
-        <!-- CLIENT START -->
-        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.teams')</p>
-            <div class="select-status">
-                <select class="form-control select-picker" name="team_id" id="team_id" data-live-search="true"
-                    data-size="8">
-                    <option value="all">@lang('app.all')</option>
-                    @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <!-- CLIENT START -->
-        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.budgetYear')</p>
-            <div class="select-status">
-                <select class="form-control select-picker" name="budget_year" id="budget_year" data-live-search="true"
-                    data-size="8">
-                    <option value="all">@lang('app.all')</option>
-                    @foreach ($budgetYears as $year)
-                        <option value="{{ $year }}">{{ $year }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <!-- DATE START -->
-        <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
-            <div class="select-status d-flex">
-                <input type="text"
-                    class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
-                    id="datatableRange" placeholder="@lang('placeholders.dateRange')"
-                    value="{{ request('start') && request('end') ? request('start') . ' ' . __('app.to') . ' ' . request('end') : '' }}">
-            </div>
-        </div>
-        <!-- DATE END -->
+        <!-- SEARCH BY TASK END -->
 
         <!-- RESET START -->
         <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
@@ -85,8 +49,8 @@
 
         <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
-                <x-forms.link-primary :link="route('man-power-reports.create')" class="mr-3 float-left" icon="plus">
-                    @lang('app.menu.manPower')
+                <x-forms.link-primary :link="route('causes.create')" class="mr-3 float-left" icon="plus">
+                    @lang('app.menu.cause')
                 </x-forms.link-primary>
             </div>
         </div>
@@ -116,71 +80,21 @@
     @include('sections.datatable_js')
 
     <script>
-        $('#manpowerreport-table').on('preXhr.dt', function(e, settings, data) {
-            // const parentId = $('#parent_id').val();
-            // const childId = $('#child').val();
-            // const searchText = $('#search-text-field').val();
-
-            // data['searchText'] = searchText;
-            // data['parentId'] = parentId;
-            // data['childId'] = childId;
-            @if (request('start') && request('end'))
-                $('#datatableRange').data('daterangepicker').setStartDate("{{ request('start') }}");
-                $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
-            @endif
-
-            var dateRangePicker = $('#datatableRange').data('daterangepicker');
-
-            let startDate = $('#datatableRange').val();
-
-            let endDate;
-
-            if (startDate == '') {
-                startDate = null;
-                endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-            }
-
-            const teamId = $('#team_id').val();
-            const locationId = $('#location_id').val();
-            const budgetYear = $('#budget_year').val();
-
-            data['teamId'] = teamId;
-            data['startDate'] = startDate;
-            data['endDate'] = endDate;
-            data['locationId'] = locationId;
-            data['budgetYear'] = budgetYear;
+        $('#cause-table').on('preXhr.dt', function(e, settings, data) {
+            const searchText = $('#search-text-field').val();
+            data['searchText'] = searchText;
         });
 
         const showTable = () => {
-            window.LaravelDataTables["manpowerreport-table"].draw(true);
+            window.LaravelDataTables["cause-table"].draw(true);
         }
 
-        $('#team_id, #location_id, #budget_year').on('change keyup',
-            function() {
-                if ($('#team_id').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#datatableRange").val() != "") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#location_id").val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#budget_year").val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else {
-                    $('#reset-filters').addClass('d-none');
-                }
-
+        $('#search-text-field').on('keyup', function() {
+            if ($('#search-text-field').val() != "") {
+                $('#reset-filters').removeClass('d-none');
                 showTable();
-            });
-
-        // $('#search-text-field').on('keyup', function() {
-        //     if ($('#search-text-field').val() != "") {
-        //         $('#reset-filters').removeClass('d-none');
-        //         showTable();
-        //     }
-        // });
+            }
+        });
 
         $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
@@ -191,7 +105,7 @@
         });
 
         $('body').on('click', '.delete-table-row', function() {
-            var id = $(this).data('manpower-id');
+            var id = $(this).data('cause-id');
 
             console.log(id);
             Swal.fire({
@@ -213,7 +127,7 @@
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    var url = "{{ route('man-power-reports.destroy', ':id') }}";
+                    var url = "{{ route('causes.destroy', ':id') }}";
                     url = url.replace(':id', id);
 
                     console.log(url);
@@ -229,7 +143,6 @@
                             '_method': 'DELETE'
                         },
                         success: function(response) {
-                            console.log(response.redirectUrl);
                             window.location.href = response.redirectUrl;
                             // if (response.message == "success") {
                             //     // showTable();
@@ -283,12 +196,12 @@
         });
 
         const applyQuickAction = () => {
-            const rowdIds = $("#manpowerreport-table input:checkbox:checked").map(function() {
+            const rowdIds = $("#cause-table input:checkbox:checked").map(function() {
                 return $(this).val();
             }).get();
 
 
-            const url = "{{ route('manPowerReports.apply_quick_action') }}?row_ids=" + rowdIds;
+            const url = "{{ route('causes.apply_quick_action') }}?row_ids=" + rowdIds;
 
             $.easyAjax({
                 url: url,

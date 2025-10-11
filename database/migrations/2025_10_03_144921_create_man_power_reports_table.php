@@ -18,6 +18,7 @@ return new class extends Migration
             $table->unsignedInteger('team_id')->index();
             $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade')->onUpdate('cascade');
             $table->string('budget_year')->nullable();
+            $table->string('quarter')->nullable();
             $table->timestamps();
         });
     }

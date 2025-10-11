@@ -9,57 +9,59 @@
 
     <div class="row p-20">
         <div class="col-sm-12">
-            <x-form action="{{ route('man-power-reports.store') }}" method="POST">
+            <x-form action="{{ route('causes.store') }}" method="POST">
                 @csrf
                 <div class="add-client bg-white rounded">
                     <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                        @lang('modules.manPower.addTitle')</h4>
+                        @lang('modules.causes.addTitle')</h4>
                     <div class="row p-20">
-                        <div class="col-md-4">
-                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year"
-                                fieldRequired="true" :fieldPlaceholder="__('placeholders.budgetYear')">
-                            </x-forms.text>
+                        @if (isset($fields) && count($fields) > 0)
+                            @foreach ($fields as $field)
+                                @if ($field->type == 'select' && $field->name == 'exit-reasons-1')
+                                    <div class="col-md-4">
 
-                            @error('budget_year')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
+                                        <x-forms.label class="my-3" fieldId="exit_reason_id"
+                                            :fieldLabel="$field->label" :fieldRequired="($field->required === 'yes') ? true : false">
+                                        </x-forms.label>
 
-                        <div class="col-md-4">
-                            <x-forms.text fieldId="man_power_setup" :fieldLabel="__('app.menu.manPowerSetup')" fieldName="man_power_setup"
-                                fieldRequired="true" :fieldPlaceholder="__('placeholders.manPowerSetup')">
-                            </x-forms.text>
-
-                            @error('man_power_setup')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <x-forms.text fieldId="man_power_basic_salary" :fieldLabel="__('app.menu.maxBasicSalary')"
-                                fieldName="man_power_basic_salary" fieldRequired="true" :fieldPlaceholder="__('placeholders.maxBasicSalary')">
-                            </x-forms.text>
-
-                            @error('man_power_basic_salary')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
+                                        <x-forms.input-group>
+                                            <select class="form-control select-picker mt" name="exit_reason_id"
+                                                id="exit_reason_id" data-live-search="true">
+                                                @foreach ($field->values as $key => $value)
+                                                    <option value="{{ $key }}">{{ $value }}</option>
+                                                @endforeach
+                                            </select>
+                                        </x-forms.input-group>
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
 
                         <div class="col-md-4">
-                            <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.teams')" fieldName="team_id">
+                            <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.criteria')" fieldName="criteria_id">
                             </x-forms.label>
 
                             <x-forms.input-group>
-                                <select class="form-control select-picker mt" name="team_id" id="team_id"
+                                <select class="form-control select-picker mt" name="criteria_id" id="criteria_id"
                                     data-live-search="true">
                                     <option value="">--</option>
-                                    @foreach ($departments as $department)
-                                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                                    @foreach ($criterias as $criteria)
+                                        <option value="{{ $criteria->id }}">{{ $criteria->criteria }}</option>
                                     @endforeach
                                 </select>
                             </x-forms.input-group>
 
-                            @error('team_id')
+                            @error('criteria_id')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="action_taken" :fieldLabel="__('app.menu.actionTaken')" fieldName="action_taken"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.actionTaken')">
+                            </x-forms.text>
+
+                            @error('action_taken')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
@@ -69,7 +71,7 @@
                         <button type="submit" class="mr-3 btn-primary rounded f-14 p-2">
                             <i class="fa fa-check mr-1"></i>@lang('app.save')
                         </button>
-                        <x-forms.button-cancel :link="route('man-power-reports.index')" class="border-0">@lang('app.cancel')
+                        <x-forms.button-cancel :link="route('causes.index')" class="border-0">@lang('app.cancel')
                         </x-forms.button-cancel>
                     </x-form-actions>
                 </div>

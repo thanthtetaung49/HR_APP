@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\ManPowerReport;
 use Illuminate\Support\Facades\Validator;
 use App\DataTables\ManPowerReportDataTable;
+use App\Models\Designation;
 
 class ManPowerReportController extends AccountBaseController
 {
@@ -43,6 +44,8 @@ class ManPowerReportController extends AccountBaseController
             ->get()
             ->pluck('budget_year');
 
+        $this->data['designations'] = Designation::select('id', 'name')
+            ->get();
 
         return $dataTable->render('man-power-reports.index', $this->data);
     }
@@ -67,6 +70,7 @@ class ManPowerReportController extends AccountBaseController
         $man_power_basic_salary = $request->man_power_basic_salary;
         $team_id = $request->team_id;
         $budget_year = $request->budget_year;
+        $quarter = $request->quarter;
 
         Validator::make($request->all(), [
             'man_power_setup' => 'required',
@@ -79,7 +83,8 @@ class ManPowerReportController extends AccountBaseController
             'man_power_setup' => $man_power_setup,
             'man_power_basic_salary' => $man_power_basic_salary,
             'team_id' => $team_id,
-            'budget_year' => $budget_year
+            'budget_year' => $budget_year,
+            'quarter' => $quarter
         ]);
 
         return redirect()->route('man-power-reports.index');
@@ -133,7 +138,8 @@ class ManPowerReportController extends AccountBaseController
             'man_power_setup' => $request->man_power_setup,
             'man_power_basic_salary' => $request->man_power_basic_salary,
             'team_id' => $request->team_id,
-            'budget_year' => $request->budget_year
+            'budget_year' => $request->budget_year,
+            'quarter' => $request->quarter
         ]);
 
         return redirect()->route('man-power-reports.index');

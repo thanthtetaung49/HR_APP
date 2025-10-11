@@ -1725,9 +1725,9 @@ return array(
         'title' => 'Criteria',
         'addTitle' => 'Add Criteria',
     ),
-    'cause' => array(
-        'title' => 'Cause',
-        'addTitle' => 'Add Cause',
+    'causes' => array(
+        'title' => 'Causes',
+        'addTitle' => 'Add Causes',
     ),
     'offlinePayment' => array(
         'title' => 'Offline Payment Method',

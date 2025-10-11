@@ -18,11 +18,31 @@
                     <div class="row p-20">
                         {{-- @dump($reports) --}}
                         <div class="col-md-4">
-                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year"
-                                fieldRequired="true" :fieldPlaceholder="__('placeholders.budgetYear')" :fieldValue="old('budget_year', $reports->budget_year)">
+                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year" fieldRequired="true"
+                                :fieldPlaceholder="__('placeholders.budgetYear')" :fieldValue="old('budget_year', $reports->budget_year)">
                             </x-forms.text>
 
                             @error('budget_year')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.quarter')" fieldName="quater">
+                            </x-forms.label>
+
+                            <x-forms.input-group>
+                                <select class="form-control select-picker mt" name="quarter" id="quarter"
+                                    data-live-search="true">
+                                    <option value="">--</option>
+                                    <option value="1" @if ($reports->quarter == 1) selected @endif>Q1 (Jan to Mar)</option>
+                                    <option value="2" @if ($reports->quarter == 2) selected @endif>Q2 (Apr to Jun)</option>
+                                    <option value="3" @if ($reports->quarter == 3) selected @endif>Q3 (Jul to Sept)</option>
+                                    <option value="4" @if ($reports->quarter == 4) selected @endif>Q4 (Oct to Dec)</option>
+                                </select>
+                            </x-forms.input-group>
+
+                            @error('quarter')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>

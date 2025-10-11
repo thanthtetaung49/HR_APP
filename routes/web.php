@@ -411,6 +411,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     /* Cause */
     Route::resource('causes', CauseController::class);
+    Route::post('causes/apply-quick-action', [CauseController::class, 'applyQuickAction'])->name('causes.apply_quick_action');
 
 
     /* KnowledgeBase */

@@ -8,6 +8,6 @@
     </style>
 
     <div class="p-20">
-        @include('man-power-reports.ajax.show')
+        @include('cause.ajax.show')
     </div>
 @endsection

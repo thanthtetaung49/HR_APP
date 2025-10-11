@@ -178,7 +178,7 @@ class DepartmentDataTable extends BaseDataTable
             ],
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.name') => ['data' => 'name', 'name' => 'team_name', 'title' => __('app.name')],
-            __('app.departmentType') => ['data' => 'department_type', 'name' => 'department_type', 'title' => __('app.departmentType')],
+            __('app.departmentGroup') => ['data' => 'department_type', 'name' => 'department_type', 'title' => __('app.departmentGroup')],
             __('modules.department.parentDepartment') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('modules.department.parentDepartment')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)

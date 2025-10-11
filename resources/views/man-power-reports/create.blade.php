@@ -16,11 +16,31 @@
                         @lang('modules.manPower.addTitle')</h4>
                     <div class="row p-20">
                         <div class="col-md-4">
-                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year"
-                                fieldRequired="true" :fieldPlaceholder="__('placeholders.budgetYear')">
+                            <x-forms.text fieldId="budget_year" :fieldLabel="__('app.menu.budgetYear')" fieldName="budget_year" fieldRequired="true"
+                                :fieldPlaceholder="__('placeholders.budgetYear')">
                             </x-forms.text>
 
                             @error('budget_year')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.quarter')" fieldName="quater">
+                            </x-forms.label>
+
+                            <x-forms.input-group>
+                                <select class="form-control select-picker mt" name="quarter" id="quarter"
+                                    data-live-search="true">
+                                    <option value="">--</option>
+                                    <option value="1">Q1 (Jan to Mar)</option>
+                                    <option value="2">Q2 (Apr to Jun)</option>
+                                    <option value="3">Q3 (Jul to Sept)</option>
+                                    <option value="4">Q4 (Oct to Dec)</option>
+                                </select>
+                            </x-forms.input-group>
+
+                            @error('quarter')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>

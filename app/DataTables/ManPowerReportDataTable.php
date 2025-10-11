@@ -32,6 +32,17 @@ class ManPowerReportDataTable extends BaseDataTable
             ->editColumn('budget_year', function ($manPower) {
                 return $manPower->budget_year;
             })
+            ->editColumn('quarter', function ($manPower) {
+                if ($manPower->quarter == 1) {
+                    return 'Q1';
+                } elseif ($manPower->quarter == 2) {
+                    return 'Q2';
+                } elseif ($manPower->quarter == 3) {
+                    return 'Q3';
+                } else {
+                    return 'Q4';
+                }
+            })
             ->editColumn('location', function ($manPower) {
                 return $manPower->location;
             })
@@ -81,6 +92,15 @@ class ManPowerReportDataTable extends BaseDataTable
             ->editColumn('updated_at', function ($manPower) {
                 return $manPower->updated_at->format('Y-m-d');
             })
+            ->editColumn('vacancy_percent', function ($manPower) {
+                $count =  ($manPower->count_employee > 0) ? $manPower->count_employee : 0;
+
+                if ($count > 0) {
+                    return ($count / $manPower->man_power_setup ) * 100 . '%';
+                } else {
+                    return '0%';
+                }
+            })
             ->addColumn('action', function ($manPower) {
                 $action = '<div class="task_view">
 <a href="' . route('man-power-reports.show', [$manPower->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
@@ -122,9 +142,18 @@ class ManPowerReportDataTable extends BaseDataTable
             'locations.location_name as location',
             'designations.id as designation_id',
             'locations.id as location_id',
+            // DB::raw('SUM(allowances.basic_salary) as total_allowance'),
+            // DB::raw('COUNT(employee_details.id) as count_employee'),
             DB::raw('SUM(CASE
     WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
     AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+    AND (
+        (man_power_reports.quarter = 1 AND MONTH(allowances.created_at) BETWEEN 1 AND 3) OR
+        (man_power_reports.quarter = 2 AND MONTH(allowances.created_at) BETWEEN 4 AND 6) OR
+        (man_power_reports.quarter = 3 AND MONTH(allowances.created_at) BETWEEN 7 AND 9) OR
+        (man_power_reports.quarter = 4 AND MONTH(allowances.created_at) BETWEEN 10 AND 12) OR
+        allowances.created_at IS NULL
+    )
     THEN allowances.basic_salary
     ELSE 0
 END) as total_allowance'),
@@ -132,9 +161,15 @@ END) as total_allowance'),
             DB::raw('COUNT(CASE
     WHEN (YEAR(employee_details.created_at) = man_power_reports.budget_year OR employee_details.created_at IS NULL)
     AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+    AND (
+        (man_power_reports.quarter = 1 AND MONTH(employee_details.created_at) BETWEEN 1 AND 3) OR
+        (man_power_reports.quarter = 2 AND MONTH(employee_details.created_at) BETWEEN 4 AND 6) OR
+        (man_power_reports.quarter = 3 AND MONTH(employee_details.created_at) BETWEEN 7 AND 9) OR
+        (man_power_reports.quarter = 4 AND MONTH(employee_details.created_at) BETWEEN 10 AND 12) OR
+        employee_details.created_at IS NULL
+    )
     THEN employee_details.id
 END) as count_employee')
-
         ])
             ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
             ->leftJoin('employee_details', 'teams.id', '=', 'employee_details.department_id')
@@ -151,6 +186,7 @@ END) as count_employee')
                 'man_power_reports.budget_year',
                 'man_power_reports.man_power_setup',
                 'man_power_reports.man_power_basic_salary',
+                'man_power_reports.quarter',
                 'man_power_reports.created_at',
                 'man_power_reports.updated_at',
                 'designations.name',
@@ -167,6 +203,14 @@ END) as count_employee')
 
         if (request()->locationId != 'all' && request()->locationId != null) {
             $model->where('locations.id', request()->locationId);
+        }
+
+        if (request()->position != 'all' && request()->position != null) {
+            $model->where('designations.id', request()->position);
+        }
+
+        if (request()->quarter != 'all' && request()->quarter != null) {
+            $model->where('man_power_reports.quarter', request()->quarter);
         }
 
         if (request()->budgetYear != 'all' && request()->budgetYear != null) {
@@ -247,13 +291,16 @@ END) as count_employee')
 
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             'budget_year' => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => 'Year'],
+            'quarter' => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
             'location' => ['data' => 'location', 'name' => 'location', 'title' => 'Location'],
             'position' => ['data' => 'position', 'name' => 'position', 'title' => 'Position'],
             'man_power_setup' => ['data' => 'man_power_setup', 'name' => 'man_power_setup', 'title' => 'Man Power Budget'],
             'actual_man_power' => ['data' => 'actual_man_power', 'name' => 'actual_man_power', 'title' => 'Man Power Actual'],
             'max_man_power_basic_salary' => ['data' => 'max_man_power_basic_salary', 'name' => 'max_man_power_basic_salary', 'title' => 'Max Salary Budget'],
             'total_man_power_basic_salary' => ['data' => 'total_man_power_basic_salary', 'name' => 'total_man_power_basic_salary', 'title' => 'Salary Actual'],
+            'vacancy_percent' => ['data' => 'vacancy_percent', 'name' => 'vacancy_percent', 'title' => 'Vacancy %'],
             'team' => ['data' => 'team', 'name' => 'team', 'title' => __('app.menu.department')],
+            // 'responsible_person' => ['data' => 'responsible_person', 'name' => 'responsible_person', 'title' => __('app.menu.responsiblePerson')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

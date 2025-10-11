@@ -19,7 +19,8 @@
         <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="location_id" id="location_id" data-live-search="true" data-size="8">
+                <select class="form-control select-picker" name="location_id" id="location_id" data-live-search="true"
+                    data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($locations as $location)
                         <option value="{{ $location->id }}">{{ $location->location_name }}</option>
@@ -38,6 +39,35 @@
                     @foreach ($departments as $department)
                         <option value="{{ $department->id }}">{{ $department->team_name }}</option>
                     @endforeach
+                </select>
+            </div>
+        </div>
+
+        <!-- CLIENT START -->
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.position')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="position" id="position" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    @foreach ($designations as $position)
+                        <option value="{{ $position->id }}">{{ $position->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+
+        <!-- CLIENT START -->
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.quarter')</p>
+            <div class="select-status">
+                <select class="form-control select-picker mt" name="quarter" id="quarter" data-live-search="true">
+                    <option value="all">@lang('app.all')</option>
+                    <option value="1">Q1 (Jan to Mar)</option>
+                    <option value="2">Q2 (Apr to Jun)</option>
+                    <option value="3">Q3 (Jul to Sept)</option>
+                    <option value="4">Q4 (Oct to Dec)</option>
                 </select>
             </div>
         </div>
@@ -117,13 +147,6 @@
 
     <script>
         $('#manpowerreport-table').on('preXhr.dt', function(e, settings, data) {
-            // const parentId = $('#parent_id').val();
-            // const childId = $('#child').val();
-            // const searchText = $('#search-text-field').val();
-
-            // data['searchText'] = searchText;
-            // data['parentId'] = parentId;
-            // data['childId'] = childId;
             @if (request('start') && request('end'))
                 $('#datatableRange').data('daterangepicker').setStartDate("{{ request('start') }}");
                 $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
@@ -146,19 +169,23 @@
             const teamId = $('#team_id').val();
             const locationId = $('#location_id').val();
             const budgetYear = $('#budget_year').val();
+            const position = $('#position').val();
+            const quarter = $('#quarter').val();
 
             data['teamId'] = teamId;
             data['startDate'] = startDate;
             data['endDate'] = endDate;
             data['locationId'] = locationId;
             data['budgetYear'] = budgetYear;
+            data['position'] = position;
+            data['quarter'] = quarter;
         });
 
         const showTable = () => {
             window.LaravelDataTables["manpowerreport-table"].draw(true);
         }
 
-        $('#team_id, #location_id, #budget_year').on('change keyup',
+        $('#team_id, #location_id, #budget_year, #position, #quarter').on('change keyup',
             function() {
                 if ($('#team_id').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -168,19 +195,16 @@
                     $('#reset-filters').removeClass('d-none');
                 } else if ($("#budget_year").val() != "all") {
                     $('#reset-filters').removeClass('d-none');
+                } else if ($("#position").val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($("#quarter").val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');
                 }
 
                 showTable();
             });
-
-        // $('#search-text-field').on('keyup', function() {
-        //     if ($('#search-text-field').val() != "") {
-        //         $('#reset-filters').removeClass('d-none');
-        //         showTable();
-        //     }
-        // });
 
         $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
@@ -192,8 +216,6 @@
 
         $('body').on('click', '.delete-table-row', function() {
             var id = $(this).data('manpower-id');
-
-            console.log(id);
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",

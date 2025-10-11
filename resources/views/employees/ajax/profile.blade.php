@@ -144,6 +144,9 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                             <x-cards.data-row :label="__('app.designation')"
                                 :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->designation)) ? ($employee->employeeDetail->designation->name) : '--'" />
 
+                             <x-cards.data-row :label="__('app.departmentGroup')"
+                                :value="(isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department)) ? ($employee->employeeDetail->department->department_type) : '--'" />
+
                             <x-cards.data-row :label="__('app.department')"
                                 :value="(isset($employee->employeeDetail) && !is_null($employee->employeeDetail->department) && !is_null($employee->employeeDetail->department)) ? ($employee->employeeDetail->department->team_name) : '--'" />
 
@@ -245,6 +248,23 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
 
                                 {{-- Custom fields data --}}
                                 <x-forms.custom-field-show :fields="$fields" :model="$employee->employeeDetail"></x-forms.custom-field-show>
+
+                                @if ($cause)
+                                    <x-cards.data-row :label="__('app.menu.criteria')"
+                                        :value="(!is_null($cause->criteria) ? $cause->criteria->criteria : '--')" />
+
+                                        <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
+                                            <p class="mb-0 text-lightest f-14 w-30">{{ __('app.menu.responsiblePerson') }}</p>
+                                            <p class="mb-0 text-white f-14 w-70 text-wrap">
+                                                <span class="bg-danger p-2">{{ (!is_null($cause->criteria) ? $cause->criteria->responsible_person : '--') }}</span>
+                                            </p>
+                                        </div>
+
+                                        <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
+                                            <p class="mb-0 text-lightest f-14 w-30">{{ __('app.menu.actionTaken') }}</p>
+                                            <p class="mb-0 text-danger f-14 w-70 text-wrap">{{ (!is_null($cause->criteria) ? $cause->action_taken : '--') }}</p>
+                                        </div>
+                                @endif
 
                             @endif
 
