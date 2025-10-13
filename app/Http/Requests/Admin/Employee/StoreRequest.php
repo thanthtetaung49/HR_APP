@@ -45,6 +45,7 @@ class StoreRequest extends CoreRequest
             'notice_period_end_date' => 'nullable|required_with:notice_period_start_date|date_format:"' . $setting->date_format . '"|after_or_equal:notice_period_start_date',
             'internship_end_date' => 'nullable|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
             'contract_end_date' => 'nullable|date_format:"' . $setting->date_format . '"|after_or_equal:joining_date',
+            'bank_account_number' => 'nullable|regex:/^[0-9]{17}$/',
         ];
 
         if (request()->telegram_user_id) {

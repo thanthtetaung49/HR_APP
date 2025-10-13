@@ -511,6 +511,8 @@ class EmployeeController extends AccountBaseController
         $user->bank_account_name = $request->bank_account_name;
         $user->bank_account_number = $request->bank_account_number;
 
+        // dd($user->toArray());
+
         if ($request->status) {
             $lastDate = $request->last_date ? Carbon::createFromFormat($this->company->date_format, $request->last_date, $this->company->timezone) : null;
 
@@ -546,7 +548,9 @@ class EmployeeController extends AccountBaseController
             $user->telegram_user_id = $request->telegram_user_id;
         }
 
+        // dd($user->toArray());
         $user->save();
+
 
         cache()->forget('user_is_active_' . $user->id);
 

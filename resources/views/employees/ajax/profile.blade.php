@@ -202,6 +202,15 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 <x-cards.data-row :label="__('modules.employees.hourlyRate')"
                                     :value="(!is_null($employee->employeeDetail)) ? company()->currency->currency_symbol.$employee->employeeDetail->hourly_rate : '--'" />
 
+                                 <x-cards.data-row :label="__('modules.bankInformation.bankName')"
+                                    :value="(!is_null($employee->bank_name)) ? $employee->bank_name : '--'" />
+
+                                 <x-cards.data-row :label="__('modules.bankInformation.bankAccountName')"
+                                    :value="(!is_null($employee->bank_account_name)) ? $employee->bank_account_name : '--'" />
+
+                                 <x-cards.data-row :label="__('modules.bankInformation.bankAccountNumber')"
+                                    :value="(!is_null($employee->bank_account_number)) ? $employee->bank_account_number : '--'" />
+
                                 <x-cards.data-row :label="__('app.address')"
                                     :value="$employee->employeeDetail->address ?? '--'" />
 
