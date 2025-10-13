@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\TurnOverReportExport;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GdprController;
 use App\Http\Controllers\DealController;
@@ -139,7 +140,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('dashboard-advanced', [DashboardController::class, 'advancedDashboard'])->name('dashboard.advanced');
     Route::post('dashboard/widget/{dashboardType}', [DashboardController::class, 'widget'])->name('dashboard.widget');
     Route::post('dashboard/week-timelog', [DashboardController::class, 'weekTimelog'])->name('dashboard.week_timelog');
-    Route::get('dashboard/lead-data/{id}', [DashboardController  ::class, 'getLeadStage'])->name('dashboard.deal-stage-data');
+    Route::get('dashboard/lead-data/{id}', [DashboardController::class, 'getLeadStage'])->name('dashboard.deal-stage-data');
 
     Route::get('attendances/clock-in-modal', [DashboardController::class, 'clockInModal'])->name('attendances.clock_in_modal');
     Route::post('attendances/store-clock-in', [DashboardController::class, 'storeClockIn'])->name('attendances.store_clock_in');
@@ -311,7 +312,6 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
             Route::resource('project-template-task', ProjectTemplateTaskController::class);
             Route::resource('project-template-sub-task', ProjectTemplateSubTaskController::class);
             Route::resource('project-calendar', ProjectCalendarController::class);
-
         }
     );
 
@@ -394,7 +394,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
             Route::get('awards/quick-create', [AwardController::class, 'quickCreate'])->name('awards.quick-create');
             Route::post('awards/quick-store', [AwardController::class, 'quickStore'])->name('awards.quick-store');
             Route::resource('awards', AwardController::class);
-        });
+        }
+    );
     Route::post('appreciations/apply-quick-action', [AppreciationController::class, 'applyQuickAction'])->name('appreciations.apply_quick_action');
     Route::resource('appreciations', AppreciationController::class);
 
@@ -415,8 +416,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('causes/apply-quick-action', [CauseController::class, 'applyQuickAction'])->name('causes.apply_quick_action');
 
     /* Turn Over Report */
+    Route::get('turn-over-reports/export-all-leave', [TurnOverReportController::class, 'exportTurnOverReport'])->name('turnOverReports.export');
+    Route::get('turn-over-reports/filter', [TurnOverReportController::class, 'filterTurnOverReport'])->name('turnOverReports.filter');
     Route::resource('turn-over-reports', TurnOverReportController::class);
-
 
     /* KnowledgeBase */
     Route::get('knowledgebase/create/{id?}', [KnowledgeBaseController::class, 'create'])->name('knowledgebase.create');
@@ -815,7 +817,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('task-report', TaskReportController::class);
 
     Route::post('time-log-report-chart', [TimelogReportController::class, 'timelogChartData'])->name('time-log-report.chart');
-    Route::get('time-log-consolidated-report', [TimelogReportController::class,'consolidateIndex'])->name('time-log-consolidated.report');
+    Route::get('time-log-consolidated-report', [TimelogReportController::class, 'consolidateIndex'])->name('time-log-consolidated.report');
     Route::resource('time-log-report', TimelogReportController::class);
     Route::post('time-log-report-time', [TimelogReportController::class, 'totalTime'])->name('time-log-report.time');
 
@@ -900,5 +902,4 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     Route::post('gantt_link.task_update', [GanttLinkController::class, 'taskUpdateController'])->name('gantt_link.task_update');
     Route::resource('gantt_link', GanttLinkController::class);
-
 });

@@ -150,6 +150,7 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'turnOverYear' => 'Turn Over (Year)',
         'turnOverReport' => 'Turn Over Report',
         'exitsReason' => 'Exit Reason',
         'actionTaken' => 'Action Taken',
