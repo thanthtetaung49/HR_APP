@@ -54,6 +54,10 @@ class TurnOverReportExport implements FromView, WithStyles, ShouldAutoSize
               ->getAllBorders()
               ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
+        $sheet->getStyle("A1")
+            ->getAlignment()
+            ->setVertical(Alignment::VERTICAL_CENTER);
+
         $sheet->getStyle("B1:{$highestColumn}{$highestRow}")
             ->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)

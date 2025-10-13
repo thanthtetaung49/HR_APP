@@ -114,10 +114,10 @@
                     $total_resign = $operation_resign + $supporting_resign;
 
                     // Percentages
-                    $operation_pct = $operation_total > 0 ? round(($operation_resign / $operation_total) * 100, 2) : 0;
+                    $operation_pct = $operation_total > 0 ? round(($operation_resign / $operation_total) * 100, 0) : 0;
                     $supporting_pct =
-                        $supporting_total > 0 ? round(($supporting_resign / $supporting_total) * 100, 2) : 0;
-                    $total_pct = $total_total > 0 ? round(($total_resign / $total_total) * 100, 2) : 0;
+                        $supporting_total > 0 ? round(($supporting_resign / $supporting_total) * 100, 0) : 0;
+                    $total_pct = $total_total > 0 ? round(($total_resign / $total_total) * 100, 0) : 0;
 
                 @endphp
 
@@ -194,10 +194,10 @@
 
                     // Percentages
                     $operation_pct =
-                        $operation_total > 0 ? round(($operation_probation / $operation_total) * 100, 2) : 0;
+                        $operation_total > 0 ? round(($operation_probation / $operation_total) * 100, 0) : 0;
                     $supporting_pct =
-                        $supporting_total > 0 ? round(($supporting_probation / $supporting_total) * 100, 2) : 0;
-                    $total_pct = $total_total > 0 ? round(($total_probation / $total_total) * 100, 2) : 0;
+                        $supporting_total > 0 ? round(($supporting_probation / $supporting_total) * 100, 0) : 0;
+                    $total_pct = $total_total > 0 ? round(($total_probation / $total_total) * 100, 0) : 0;
 
                 @endphp
 
@@ -274,10 +274,10 @@
 
                     // Percentages
                     $operation_pct =
-                        $operation_total > 0 ? round(($operation_permanent / $operation_total) * 100, 2) : 0;
+                        $operation_total > 0 ? round(($operation_permanent / $operation_total) * 100, 0) : 0;
                     $supporting_pct =
-                        $supporting_total > 0 ? round(($supporting_permanent / $supporting_total) * 100, 2) : 0;
-                    $total_pct = $total_total > 0 ? round(($total_permanent / $total_total) * 100, 2) : 0;
+                        $supporting_total > 0 ? round(($supporting_permanent / $supporting_total) * 100, 0) : 0;
+                    $total_pct = $total_total > 0 ? round(($total_permanent / $total_total) * 100, 0) : 0;
 
                 @endphp
 
