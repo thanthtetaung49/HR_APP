@@ -57,6 +57,20 @@
             </div>
         </div>
 
+        <!-- CLIENT START -->
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.budgetYear')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="budget_year" id="budget_year" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    @foreach ($budgetYears as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
 
         <!-- CLIENT START -->
         <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
@@ -72,30 +86,8 @@
             </div>
         </div>
 
-        <!-- CLIENT START -->
-        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.budgetYear')</p>
-            <div class="select-status">
-                <select class="form-control select-picker" name="budget_year" id="budget_year" data-live-search="true"
-                    data-size="8">
-                    <option value="all">@lang('app.all')</option>
-                    @foreach ($budgetYears as $year)
-                        <option value="{{ $year }}">{{ $year }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
 
-        <!-- DATE START -->
-        <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
-            <div class="select-status d-flex">
-                <input type="text"
-                    class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
-                    id="datatableRange" placeholder="@lang('placeholders.dateRange')"
-                    value="{{ request('start') && request('end') ? request('start') . ' ' . __('app.to') . ' ' . request('end') : '' }}">
-            </div>
-        </div>
+
         <!-- DATE END -->
 
         <!-- RESET START -->
@@ -131,7 +123,7 @@
         </x-datatable.actions>
 
         <!-- leave table Box Start -->
-        <div class="d-flex flex-column w-tables rounded mt-3 bg-white">
+        <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive">
 
             {!! $dataTable->table(['class' => 'table table-hover border-0 w-100']) !!}
 
@@ -147,25 +139,6 @@
 
     <script>
         $('#manpowerreport-table').on('preXhr.dt', function(e, settings, data) {
-            @if (request('start') && request('end'))
-                $('#datatableRange').data('daterangepicker').setStartDate("{{ request('start') }}");
-                $('#datatableRange').data('daterangepicker').setEndDate("{{ request('end') }}");
-            @endif
-
-            var dateRangePicker = $('#datatableRange').data('daterangepicker');
-
-            let startDate = $('#datatableRange').val();
-
-            let endDate;
-
-            if (startDate == '') {
-                startDate = null;
-                endDate = null;
-            } else {
-                startDate = dateRangePicker.startDate.format('{{ company()->moment_date_format }}');
-                endDate = dateRangePicker.endDate.format('{{ company()->moment_date_format }}');
-            }
-
             const teamId = $('#team_id').val();
             const locationId = $('#location_id').val();
             const budgetYear = $('#budget_year').val();
@@ -173,8 +146,6 @@
             const quarter = $('#quarter').val();
 
             data['teamId'] = teamId;
-            data['startDate'] = startDate;
-            data['endDate'] = endDate;
             data['locationId'] = locationId;
             data['budgetYear'] = budgetYear;
             data['position'] = position;

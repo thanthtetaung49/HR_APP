@@ -402,6 +402,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     /* Man Power Report */
     Route::resource('man-power-reports', ManPowerReportController::class);
     Route::post('man-power-reports/apply-quick-action', [ManPowerReportController::class, 'applyQuickAction'])->name('manPowerReports.apply_quick_action');
+    Route::get('man-power-reports/filter/departments', [ManPowerReportController::class, 'applyDepartmentFilter'])->name('manPowerReports.apply_department_filter');
 
     /* Sub criteria */
     Route::resource('sub-criteria', SubCriteriaController::class);

@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Models\Designation;
 use App\Models\Team;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -85,10 +86,27 @@ class DepartmentDataTable extends BaseDataTable
 
                 return '-';
             })
+            ->editColumn('designations', function ($row) {
+                // get name of parent department
+                $designationIds = $row->designation_ids;
+
+                $designations = Designation::whereIn('id', json_decode($designationIds))->get();
+
+                $li = '';
+
+                collect($designations)->map(function ($designation) use (&$li) {
+                    $li .= '<li><i class="fa fa-check text-success mr-3"></i>' . $designation->name . '</li>';
+                    return $li;
+                });
+
+                return '<ul>'
+                    . $li .
+                    '</ul>';
+            })
             ->addIndexColumn()
             ->smart(false)
             ->setRowId(fn($row) => 'row-' . $row->id)
-            ->rawColumns(['action', 'name', 'check']);
+            ->rawColumns(['action', 'name', 'check', 'designations']);
     }
 
     /**
@@ -180,6 +198,7 @@ class DepartmentDataTable extends BaseDataTable
             __('app.name') => ['data' => 'name', 'name' => 'team_name', 'title' => __('app.name')],
             __('app.departmentGroup') => ['data' => 'department_type', 'name' => 'department_type', 'title' => __('app.departmentGroup')],
             __('modules.department.parentDepartment') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('modules.department.parentDepartment')],
+            __('modules.department.designation') => ['data' => 'designations', 'name' => 'designations', 'exportable' => true, 'title' => __('modules.department.designation')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

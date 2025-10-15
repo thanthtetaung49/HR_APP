@@ -57,6 +57,8 @@ class ManPowerReportController extends AccountBaseController
     {
         $this->data['pageTitle'] = 'Add Man Power';
         $this->data['departments'] = Team::get();
+        $this->data['designations'] = Designation::select('id', 'name')
+            ->get();
 
         return view('man-power-reports.create', $this->data);
     }
@@ -71,12 +73,14 @@ class ManPowerReportController extends AccountBaseController
         $team_id = $request->team_id;
         $budget_year = $request->budget_year;
         $quarter = $request->quarter;
+        $position_id = $request->position_id;
 
         Validator::make($request->all(), [
             'man_power_setup' => 'required',
             'man_power_basic_salary' => 'required',
             'team_id' => 'required',
             'budget_year' => 'required|date_format:Y',
+            'position_id' => 'required',
         ])->validate();
 
         ManPowerReport::create([
@@ -84,7 +88,8 @@ class ManPowerReportController extends AccountBaseController
             'man_power_basic_salary' => $man_power_basic_salary,
             'team_id' => $team_id,
             'budget_year' => $budget_year,
-            'quarter' => $quarter
+            'quarter' => $quarter,
+            'position_id' => $position_id
         ]);
 
         return redirect()->route('man-power-reports.index');
@@ -117,6 +122,12 @@ class ManPowerReportController extends AccountBaseController
         $this->data['pageTitle'] = 'Edit Man Power';
         $this->data['departments'] = Team::get();
 
+        $teams = Team::where('id', $this->reports->team_id)->first();
+
+        $this->data['designations'] = Designation::select('id', 'name')
+            ->whereIn('id', json_decode($teams->designation_ids))
+            ->get();
+
         return view('man-power-reports.ajax.edit', $this->data);
     }
 
@@ -132,6 +143,7 @@ class ManPowerReportController extends AccountBaseController
             'man_power_basic_salary' => 'required',
             'team_id' => 'required',
             'budget_year' => 'required|date_format:Y',
+            'position_id' => 'required',
         ])->validate();
 
         $reports->update([
@@ -139,7 +151,8 @@ class ManPowerReportController extends AccountBaseController
             'man_power_basic_salary' => $request->man_power_basic_salary,
             'team_id' => $request->team_id,
             'budget_year' => $request->budget_year,
-            'quarter' => $request->quarter
+            'quarter' => $request->quarter,
+            'position_id' => $request->position_id
         ]);
 
         return redirect()->route('man-power-reports.index');
@@ -181,5 +194,14 @@ class ManPowerReportController extends AccountBaseController
         foreach ($item as $id) {
             ManPowerReport::where('id', $id)->delete();
         }
+    }
+
+    public function applyDepartmentFilter(Request $request)
+    {
+        $team = Team::where('id', $request->teamId)->first();
+
+        $designations = Designation::whereIn('id', json_decode($team->designation_ids))->get();
+
+        return response()->json(['designations' => $designations]);
     }
 }

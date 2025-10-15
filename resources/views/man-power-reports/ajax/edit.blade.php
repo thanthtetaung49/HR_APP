@@ -35,10 +35,14 @@
                                 <select class="form-control select-picker mt" name="quarter" id="quarter"
                                     data-live-search="true">
                                     <option value="">--</option>
-                                    <option value="1" @if ($reports->quarter == 1) selected @endif>Q1 (Jan to Mar)</option>
-                                    <option value="2" @if ($reports->quarter == 2) selected @endif>Q2 (Apr to Jun)</option>
-                                    <option value="3" @if ($reports->quarter == 3) selected @endif>Q3 (Jul to Sept)</option>
-                                    <option value="4" @if ($reports->quarter == 4) selected @endif>Q4 (Oct to Dec)</option>
+                                    <option value="1" @if ($reports->quarter == 1) selected @endif>Q1 (Jan to Dec)
+                                    </option>
+                                    <option value="2" @if ($reports->quarter == 2) selected @endif>Q2 (Apr to Dec)
+                                    </option>
+                                    <option value="3" @if ($reports->quarter == 3) selected @endif>Q3 (Jul to
+                                        Dec)</option>
+                                    <option value="4" @if ($reports->quarter == 4) selected @endif>Q4 (Oct to Dec)
+                                    </option>
                                 </select>
                             </x-forms.input-group>
 
@@ -87,6 +91,27 @@
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        <div class="col-md-4">
+                            <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.designation')" fieldName="position_id">
+                            </x-forms.label>
+
+                            <x-forms.input-group>
+                                <select class="form-control select-picker mt" name="position_id" id="position_id"
+                                    data-live-search="true">
+                                    <option value="">--</option>
+                                    @foreach ($designations as $designation)
+                                        <option value="{{ $designation->id }}" @if ($reports->position_id == $designation->id)
+selected @endif>{{ $designation->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </x-forms.input-group>
+
+                            @error('position_id')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
 
                     <x-form-actions>
@@ -101,3 +126,38 @@
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        $('#team_id').change(function() {
+            const teamId = $(this).val();
+
+            const data = {
+                teamId: teamId
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "{{ route('manPowerReports.apply_department_filter') }}",
+                data: data,
+                dataType: "json",
+                success: function(response) {
+                    const designations = response.designations;
+                    let options = `<option value="">--</option>`;
+
+                    designations.forEach(item => {
+                        options += `<option value="${item.id}">${item.name}</option>`;
+                    });
+
+                    $('#position_id').html(options);
+                    $('#position_id').selectpicker('refresh');
+                },
+                error: function(error) {
+                    console.log(error);
+                }
+            });
+
+
+        });
+    </script>
+@endpush

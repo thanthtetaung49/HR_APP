@@ -1420,6 +1420,7 @@ return array(
         'flexibleTiming' => 'Flexible Timings',
         'totalShiftHours' => 'Total Shift Hours',
         'halfdayShiftHours' => 'Halfday Shift Hours',
+        'breadkDown' => 'Break Time',
     ),
     'customFields' => array(
         'label' => 'Field Label',
@@ -1703,6 +1704,7 @@ return array(
         'title' => 'Department',
         'addDepartment' => 'Add Department',
         'parentDepartment' => 'Parent Department',
+        'designation' => 'Child Designation',
         'dragAndDrop' => 'Drag & drop to restructure',
         'treeView' => 'Hierarchy View',
         'hierarchy' => 'Hierarchy',

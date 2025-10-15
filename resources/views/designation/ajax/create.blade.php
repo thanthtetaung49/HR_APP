@@ -10,7 +10,7 @@
                                       fieldRequired="true" :fieldPlaceholder="__('placeholders.designation')">
                         </x-forms.text>
                     </div>
-                    <div class="col-md-6">
+                    {{-- <div class="col-md-6">
                         <x-forms.label class="mt-3" fieldId="parent_label" :fieldLabel="__('app.menu.parent_id')"
                                        fieldName="parent_label">
                         </x-forms.label>
@@ -23,7 +23,7 @@
                                 @endforeach
                             </select>
                         </x-forms.input-group>
-                    </div>
+                    </div> --}}
                 </div>
 
                 <x-form-actions>

@@ -16,9 +16,11 @@ return new class extends Migration
             $table->integer('man_power_setup')->nullable();
             $table->integer('man_power_basic_salary')->nullable();
             $table->unsignedInteger('team_id')->index();
-            $table->foreign('team_id')->references('id')->on('teams')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreign('team_id')->references('id')->on('teams');
+            $table->foreignId('position_id')->references('id')->on('designations');
             $table->string('budget_year')->nullable();
             $table->string('quarter')->nullable();
+            $table->enum('status', ['pending', 'approved', 'review'])->default('pending');
             $table->timestamps();
         });
     }

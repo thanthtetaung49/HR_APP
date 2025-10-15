@@ -14,33 +14,29 @@ class TurnOverReportExport implements FromView, WithStyles, ShouldAutoSize
 {
 
     public $months;
-    public $probation;
-    public $resigned;
-    public $permanent;
+    public $turnOverReports;
     public $employeeTotal;
     public $shortFormatYear;
+    public $locationName;
 
-    public function __construct($months = null, $probation = null, $resigned = null, $permanent= null, $employeeTotal = null, $shortFormatYear = null) {
+    public function __construct($months = null, $turnOverReports = null, $employeeTotal = null, $shortFormatYear = null, $locationName = null) {
        $this->months = $months;
-       $this->probation = $probation;
-       $this->resigned = $resigned;
-       $this->permanent = $permanent;
+       $this->turnOverReports = $turnOverReports;
        $this->employeeTotal = $employeeTotal;
        $this->shortFormatYear = $shortFormatYear;
+       $this->locationName = $locationName;
     }
     /**
     * @return \Illuminate\Support\Collection
     */
     public function view(): View
     {
-
         return view('turn-over-reports.export.table', [
             'months' => $this->months,
-            'probation' => $this->probation,
-            'resigned' => $this->resigned,
-            'permanent' => $this->permanent,
+            'turnOverReports' => $this->turnOverReports,
             'employeeTotal' => $this->employeeTotal,
-            'shortFormatYear' => $this->shortFormatYear
+            'shortFormatYear' => $this->shortFormatYear,
+            'locationName' => $this->locationName,
         ]);
     }
 
@@ -49,16 +45,21 @@ class TurnOverReportExport implements FromView, WithStyles, ShouldAutoSize
         $highestRow = $sheet->getHighestRow();
         $highestColumn = $sheet->getHighestColumn();
 
+        $sheet->getStyle('A1')
+            ->getFont()
+            ->setSize(16)
+            ->setBold(true);
+
         $sheet->getStyle("A1:{$highestColumn}{$highestRow}")
               ->getBorders()
               ->getAllBorders()
               ->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN);
 
-        $sheet->getStyle("A1")
+        $sheet->getStyle("A2")
             ->getAlignment()
             ->setVertical(Alignment::VERTICAL_CENTER);
 
-        $sheet->getStyle("B1:{$highestColumn}{$highestRow}")
+        $sheet->getStyle("B2:{$highestColumn}{$highestRow}")
             ->getAlignment()
             ->setHorizontal(Alignment::HORIZONTAL_CENTER)
             ->setVertical(Alignment::VERTICAL_CENTER);

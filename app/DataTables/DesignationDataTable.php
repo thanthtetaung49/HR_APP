@@ -37,17 +37,17 @@ class DesignationDataTable extends BaseDataTable
 
                 return $name;
             })
-            ->editColumn('parent_id', function ($row) {
-                // get name of parent designation
-                $parent = Designation::where('id', $row->parent_id)->first();
+            // ->editColumn('parent_id', function ($row) {
+            //     // get name of parent designation
+            //     $parent = Designation::where('id', $row->parent_id)->first();
 
-                if ($parent) {
-                    return $parent->name;
-                }
+            //     if ($parent) {
+            //         return $parent->name;
+            //     }
 
-                return '-';
+            //     return '-';
 
-            })
+            // })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -170,7 +170,7 @@ class DesignationDataTable extends BaseDataTable
             ],
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'exportable' => true, 'title' => __('app.name')],
-            __('app.menu.parent_id') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('app.menu.parent_id') . ' ' . __('app.menu.designation')],
+            // __('app.menu.parent_id') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('app.menu.parent_id') . ' ' . __('app.menu.designation')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

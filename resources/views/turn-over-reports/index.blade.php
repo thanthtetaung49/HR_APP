@@ -28,9 +28,24 @@
 @section('filter-section')
     <x-filters.filter-box>
         <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location" id="location" data-live-search="true" data-size="8">
+                    <option value="">@lang('app.all')</option>
+                    @foreach ($locations as $item)
+                        <option value="{{ $item->id }}">
+                            {{ $item->location_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.turnOverYear')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="year" id="year" data-live-search="true" data-size="8">
+                <select class="form-control select-picker" name="year" id="year" data-live-search="true"
+                    data-size="8">
                     @foreach (range(date('Y'), date('Y') - 10) as $year)
                         <option value="{{ $year }}" {{ request('year', date('Y')) == $year ? 'selected' : '' }}>
                             {{ $year }}
@@ -81,9 +96,16 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
+                            <th colspan="6">
+                                <h3>Turn Over Report
+                                    <span id="locationTitle">(All Location)</span>
+                                </h3>
+                            </th>
+                        </tr>
+                        <tr>
                             <th rowspan="2" class="align-middle">Description</th>
                             @foreach ($months as $key => $month)
-                                <th colspan="3">{{ $month }} -  @php echo now()->year % 100; @endphp</th>
+                                <th colspan="3">{{ $month }} - @php echo now()->year % 100; @endphp</th>
                             @endforeach
                         </tr>
                         <tr>
@@ -95,6 +117,7 @@
                         </tr>
                     </thead>
                     <tbody>
+
                         <tr>
                             <td>Total MP</td>
                             @foreach ($months as $key => $month)
@@ -126,14 +149,14 @@
                                     $total = 0;
                                 @endphp
 
-                                @foreach ($resigned as $item)
+                                @foreach ($turnOverReports as $item)
                                     @if ($item->month == $key)
                                         @if ($item->department_type == 'operation')
-                                            @php $operation = $item->total; @endphp
+                                            @php $operation = $item->resigned_total; @endphp
                                         @endif
 
                                         @if ($item->department_type == 'supporting')
-                                            @php $supporting = $item->total; @endphp
+                                            @php $supporting = $item->resigned_total; @endphp
                                         @endif
                                     @endif
                                 @endforeach
@@ -167,13 +190,13 @@
                                     $operation_resign = 0;
                                     $supporting_resign = 0;
 
-                                    foreach ($resigned as $item) {
+                                    foreach ($turnOverReports as $item) {
                                         if ($item->month == $key) {
                                             if ($item->department_type == 'operation') {
-                                                $operation_resign = $item->total;
+                                                $operation_resign = $item->resigned_total;
                                             }
                                             if ($item->department_type == 'supporting') {
-                                                $supporting_resign = $item->total;
+                                                $supporting_resign = $item->resigned_total;
                                             }
                                         }
                                     }
@@ -210,14 +233,14 @@
                                     $total = 0;
                                 @endphp
 
-                                @foreach ($probation as $item)
+                                @foreach ($turnOverReports as $item)
                                     @if ($item->month == $key)
                                         @if ($item->department_type == 'operation')
-                                            @php $operation = $item->total; @endphp
+                                            @php $operation = $item->probation_total; @endphp
                                         @endif
 
                                         @if ($item->department_type == 'supporting')
-                                            @php $supporting = $item->total; @endphp
+                                            @php $supporting = $item->probation_total; @endphp
                                         @endif
                                     @endif
                                 @endforeach
@@ -251,13 +274,13 @@
                                     $operation_probation = 0;
                                     $supporting_probation = 0;
 
-                                    foreach ($probation as $item) {
+                                    foreach ($turnOverReports as $item) {
                                         if ($item->month == $key) {
                                             if ($item->department_type == 'operation') {
-                                                $operation_probation = $item->total;
+                                                $operation_probation = $item->probation_total;
                                             }
                                             if ($item->department_type == 'supporting') {
-                                                $supporting_probation = $item->total;
+                                                $supporting_probation = $item->probation_total;
                                             }
                                         }
                                     }
@@ -295,14 +318,14 @@
                                     $total = 0;
                                 @endphp
 
-                                @foreach ($permanent as $item)
+                                @foreach ($turnOverReports as $item)
                                     @if ($item->month == $key)
                                         @if ($item->department_type == 'operation')
-                                            @php $operation = $item->total; @endphp
+                                            @php $operation = $item->permanent_total; @endphp
                                         @endif
 
                                         @if ($item->department_type == 'supporting')
-                                            @php $supporting = $item->total; @endphp
+                                            @php $supporting = $item->permanent_total; @endphp
                                         @endif
                                     @endif
                                 @endforeach
@@ -336,13 +359,13 @@
                                     $operation_permanent = 0;
                                     $supporting_permanent = 0;
 
-                                    foreach ($permanent as $item) {
+                                    foreach ($turnOverReports as $item) {
                                         if ($item->month == $key) {
                                             if ($item->department_type == 'operation') {
-                                                $operation_permanent = $item->total;
+                                                $operation_permanent = $item->permanent_total;
                                             }
                                             if ($item->department_type == 'supporting') {
-                                                $supporting_permanent = $item->total;
+                                                $supporting_permanent = $item->permanent_total;
                                             }
                                         }
                                     }
@@ -383,16 +406,18 @@
 
 @push('scripts')
     <script>
-        $("#year").on('change', function() {
-            const year = $(this).val();
+        $("#year, #location").on('change', function() {
+            const year = $("#year").val();
+            const locationId = $("#location").val();
+            const locationName = $("#location").val() != "" ? $.trim($("#location option:selected").text()) : 'All Location';
             const shortFormatYear = parseInt(year) % 100
 
             const data = {
-                'year': year
+                'year': year,
+                'locationId': locationId
             }
 
-            $("#exportBtn").attr('href', "{{ route('turnOverReports.export') }}?year=" + year);
-
+            $("#exportBtn").attr('href', "{{ route('turnOverReports.export') }}?year=" + year +"&locationId=" + locationId);
 
             $.ajax({
                 type: "GET",
@@ -400,12 +425,13 @@
                 data: data,
                 dataType: "json",
                 success: function(response) {
-
                     const employeeTotal = response.employeeTotal;
                     const months = Object.values(response.months);
-                    const permanent = response.permanent;
-                    const probation = response.probation;
-                    const resigned = response.resigned;
+                    const turnOverReports = response.turnOverReports;
+                    // const locationName = response.turnOverReports ? response.turnOverReports[0]
+                    //     .location_name : null;
+
+                    // $("#locationTitle").html(locationName)
 
                     let theadMonth = '';
                     let theadCategory = '';
@@ -446,47 +472,55 @@
                             }
                         })
 
-                        resigned.forEach(item => {
+                        turnOverReports.forEach(item => {
                             if (item.month == monthNumber) {
                                 if (item.department_type == 'operation') {
-                                    operationResign = item.total;
+                                    operationResign = item.resigned_total;
+                                    operationProbation = item.probation_total;
+                                    operationPermanent = item.permanent_total;
                                 }
 
                                 if (item.department_type == 'supporting') {
-                                    supportingResign = item.total;
+                                    supportingResign = item.resigned_total;
+                                    supportingProbation = item.probation_total;
+                                    supportingPermanent = item.permanent_total;
                                 }
                             }
                         });
 
-                        probation.forEach(item => {
-                            if (item.month == monthNumber) {
-                                if (item.department_type == 'operation') {
-                                    operationProbation = item.total;
-                                }
+                        // probation.forEach(item => {
+                        //     if (item.month == monthNumber) {
+                        //         if (item.department_type == 'operation') {
+                        //             operationProbation = item.total;
+                        //         }
 
-                                if (item.department_type == 'supporting') {
-                                    supportingProbation = item.total;
-                                }
-                            }
-                        });
+                        //         if (item.department_type == 'supporting') {
+                        //             supportingProbation = item.total;
+                        //         }
+                        //     }
+                        // });
 
-                        permanent.forEach(item => {
-                            if (item.month == monthNumber) {
-                                if (item.department_type == 'operation') {
-                                    operationPermanent = item.total;
-                                }
+                        // permanent.forEach(item => {
+                        //     if (item.month == monthNumber) {
+                        //         if (item.department_type == 'operation') {
+                        //             operationPermanent = item.total;
+                        //         }
 
-                                if (item.department_type == 'supporting') {
-                                    supportingPermanent = item.total;
-                                }
-                            }
-                        });
+                        //         if (item.department_type == 'supporting') {
+                        //             supportingPermanent = item.total;
+                        //         }
+                        //     }
+                        // });
 
-                        const totalMp = parseInt(operationTotalMp) + parseInt(supportingTotalMp);
+                        const totalMp = parseInt(operationTotalMp) + parseInt(
+                        supportingTotalMp);
 
-                        const totalResign = parseInt(operationResign) + parseInt(supportingResign);
-                        const totalProbation = parseInt(operationProbation) + parseInt(supportingProbation);
-                        const totalPermanent = parseInt(operationPermanent) + parseInt(supportingPermanent);
+                        const totalResign = parseInt(operationResign) + parseInt(
+                            supportingResign);
+                        const totalProbation = parseInt(operationProbation) + parseInt(
+                            supportingProbation);
+                        const totalPermanent = parseInt(operationPermanent) + parseInt(
+                            supportingPermanent);
 
                         const operationPercentResign = operationTotalMp > 0 ? Math.round((
                             operationResign / operationTotalMp) * 100, 2) : 0;
@@ -558,6 +592,13 @@
                     let table = `
                     <table class="table table-bordered">
                         <thead>
+                            <tr>
+                            <th colspan="6">
+                                <h3>Turn Over Report
+                                    <span id="locationTitle">(${locationName})</span>
+                                </h3>
+                            </th>
+                        </tr>
                         <tr>
                             <th rowspan="2" class="align-middle">Description</th>
                             ${theadMonth}
@@ -601,8 +642,6 @@
                         </tbody>
                     </table>
                     `
-
-                    // $("#table").html('')
                     $("#tableContainer").html(table)
                 },
                 error: function(xhr, status, error) {
