@@ -13,8 +13,8 @@
             @php
                 $notPermited = !in_array($moduleData->module_name, $employeeModules) ? 'disabled' : null;
             @endphp
-        <tr>    
-            <td>@lang('modules.module.'.$moduleData->module_name)  
+        <tr>
+            <td>@lang('modules.module.'.$moduleData->module_name)
                 @if($notPermited)
                     <i class="fa fa-info-circle" data-toggle="popover" data-placement="top" data-content="@lang('messages.moduleDisabled')" data-html="true" data-trigger="hover"></i>
                 @endif

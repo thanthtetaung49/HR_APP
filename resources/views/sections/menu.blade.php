@@ -150,14 +150,14 @@
                 @endif
 
                 @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
-                    <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.criteria')" />
+                    <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.exitsReason')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
-                    <x-sub-menu-item :link="route('causes.index')" :text="__('app.menu.cause')" />
+                @if (isset($sidebarUserPermissions['view_report_permission']) && $sidebarUserPermissions['view_report_permission'] == 4)
+                    <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                @if (isset($sidebarUserPermissions['view_man_power_report']) && $sidebarUserPermissions['view_man_power_report'] == 4)
                     <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
                 @endif
 

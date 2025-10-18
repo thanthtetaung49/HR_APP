@@ -258,7 +258,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 {{-- Custom fields data --}}
                                 <x-forms.custom-field-show :fields="$fields" :model="$employee->employeeDetail"></x-forms.custom-field-show>
 
-                                @if ($cause)
+                                {{-- @if ($cause)
                                     <x-cards.data-row :label="__('app.menu.criteria')"
                                         :value="(!is_null($cause->criteria) ? $cause->criteria->criteria : '--')" />
 
@@ -273,7 +273,7 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                             <p class="mb-0 text-lightest f-14 w-30">{{ __('app.menu.actionTaken') }}</p>
                                             <p class="mb-0 text-danger f-14 w-70 text-wrap">{{ (!is_null($cause->criteria) ? $cause->action_taken : '--') }}</p>
                                         </div>
-                                @endif
+                                @endif --}}
 
                             @endif
 

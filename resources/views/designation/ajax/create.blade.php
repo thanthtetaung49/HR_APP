@@ -6,8 +6,8 @@
                     @lang('app.menu.addDesignation')</h4>
                 <div class="row p-20">
                     <div class="col-md-6">
-                        <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="name"
-                                      fieldRequired="true" :fieldPlaceholder="__('placeholders.designation')">
+                        <x-forms.text fieldId="designation_name" :fieldLabel="__('app.name')" fieldName="name" fieldRequired="true"
+                            :fieldPlaceholder="__('placeholders.designation')">
                         </x-forms.text>
                     </div>
                     {{-- <div class="col-md-6">
@@ -18,12 +18,33 @@
                             <select class="form-control select-picker" name="parent_id" id="parent_id"
                                     data-live-search="true">
                                 <option value="">--</option>
-                                @foreach($designations as $designation)
+                                @foreach ($designations as $designation)
                                     <option value="{{ $designation->id }}">{{ $designation->name }}</option>
                                 @endforeach
                             </select>
                         </x-forms.input-group>
                     </div> --}}
+
+                    <div class="col-md-6">
+                        <x-forms.label class="mt-3" fieldId="rank_id" :fieldLabel="__('app.menu.rank')" fieldName="rank">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="rank_id" id="rank_id"
+                                data-live-search="true">
+                                <option value="">--</option>
+                                <option value="1">Rank 1</option>
+                                <option value="2">Rank 2</option>
+                                <option value="3">Rank 3</option>
+                                <option value="4">Rank 4</option>
+                                <option value="5">Rank 5</option>
+                                <option value="6">Rank 6</option>
+                                <option value="7">Rank 7</option>
+                                <option value="8">Rank 8</option>
+                                <option value="9">Rank 9</option>
+                                <option value="10">Rank 10</option>
+                            </select>
+                        </x-forms.input-group>
+                    </div>
                 </div>
 
                 <x-form-actions>
@@ -40,9 +61,9 @@
 </div>
 
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
 
-        $('#save-designation-form').click(function () {
+        $('#save-designation-form').click(function() {
 
             const url = "{{ route('designations.store') }}";
 
@@ -54,7 +75,7 @@
                 blockUI: true,
                 buttonSelector: "#save-designation-form",
                 data: $('#save-designation-data-form').serialize(),
-                success: function (response) {
+                success: function(response) {
                     if (response.status === 'success') {
                         if ($(MODAL_XL).hasClass('show')) {
                             $(MODAL_XL).modal('hide');

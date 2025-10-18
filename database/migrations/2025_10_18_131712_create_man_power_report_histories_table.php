@@ -11,13 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('criterias', function (Blueprint $table) {
+        Schema::create('man_power_report_histories', function (Blueprint $table) {
             $table->id();
-            $table->text('exit_reason_id')->nullable();
-            $table->json('sub_criteria_ids')->nullable();
-            $table->string('responsible_person')->nullable();
-            $table->string('accountability')->nullable();
-            $table->string('action_taken')->nullable();
+            $table->foreignId('man_power_report_id')->constrained('man_power_reports')->onDelete('cascade');
+            $table->date('updated_date')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('criterias');
+        Schema::dropIfExists('man_power_report_histories');
     }
 };

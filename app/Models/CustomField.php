@@ -77,7 +77,9 @@ class CustomField extends BaseModel
         if ($customFieldsGroupsId) {
             $customFields = CustomField::where('custom_field_group_id', $customFieldsGroupsId->id)->where(function ($q) {
                 return $q->where('export', 1)->orWhere('visible', 'true');
-            })->get();
+            })
+            ->where('name', '!=', 'exit-reasons-1')
+            ->get();
         }
 
         return $customFields;
@@ -91,6 +93,7 @@ class CustomField extends BaseModel
         $fieldData = DB::table('custom_fields_data')->where('model', $model)->whereIn('custom_field_id', $customFieldsId)->select('id', 'custom_field_id', 'model_id', 'value')->get();
 
         foreach ($customFields as $customField) {
+            // dd($customField);
             $datatables->addColumn($customField->name, function ($row) use ($fieldData, $customField, $relation) {
                 $finalData = $fieldData->filter(function ($value) use ($customField, $row, $relation) {
                     return (
@@ -105,6 +108,7 @@ class CustomField extends BaseModel
 
                 if ($customField->type == 'select') {
                     $data = json_decode($customField->values, true);
+                    // dd($data);
                     $index = intval($finalData->value);
                     return ($index >= 0 && $index < count($data)) ? $data[$index] : '--';
                 }

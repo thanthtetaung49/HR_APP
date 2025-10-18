@@ -99,10 +99,10 @@
                             <x-forms.input-group>
                                 <select class="form-control select-picker mt" name="position_id" id="position_id"
                                     data-live-search="true">
-                                    <option value="">--</option>
+                                    <option value="">--werwe</option>
                                     @foreach ($designations as $designation)
-                                        <option value="{{ $designation->id }}" @if ($reports->position_id == $designation->id)
-selected @endif>{{ $designation->name }}
+                                        <option value="{{ $designation->id }}"
+                                            @if ($reports->position_id == $designation->id) selected @endif>{{ $designation->name }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -112,6 +112,39 @@ selected @endif>{{ $designation->name }}
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        @can('canApprove', App\Models\ManPowerReport::class)
+                            <div class="col-md-4">
+                                <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.status')" fieldName="position_id">
+                                </x-forms.label>
+
+                                <x-forms.input-group>
+                                    <select class="form-control select-picker mt" name="status" id="status"
+                                        data-live-search="true">
+                                        <option value="">--</option>
+                                        <option value="pending" @if ($reports->status == 'pending') selected @endif>Pending
+                                        </option>
+                                        <option value="approved" @if ($reports->status == 'approved') selected @endif>Approved
+                                        </option>
+                                        <option value="review" @if ($reports->status == 'review') selected @endif>Review</option>
+                                    </select>
+                                </x-forms.input-group>
+
+                                @error('status')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4">
+                                <x-forms.text fieldId="remark" :fieldLabel="__('app.menu.remark')" fieldName="remark" fieldRequired="true"
+                                    :fieldPlaceholder="__('placeholders.remark')" :fieldValue="old('remark', $reports->remark)">
+                                </x-forms.text>
+
+                                @error('remark')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endcan
                     </div>
 
                     <x-form-actions>
@@ -143,21 +176,29 @@ selected @endif>{{ $designation->name }}
                 dataType: "json",
                 success: function(response) {
                     const designations = response.designations;
+                    const designationId = @json($reports->position_id);
+
                     let options = `<option value="">--</option>`;
 
                     designations.forEach(item => {
-                        options += `<option value="${item.id}">${item.name}</option>`;
+                        console.log(designationId, item.id);
+                        if (designationId === item.id) {
+                            options +=
+                                `<option value="${item.id}" selected>${item.name}</option>`;
+                        } else {
+                            options += `<option value="${item.id}">${item.name}</option>`;
+
+                        }
                     });
 
                     $('#position_id').html(options);
+                    $('#position_id').val(designationId);
                     $('#position_id').selectpicker('refresh');
                 },
                 error: function(error) {
                     console.log(error);
                 }
             });
-
-
-        });
+        }).trigger('change');
     </script>
 @endpush

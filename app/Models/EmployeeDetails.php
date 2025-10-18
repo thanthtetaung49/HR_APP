@@ -105,6 +105,8 @@ class EmployeeDetails extends BaseModel
 
     const CUSTOM_FIELD_MODEL = 'App\Models\EmployeeDetails';
 
+    protected $guarded = [];
+
     public function getUpcomingBirthdayAttribute()
     {
         if (is_null($this->date_of_birth)) {

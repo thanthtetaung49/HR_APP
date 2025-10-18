@@ -1224,4 +1224,12 @@ class User extends BaseModel implements AuthenticatableContract, AuthorizableCon
         return $this->hasOne(Detection::class, 'user_id', 'id');
     }
 
+    public function team () {
+        return $this->belongsTo(Team::class, 'department_id');
+    }
+
+    public function designation () {
+        return $this->belongsTo(Designation::class, 'designation_id');
+    }
+
 }

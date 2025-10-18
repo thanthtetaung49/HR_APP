@@ -1727,9 +1727,13 @@ return array(
         'title' => 'Criteria',
         'addTitle' => 'Add Criteria',
     ),
-    'causes' => array(
-        'title' => 'Causes',
-        'addTitle' => 'Add Causes',
+    'criteria' => array(
+        'title' => 'Criteria',
+        'addTitle' => 'Add Criteria',
+    ),
+    'reportPermission' => array(
+        'title' => 'Report Permission',
+        'addTitle' => 'Add Report Permission',
     ),
     'offlinePayment' => array(
         'title' => 'Offline Payment Method',

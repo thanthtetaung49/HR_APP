@@ -54,9 +54,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Mailer\Exception\TransportException;
 use App\Models\CompanyAddress;
+use App\Models\Criteria;
 use App\Models\Location;
+use App\Models\ManagementRank;
+use App\Models\ManPowerReport;
 use App\Models\Promotion;
 use App\Models\ShiftRotation;
+use App\Models\SubCriteria;
 use Modules\Payroll\Entities\EmployeeMonthlySalary;
 use Modules\Payroll\Entities\PayrollSetting;
 
@@ -135,6 +139,7 @@ class EmployeeController extends AccountBaseController
         $this->companyAddresses = CompanyAddress::all();
         $this->locations = Location::get();
         $this->cause = Cause::get();
+        $this->criterias = Criteria::get();
 
         $userRoles = user()->roles->pluck('name')->toArray();
 
@@ -170,6 +175,17 @@ class EmployeeController extends AccountBaseController
 
         return response()->json([
             'data' => $location,
+        ]);
+    }
+
+    public function selectDesignation(Request $request)
+    {
+        $id = $request->id;
+
+        $users = User::select('name', 'id')->where('designation_id', $request->id)->get();
+
+        return response()->json([
+            'data' => $users,
         ]);
     }
 
@@ -451,6 +467,10 @@ class EmployeeController extends AccountBaseController
         $this->salutations = Salutation::cases();
         $this->companyAddresses = CompanyAddress::all();
         $this->locations = Location::all();
+        $this->criterias = Criteria::get();
+        $this->criteria = Criteria::where('id', $this->employee->employeeDetail->criteria_id)
+            ->first();
+        $this->subCriterias = SubCriteria::whereIn('id', $this->criteria->sub_criteria_ids)->get();
 
         /** @phpstan-ignore-next-line */
         if (count($this->employee->reportingTeam) > 0) {
@@ -712,11 +732,11 @@ class EmployeeController extends AccountBaseController
 
                 // dd($this->employee->employeeDetail->custom_fields_data);
 
-               foreach ($this->fields as $field) {
-                    if ($field->type == 'select'&& $field->name == 'exit-reasons-1') {
+                foreach ($this->fields as $field) {
+                    if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
                         $exitReasonId = $this->employee->employeeDetail->custom_fields_data['field_' . $field->id];
                     }
-               }
+                }
 
                 $this->cause = Cause::where('exit_reason_id', $exitReasonId)->first();
 
@@ -1223,6 +1243,8 @@ class EmployeeController extends AccountBaseController
         $employee->employment_type = $request->employment_type;
         $employee->internship_end_date = $request->internship_end_date ? companyToYmd($request->internship_end_date) : null;
         $employee->contract_end_date = $request->contract_end_date ? companyToYmd($request->contract_end_date) : null;
+        $employee->criteria_id = $request->criteria_id;
+        $employee->sub_criteria_id = $request->sub_criteria_id;
     }
 
     public function importMember()
@@ -1259,5 +1281,22 @@ class EmployeeController extends AccountBaseController
         $batch = $this->importJobProcess($request, EmployeeImport::class, ImportEmployeeJob::class);
 
         return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
+    }
+
+
+    public function filterExistReason(Request $request)
+    {
+        $subCriterias = null;
+
+        if ($request->criteriaId) {
+            $criteriaId = $request->criteriaId;
+            $manPowerReport = Criteria::where('id', $criteriaId)->first();
+            $subCriteriaIds = $manPowerReport->sub_criteria_ids;
+            $subCriterias =  SubCriteria::whereIn('id', $subCriteriaIds)->get();
+        }
+
+        return response()->json([
+            'subCriterias' => $subCriterias
+        ]);
     }
 }

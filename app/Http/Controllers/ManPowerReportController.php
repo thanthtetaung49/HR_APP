@@ -9,7 +9,10 @@ use Illuminate\Http\Request;
 use App\Models\ManPowerReport;
 use Illuminate\Support\Facades\Validator;
 use App\DataTables\ManPowerReportDataTable;
+use App\DataTables\ManPowerReportHistoryDataTable;
 use App\Models\Designation;
+use App\Models\ManPowerReportHistory;
+use App\Models\ReportPermission;
 
 class ManPowerReportController extends AccountBaseController
 {
@@ -17,10 +20,14 @@ class ManPowerReportController extends AccountBaseController
 
     public function __construct()
     {
+
         parent::__construct();
         $this->pageTitle = __('app.menu.manPowerReport');
 
+        // $this->authorize('view', ManPowerReport::class);
+
         $this->middleware(function ($request, $next) {
+            // dd('Middleware passed, calling next()');
             abort_403(!in_array('employees', $this->user->modules));
 
             return $next($request);
@@ -32,8 +39,10 @@ class ManPowerReportController extends AccountBaseController
      */
     public function index(ManPowerReportDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_department');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        $this->authorize('viewAny', ReportPermission::class);
+
+        $permission = user()->permission('view_man_power_report');
+        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
 
         $this->reports = ManPowerReport::get();
         $this->data['departments'] = Team::get();
@@ -50,13 +59,59 @@ class ManPowerReportController extends AccountBaseController
         return $dataTable->render('man-power-reports.index', $this->data);
     }
 
+    public function history(Request $request, $id)
+    {
+        $this->authorize('viewAny', ReportPermission::class);
+
+        $permission = user()->permission('view_man_power_report');
+        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
+
+        $dataTable = new ManPowerReportHistoryDataTable($id);
+        $this->reports = ManPowerReport::get();
+        $this->data['departments'] = Team::get();
+        $this->data['locations'] = Location::get();
+        $this->data['budgetYears'] = ManPowerReport::select('budget_year')
+            ->distinct()
+            ->orderBy('budget_year', 'desc')
+            ->get()
+            ->pluck('budget_year');
+
+        $this->data['designations'] = Designation::select('id', 'name')
+            ->get();
+
+        return $dataTable->render('man-power-reports.history', $this->data);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
     public function create()
     {
+        $this->authorize('viewAny', ReportPermission::class);
+
         $this->data['pageTitle'] = 'Add Man Power';
-        $this->data['departments'] = Team::get();
+
+        $roles = auth()->user()->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
+
+        $isEmployee = $roles->contains(function ($role) {
+            return $role->name === 'employee';
+        });
+
+
+        if ($isAdmin || $isHRmanager) {
+            $this->data['departments'] = Team::get();
+        } elseif ($isEmployee) {
+            $this->data['departments'] = Team::where('id', auth()->user()->department_id)->get();
+        }
+
         $this->data['designations'] = Designation::select('id', 'name')
             ->get();
 
@@ -68,12 +123,17 @@ class ManPowerReportController extends AccountBaseController
      */
     public function store(Request $request)
     {
+        $permission = user()->permission('add_man_power_report');
+        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
+
         $man_power_setup = $request->man_power_setup;
         $man_power_basic_salary = $request->man_power_basic_salary;
         $team_id = $request->team_id;
         $budget_year = $request->budget_year;
         $quarter = $request->quarter;
         $position_id = $request->position_id;
+        $status = $request->status ? $request->status : 'pending';
+        $remark = $request->remark;
 
         Validator::make($request->all(), [
             'man_power_setup' => 'required',
@@ -83,13 +143,22 @@ class ManPowerReportController extends AccountBaseController
             'position_id' => 'required',
         ])->validate();
 
-        ManPowerReport::create([
+        $manPowerReport = ManPowerReport::create([
             'man_power_setup' => $man_power_setup,
             'man_power_basic_salary' => $man_power_basic_salary,
             'team_id' => $team_id,
             'budget_year' => $budget_year,
             'quarter' => $quarter,
-            'position_id' => $position_id
+            'position_id' => $position_id,
+            'status' => $status,
+            'remarks' => $remark,
+            'created_by' => user()->id,
+            'approved_date' => $status == 'approved' ? now() : null,
+        ]);
+
+        ManPowerReportHistory::create([
+            'man_power_report_id' => $manPowerReport->id,
+            'updated_date' => now(),
         ]);
 
         return redirect()->route('man-power-reports.index');
@@ -100,9 +169,31 @@ class ManPowerReportController extends AccountBaseController
      */
     public function show(string $id)
     {
+        $this->authorize('viewAny', ReportPermission::class);
+
         $this->reports = ManPowerReport::findOrFail($id);
         $this->data['pageTitle'] = 'Show Man Power';
-        $this->data['departments'] = Team::get();
+
+        $roles = auth()->user()->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
+
+        $isEmployee = $roles->contains(function ($role) {
+            return $role->name === 'employee';
+        });
+
+
+        if ($isAdmin || $isHRmanager) {
+            $this->data['departments'] = Team::get();
+        } elseif ($isEmployee) {
+            $this->data['departments'] = Team::where('id', auth()->user()->department_id)->get();
+        }
 
         $this->view = 'man-power-reports.ajax.show';
 
@@ -118,11 +209,34 @@ class ManPowerReportController extends AccountBaseController
      */
     public function edit(string $id)
     {
+        $this->authorize('viewAny', ReportPermission::class);
+
         $this->reports = ManPowerReport::findOrFail($id);
         $this->data['pageTitle'] = 'Edit Man Power';
-        $this->data['departments'] = Team::get();
+        $roles = auth()->user()->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
+
+        $isEmployee = $roles->contains(function ($role) {
+            return $role->name === 'employee';
+        });
+
+
+        if ($isAdmin || $isHRmanager) {
+            $this->data['departments'] = Team::get();
+        } elseif ($isEmployee) {
+            $this->data['departments'] = Team::where('id', auth()->user()->department_id)->get();
+        }
 
         $teams = Team::where('id', $this->reports->team_id)->first();
+
+        // dd($teams->toArray());
 
         $this->data['designations'] = Designation::select('id', 'name')
             ->whereIn('id', json_decode($teams->designation_ids))
@@ -136,6 +250,10 @@ class ManPowerReportController extends AccountBaseController
      */
     public function update(string $id, Request $request)
     {
+        // dd($request->all());
+        $permission = user()->permission('edit_man_power_report');
+        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
+
         $reports = ManPowerReport::findOrFail($id);
 
         Validator::make($request->all(), [
@@ -152,7 +270,15 @@ class ManPowerReportController extends AccountBaseController
             'team_id' => $request->team_id,
             'budget_year' => $request->budget_year,
             'quarter' => $request->quarter,
-            'position_id' => $request->position_id
+            'position_id' => $request->position_id,
+            'status' => $request->status ? $request->status : 'pending',
+            'remarks' => $request->remark,
+            'approved_date' => $request->status == 'approved' ? now() : null,
+        ]);
+
+        ManPowerReportHistory::create([
+            'man_power_report_id' => $reports->id,
+            'updated_date' => now(),
         ]);
 
         return redirect()->route('man-power-reports.index');
@@ -163,6 +289,9 @@ class ManPowerReportController extends AccountBaseController
      */
     public function destroy(string $id)
     {
+        $permission = user()->permission('delete_man_power_report');
+        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
+
         $reports = ManPowerReport::findOrFail($id);
         $reports->delete();
 
@@ -182,8 +311,8 @@ class ManPowerReportController extends AccountBaseController
 
     protected function deleteRecords($request)
     {
-        $deletePermission = user()->permission('delete_department');
-        abort_403($deletePermission != 'all');
+        // $deletePermission = user()->permission('delete_department');
+        // abort_403($deletePermission != 'all');
 
         $item = explode(',', $request->row_ids);
 

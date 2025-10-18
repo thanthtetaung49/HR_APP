@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('criterias', function (Blueprint $table) {
+        Schema::create('management_ranks', function (Blueprint $table) {
             $table->id();
-            $table->text('exit_reason_id')->nullable();
-            $table->json('sub_criteria_ids')->nullable();
-            $table->string('responsible_person')->nullable();
-            $table->string('accountability')->nullable();
-            $table->string('action_taken')->nullable();
+            // $table->foreignId('position_id')->references('id')->on('designations');
+            $table->string('name');
+            $table->json('rank');
             $table->timestamps();
         });
     }
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('criterias');
+        Schema::dropIfExists('management_ranks');
     }
 };

@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\Models\Criteria;
 use App\Models\Criterion;
+use App\Models\EmployeeDetails;
 use App\Models\SubCriteria;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
@@ -31,7 +32,23 @@ class CriteriaDataTable extends BaseDataTable
                 return ++$index; // Incremental row indexedi
             })
             ->editColumn('criteria', function ($criteria) {
-                return $criteria->criteria;
+                $employee = new EmployeeDetails();
+                $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+                if ($getCustomFieldGroupsWithFields) {
+                    $fields = $getCustomFieldGroupsWithFields->fields;
+                }
+
+                if (isset($fields) && count($fields) > 0) {
+                    foreach ($fields as $field) {
+                        if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
+                            $options = $field->values;
+                            $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
+                        }
+                    }
+                }
+
+                return $exitReason;
             })
             ->editColumn('sub_criteria', function ($criteria) {
                 $subCriteriaIds = $criteria->sub_criteria_ids;
@@ -46,11 +63,17 @@ class CriteriaDataTable extends BaseDataTable
                 });
 
                 return '<ul>'
-                 . $li .
-                '</ul>';
+                    . $li .
+                    '</ul>';
             })
             ->editColumn('responsible_person', function ($criteria) {
                 return $criteria->responsible_person;
+            })
+            ->editColumn('accountability', function ($criteria) {
+                return $criteria->accountability;
+            })
+             ->editColumn('action_taken', function ($criteria) {
+                return $criteria->action_taken;
             })
             ->addColumn('action', function ($criteria) {
                 $action = '<div class="task_view">
@@ -88,9 +111,29 @@ class CriteriaDataTable extends BaseDataTable
         $model = $model->select('*');
         $searchText = request()->searchText;
 
-        if (request()->has('searchText') && request()->searchText != '') {
+        if (!empty($searchText)) {
+            $employee = new EmployeeDetails();
+            $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
-            $model = $model->where('criteria', 'like', '%' . $searchText . '%');
+            $exitReasonIds = [];
+
+            if ($getCustomFieldGroupsWithFields && $getCustomFieldGroupsWithFields->fields) {
+                foreach ($getCustomFieldGroupsWithFields->fields as $field) {
+                    if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
+                        foreach ($field->values as $id => $label) {
+                            if (stripos($label, $searchText) !== false) {
+                                $exitReasonIds[] = $id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!empty($exitReasonIds)) {
+                $model = $model->whereIn('exit_reason_id', $exitReasonIds);
+            } else {
+                $model = $model->where('exit_reason_id', 'like', '%' . $searchText . '%');
+            }
         }
 
         return $model;
@@ -132,9 +175,11 @@ class CriteriaDataTable extends BaseDataTable
             ],
 
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
-            'criteria' => ['data' => 'criteria', 'name' => 'criteria', 'title' => __('app.menu.criteria')],
-            'sub_criteria' => ['data' => 'sub_criteria', 'name' => 'sub_criteria', 'title' => __('app.menu.subCriteria')],
-             'responsible_person' => ['data' => 'responsible_person', 'name' => 'responsible_person', 'title' => __('app.menu.responsiblePerson')],
+            __('app.menu.exitsReason') => ['data' => 'criteria', 'name' => 'criteria', 'title' => __('app.menu.exitsReason')],
+            __('app.menu.subCriteria') => ['data' => 'sub_criteria', 'name' => 'sub_criteria', 'title' => __('app.menu.subCriteria')],
+            __('app.menu.responsiblePerson') => ['data' => 'responsible_person', 'name' => 'responsible_person', 'title' => __('app.menu.responsiblePerson')],
+            __('app.menu.accountability') => ['data' => 'accountability', 'name' => 'accountability', 'title' => __('app.menu.accountability')],
+            __('app.menu.actionTaken') => ['data' => 'action_taken', 'name' => 'action_taken', 'title' => __('app.menu.actionTaken')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

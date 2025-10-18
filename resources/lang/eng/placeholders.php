@@ -1,6 +1,8 @@
 <?php
 
 return array(
+    'remark' => 'Enter remark here',
+    'accountability' => 'Accountability',
     'exitsReason' => 'Exit Reason',
     'actionTaken' => 'Action Taken',
     'cause' => 'Cause',

@@ -105,13 +105,13 @@
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
 
-        <div class="d-grid d-lg-flex d-md-flex action-bar">
+        {{-- <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
                 <x-forms.link-primary :link="route('man-power-reports.create')" class="mr-3 float-left" icon="plus">
                     @lang('app.menu.manPower')
                 </x-forms.link-primary>
             </div>
-        </div>
+        </div> --}}
 
         <x-datatable.actions>
             <div class="select-status mr-3 pl-3">

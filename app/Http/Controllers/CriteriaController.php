@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\CriteriaDataTable;
 use App\Helper\Reply;
 use App\Models\Criteria;
+use App\Models\EmployeeDetails;
 use App\Models\SubCriteria;
 use Illuminate\Http\Request;
 
@@ -43,6 +44,13 @@ class CriteriaController extends AccountBaseController
         $this->data['pageTitle'] = 'Add Criteria';
         $this->data['subCriterias'] = SubCriteria::get();
 
+        $employee = new EmployeeDetails();
+        $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+
         return view('criteria.create', $this->data);
     }
 
@@ -52,16 +60,20 @@ class CriteriaController extends AccountBaseController
     public function store(Request $request)
     {
         $request->validate([
-            'criteria' => 'required|string',
+            'exit_reason_id' => 'required|string',
             'sub_criteria_ids' => 'required|array',
             'sub_criteria_ids.*' => 'integer',
-            'responsible_person' => 'required|string'
+            'responsible_person' => 'required|string',
+            'accountability' => 'required|string',
+            'action_taken' => 'required|string'
         ]);
 
         Criteria::create([
-            'criteria' => $request->criteria,
+            'exit_reason_id' => $request->exit_reason_id,
             'sub_criteria_ids' => $request->sub_criteria_ids,
             'responsible_person' => $request->responsible_person,
+            'accountability' => $request->accountability,
+            'action_taken' => $request->action_taken,
         ]);
 
         return redirect()->route('criteria.index');
@@ -92,6 +104,13 @@ class CriteriaController extends AccountBaseController
         $this->data['pageTitle'] = 'Edit Criteria';
         $this->data['subCriterias'] = SubCriteria::get();
 
+        $employee = new EmployeeDetails();
+        $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+        if ($getCustomFieldGroupsWithFields) {
+            $this->fields = $getCustomFieldGroupsWithFields->fields;
+        }
+
         return view('criteria.ajax.edit', $this->data);
     }
 
@@ -103,16 +122,20 @@ class CriteriaController extends AccountBaseController
         $criteria = Criteria::findOrFail($id);
 
         $request->validate([
-            'criteria' => 'required|string',
+            'exit_reason_id' => 'required|string',
             'sub_criteria_ids' => 'required|array',
             'sub_criteria_ids.*' => 'integer',
-            'responsible_person' => 'required|string'
+            'responsible_person' => 'required|string',
+            'accountability' => 'required|string',
+            'action_taken' => 'required|string'
         ]);
 
         $criteria->update([
-            'criteria' => $request->criteria,
+            'exit_reason_id' => $request->exit_reason_id,
             'sub_criteria_ids' => $request->sub_criteria_ids,
             'responsible_person' => $request->responsible_person,
+            'accountability' => $request->accountability,
+            'action_taken' => $request->action_taken,
         ]);
 
         return redirect()->route('criteria.index');

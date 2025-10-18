@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\ManPowerReport;
+use App\Models\ReportPermission;
+use App\Policies\ManPowerReportPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -14,6 +17,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         /* 'App\Models\Model' => 'App\Policies\ModelPolicy', */
+        ReportPermission::class => ManPowerReportPolicy::class
     ];
 
     /**
@@ -24,6 +28,8 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
+
+        // dd('AuthServiceProvider loaded', $this->policies);
     }
 
 }

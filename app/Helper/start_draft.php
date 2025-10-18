@@ -778,49 +778,27 @@ if (!function_exists('sidebar_user_perms')) {
                 'add_man_power_report',
                 'edit_man_power_report',
                 'delete_man_power_report',
-                'view_report_permission',
-                'add_report_permission',
-                'edit_report_permission',
-                'delete_report_permission'
             ];
 
-            $sidebarPermissions = Permission::whereIn('name', $sidebarPermissionsArray)
-                ->select('id', 'name')
-                ->orderBy('id', 'asc')
-                ->get();
+
+            $sidebarPermissions = Permission::whereIn('name', $sidebarPermissionsArray)->select('id', 'name')->orderBy('id', 'asc')->get();
+
+            // dd($sidebarPermissions);
 
             $sidebarPermissionsId = $sidebarPermissions->pluck('id')->toArray();
 
-            // Check user-specific permissions (user_permissions table)
-            $userSpecificPermissions = UserPermission::where('user_id', user()->id)
+            $sidebarUserPermissionType = UserPermission::where('user_id', user()->id)
                 ->whereIn('permission_id', $sidebarPermissionsId)
                 ->join('permissions', 'permissions.id', '=', 'user_permissions.permission_id')
+                //                ->orderBy('user_permissions.id')
                 ->select('user_permissions.permission_type_id', 'permissions.name', 'permissions.id')
+                ->groupBy(['user_id', 'permission_id', 'permission_type_id'])
                 ->get()
                 ->keyBy('name');
 
-            // Check role-based permissions (permission_role table)
-            $userRoles = user()->roles->pluck('id')->toArray();
+            $sidebarUserPermissions = array_combine($sidebarUserPermissionType->pluck('name')->toArray(), $sidebarUserPermissionType->pluck('permission_type_id')->toArray());
 
-            $roleBasedPermissions = DB::table('permission_role')
-                ->whereIn('role_id', $userRoles)
-                ->whereIn('permission_id', $sidebarPermissionsId)
-                ->join('permissions', 'permissions.id', '=', 'permission_role.permission_id')
-                ->select('permission_role.permission_type_id', 'permissions.name', 'permissions.id')
-                ->get()
-                ->keyBy('name');
-
-            // Merge: user-specific overrides role-based
-            $sidebarUserPermissionType = $roleBasedPermissions->merge($userSpecificPermissions);
-
-            $sidebarUserPermissions = array_combine(
-                $sidebarUserPermissionType->pluck('name')->toArray(),
-                $sidebarUserPermissionType->pluck('permission_type_id')->toArray()
-            );
-
-            // Handle unassigned permissions
-            $assignedPermissionIds = $sidebarUserPermissionType->pluck('id')->toArray();
-            $unassignedPermissions = array_diff($sidebarPermissionsId, $assignedPermissionIds);
+            $unassignedPermissions = array_diff($sidebarPermissionsId, $sidebarUserPermissionType->pluck('id')->toArray());
 
             $filteredPermissions = $sidebarPermissions->filter(function ($item) use ($unassignedPermissions) {
                 return in_array($item->id, $unassignedPermissions);
@@ -832,8 +810,6 @@ if (!function_exists('sidebar_user_perms')) {
 
             cache(['sidebar_user_perms_' . user()->id => $sidebarUserPermissions]);
         }
-
-        // dd(user()->permission('view_report_permission'));
 
         return cache('sidebar_user_perms_' . user()->id);
     }

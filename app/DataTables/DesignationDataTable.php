@@ -3,6 +3,7 @@
 namespace App\DataTables;
 
 use App\Models\Designation;
+use App\Models\ManagementRank;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 
@@ -48,6 +49,29 @@ class DesignationDataTable extends BaseDataTable
             //     return '-';
 
             // })
+            ->editColumn('rank', function ($row) {
+                if (empty($row->rank_id)) {
+                    return '---';
+                }
+
+                return 'Rank ' . $row->rank_id;
+            })
+            ->editColumn('rank_level', function ($row) {
+                if (empty($row->rank_id)) {
+                    return '---';
+                }
+
+                $managementRank = ManagementRank::all();
+
+                $lookupRankId = ($row->rank_id >= 7) ? 7 : $row->rank_id;
+
+                $relatedRank = $managementRank->first(function ($item) use ($lookupRankId) {
+                    $ranks = json_decode($item->rank, true);
+                    return is_array($ranks) && in_array($lookupRankId, $ranks);
+                });
+
+                return $relatedRank ? $relatedRank->name : '---';
+            })
             ->addColumn('action', function ($row) {
 
                 $action = '<div class="task_view">
@@ -170,6 +194,8 @@ class DesignationDataTable extends BaseDataTable
             ],
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'exportable' => true, 'title' => __('app.name')],
+            __('app.menu.rank') => ['data' => 'rank', 'name' => 'rank', 'exportable' => false, 'title' => __('app.menu.rank')],
+            __('app.menu.rankLevel') => ['data' => 'rank_level', 'name' => 'rank_level', 'exportable' => false, 'title' => __('app.menu.rankLevel')],
             // __('app.menu.parent_id') => ['data' => 'parent_id', 'name' => 'parent_id', 'exportable' => true, 'title' => __('app.menu.parent_id') . ' ' . __('app.menu.designation')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
@@ -179,5 +205,4 @@ class DesignationDataTable extends BaseDataTable
                 ->addClass('text-right pr-20')
         ];
     }
-
 }

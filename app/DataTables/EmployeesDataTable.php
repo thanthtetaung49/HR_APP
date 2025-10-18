@@ -231,6 +231,7 @@ class EmployeesDataTable extends BaseDataTable
 
         $datatables->rawColumns(array_merge(['name', 'action', 'role', 'status', 'check', 'employee_id'], $customFieldColumns));
 
+
         return $datatables;
     }
 

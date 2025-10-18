@@ -14,4 +14,12 @@ class ManPowerReport extends Model
     public function teams () {
         return $this->belongsTo(Team::class, 'team_id');
     }
+
+    // public function location () {
+    //     return $this->belongsTo(Location::class, 'location_id');
+    // }
+
+    public function designation() {
+        return $this->belongsTo(Designation::class, 'position_id');
+    }
 }

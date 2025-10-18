@@ -15,17 +15,30 @@
                     <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                         @lang('modules.criteria.addTitle')</h4>
                     <div class="row p-20">
+
+                        @if (isset($fields) && count($fields) > 0)
+                            @foreach ($fields as $field)
+                                @if ($field->type == 'select' && $field->name == 'exit-reasons-1')
+                                    <div class="col-md-4">
+
+                                        <x-forms.label class="my-3" fieldId="exit_reason_id"
+                                            :fieldLabel="$field->label" :fieldRequired="($field->required === 'yes') ? true : false">
+                                        </x-forms.label>
+
+                                        <x-forms.input-group>
+                                            <select class="form-control select-picker mt" name="exit_reason_id"
+                                                id="exit_reason_id" data-live-search="true">
+                                                @foreach ($field->values as $key => $value)
+                                                    <option value="{{ $key }}">{{ $value }}</option>
+                                                @endforeach
+                                            </select>
+                                        </x-forms.input-group>
+                                    </div>
+                                @endif
+                            @endforeach
+                        @endif
+
                         <div class="col-md-4">
-                            <x-forms.text fieldId="criteria" :fieldLabel="__('app.menu.criteria')" fieldName="criteria" fieldRequired="true"
-                                :fieldPlaceholder="__('placeholders.criteria')">
-                            </x-forms.text>
-
-                            @error('criteria')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-3">
                             <x-forms.label class="my-3" fieldId="sub_criteria_ids" :fieldLabel="__('app.menu.subCriteria')"
                                 fieldName="sub_criteria_ids">
                             </x-forms.label>
@@ -42,6 +55,26 @@
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </x-forms.input-group>
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="accountability" :fieldLabel="__('app.menu.accountability')" fieldName="accountability" fieldRequired="true"
+                                :fieldPlaceholder="__('placeholders.accountability')">
+                            </x-forms.text>
+
+                            @error('accountability')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="action_taken" :fieldLabel="__('app.menu.actionTaken')" fieldName="action_taken"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.actionTaken')">
+                            </x-forms.text>
+
+                            @error('action_taken')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
                         </div>
 
                         <div class="col-md-4">

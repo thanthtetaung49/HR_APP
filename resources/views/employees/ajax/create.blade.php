@@ -227,8 +227,8 @@
                         </x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
-                        <x-forms.text type="number" fieldId="bank_account_number" :fieldLabel="__('modules.bankInformation.bankAccountNumber')" fieldName="bank_account_number"
-                            fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankAccountNumber')">
+                        <x-forms.text type="number" fieldId="bank_account_number" :fieldLabel="__('modules.bankInformation.bankAccountNumber')"
+                            fieldName="bank_account_number" fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankAccountNumber')">
                         </x-forms.text>
                     </div>
                 </div>
@@ -376,7 +376,8 @@
                     <input type ="hidden" name="add_more" value="false" id="add_more" />
 
                 </div>
-                <x-forms.custom-field :fields="$fields"></x-forms.custom-field>
+
+                <x-forms.custom-field :fields="$fields" :criterias="$criterias"></x-forms.custom-field>
 
                 <x-form-actions>
                     <x-forms.button-primary id="save-employee-form" class="mr-3" icon="check">

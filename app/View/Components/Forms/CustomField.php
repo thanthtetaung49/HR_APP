@@ -10,15 +10,19 @@ class CustomField extends Component
 
     public $fields;
     public $model;
+    public $criterias;
+    public $subCriterias;
 
     /**
      * Create a new component instance.
      *
      * @return void
      */
-    public function __construct($fields, $model = false)
+    public function __construct($fields, $criterias = null, $subCriterias = null, $model = false, )
     {
         $this->fields = $fields;
+        $this->criterias = $criterias;
+        $this->subCriterias = $subCriterias;
         $this->model = $model;
     }
 

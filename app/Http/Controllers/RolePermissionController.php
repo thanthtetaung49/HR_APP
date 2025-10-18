@@ -41,6 +41,8 @@ class RolePermissionController extends AccountBaseController
             ->orderBy('id', 'asc')
             ->get();
 
+        // dd($this->roles->toArray());
+
         $otherRoleUserCount = 0;
 
         foreach ($this->roles->whereNotIn('name', ['employee', 'client']) as $role) {

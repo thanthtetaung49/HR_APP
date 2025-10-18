@@ -7,14 +7,6 @@
         }
     </style>
 
-    @php
-        $roles = auth()->user()->roles;
-
-        $isAdmin = $roles->contains(function ($role) {
-            return $role->name === 'admin';
-        });
-    @endphp
-
     <div class="row p-20">
         <div class="col-sm-12">
             <x-form action="{{ route('man-power-reports.store') }}" method="POST">
@@ -73,6 +65,7 @@
                             @enderror
                         </div>
 
+
                         <div class="col-md-4">
                             <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.teams')" fieldName="team_id">
                             </x-forms.label>
@@ -81,11 +74,11 @@
                                 <select class="form-control select-picker mt" name="team_id" id="team_id"
                                     data-live-search="true">
                                     <option value="">--</option>
-                                    @if ($isAdmin)
-                                        @foreach ($departments as $department)
-                                            <option value="{{ $department->id }}">{{ $department->team_name }}</option>
-                                        @endforeach
-                                    @endif
+                                    @foreach ($departments as $department)
+                                        <option value="{{ $department->id }}"
+                                            @if ($department->id == auth()->user()->department_id) selected @endif>{{ $department->team_name }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </x-forms.input-group>
 
@@ -109,6 +102,39 @@
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        @can('canApprove', App\Models\ManPowerReport::class)
+                            <div class="col-md-4">
+                                <x-forms.label class="my-3" fieldId="parent_label" :fieldLabel="__('app.menu.status')" fieldName="position_id">
+                                </x-forms.label>
+
+                                <x-forms.input-group>
+                                    <select class="form-control select-picker mt" name="status" id="status"
+                                        data-live-search="true">
+                                        <option value="">--</option>
+                                        <option value="pending" selected>Pending
+                                        </option>
+                                        <option value="approved">Approved
+                                        </option>
+                                        <option value="review">Review</option>
+                                    </select>
+                                </x-forms.input-group>
+
+                                @error('status')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+
+                            <div class="col-md-4">
+                                <x-forms.text fieldId="remark" :fieldLabel="__('app.menu.remark')"
+                                    fieldName="remark" fieldRequired="true" :fieldPlaceholder="__('placeholders.remark')">
+                                </x-forms.text>
+
+                                @error('remark')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endcan
                     </div>
 
                     <x-form-actions>
@@ -155,6 +181,6 @@
             });
 
 
-        });
+        }).trigger('change');
     </script>
 @endpush

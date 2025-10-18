@@ -497,7 +497,7 @@
                     @endif
                 </div>
 
-                <x-forms.custom-field :fields="$fields" :model="$employeeDetail"></x-forms.custom-field>
+                <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail" :subCriterias="$subCriterias"></x-forms.custom-field>
 
                 <x-form-actions>
                     <x-forms.button-primary id="save-form" class="mr-3" icon="check">@lang('app.save')
@@ -835,7 +835,7 @@
         $('#country').change(function() {
             updatePhoneCode();
             $('.select-picker').selectpicker('refresh');
-        });  
+        });
         <x-forms.custom-field-filejs/>
             init(RIGHT_MODAL);
     });

@@ -127,6 +127,7 @@ use App\Http\Controllers\InvoicePaymentDetailController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\LocationController;
 use App\Http\Controllers\ManPowerReportController;
+use App\Http\Controllers\ReportPermissionController;
 use App\Http\Controllers\SubCriteriaController;
 use App\Http\Controllers\TurnOverReportController;
 
@@ -201,10 +202,13 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('employees/send-invite', [EmployeeController::class, 'sendInvite'])->name('employees.send_invite');
     Route::post('employees/create-link', [EmployeeController::class, 'createLink'])->name('employees.create_link');
     Route::post('/get-exit-date-message', [EmployeeController::class, 'getExitDateMessage'])->name('getExitDateMessage');
+    Route::get('employees/filter/existReason', [EmployeeController::class, 'filterExistReason'])->name('filterExistReason');
     Route::resource('employees', EmployeeController::class);
+
     // select location and department
     Route::post('location/select', [EmployeeController::class, 'selectLocation'])->name('location.select');
     Route::post('department/select', [EmployeeController::class, 'selectDepartment'])->name('department.select');
+    Route::post('designation/select', [EmployeeController::class, 'selectDesignation'])->name('designation.select');
 
     Route::resource('passport', PassportController::class);
     Route::resource('employee-visa', EmployeeVisaController::class);
@@ -403,6 +407,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('man-power-reports', ManPowerReportController::class);
     Route::post('man-power-reports/apply-quick-action', [ManPowerReportController::class, 'applyQuickAction'])->name('manPowerReports.apply_quick_action');
     Route::get('man-power-reports/filter/departments', [ManPowerReportController::class, 'applyDepartmentFilter'])->name('manPowerReports.apply_department_filter');
+    Route::get('man-power-reports/history/{id?}', [ManPowerReportController::class, 'history'])->name('manPowerReports.history');
 
     /* Sub criteria */
     Route::resource('sub-criteria', SubCriteriaController::class);
@@ -411,6 +416,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     /* Crietia */
     Route::resource('criteria', CriteriaController::class);
     Route::post('criteria/apply-quick-action', [SubCriteriaController::class, 'applyQuickAction'])->name('criteria.apply_quick_action');
+
+    /* Report Permission */
+    Route::resource('report-permission', ReportPermissionController::class);
+    Route::post('report-permission/apply-quick-action', [ReportPermissionController::class, 'applyQuickAction'])->name('reportPermission.apply_quick_action');
 
     /* Cause */
     Route::resource('causes', CauseController::class);

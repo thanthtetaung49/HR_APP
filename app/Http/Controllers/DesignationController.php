@@ -59,6 +59,7 @@ class DesignationController extends AccountBaseController
         $group = new Designation();
         $group->name = $request->name;
         $group->parent_id = $request->parent_id ? $request->parent_id : null;
+        $group->rank_id = $request->rank_id;
         $group->save();
 
         $redirectUrl = urldecode($request->redirect_url);
@@ -139,6 +140,7 @@ class DesignationController extends AccountBaseController
 
         $group->name = strip_tags($request->designation_name);
         $group->parent_id = $request->parent_id ? $request->parent_id : null;
+        $group->rank_id = $request->rank_id;
         $group->save();
 
         $redirectUrl = route('designations.index');

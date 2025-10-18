@@ -30,7 +30,6 @@ class AccountBaseController extends Controller
         }
 
         $this->middleware(function ($request, $next) {
-
             // Keep this function at top
             $this->adminSpecific();
 
@@ -43,13 +42,13 @@ class AccountBaseController extends Controller
 
     public function adminSpecific()
     {
-
         abort_403(!user()->admin_approval && request()->ajax());
 
         if (!user()->admin_approval && Route::currentRouteName() != 'account_unverified') {
             // send() is added to force redirect from here rather return to called function
             return redirect(route('account_unverified'))->send();
         }
+
 
         $this->adminTheme = admin_theme();
         $this->invoiceSetting = invoice_setting();
@@ -102,15 +101,24 @@ class AccountBaseController extends Controller
         if (in_array('admin', user_roles())) {
             $this->appTheme = admin_theme();
             $this->checkListCompleted = GlobalSetting::checkListCompleted();
-        }
-        else if (in_array('client', user_roles())) {
+        } else if (in_array('client', user_roles())) {
             $this->appTheme = client_theme();
-        }
-        else {
+        } else {
             $this->appTheme = employee_theme();
         }
 
         $this->sidebarUserPermissions = sidebar_user_perms();
+
+        // dd([
+        //     'user_id' => user()->id,
+        //     'user_name' => user()->name,
+        //     'user_roles' => user()->roles->pluck('name')->toArray(),
+        //     'view_permission' => user()->permission('view_man_power_report'),
+        //     'add_permission' => user()->permission('add_man_power_report'),
+        //     'edit_permission' => user()->permission('edit_man_power_report'),
+        //     'delete_permission' => user()->permission('delete_man_power_report'),
+        //     'sidebar_perms' => $this->sidebarUserPermissions,
+        // ]);
     }
 
     public function logProjectActivity($projectId, $text)
@@ -147,7 +155,4 @@ class AccountBaseController extends Controller
 
         $activity->save();
     }
-
 }
-
-
