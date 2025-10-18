@@ -68,16 +68,16 @@ class ManPowerReportController extends AccountBaseController
 
         $dataTable = new ManPowerReportHistoryDataTable($id);
         $this->reports = ManPowerReport::get();
-        $this->data['departments'] = Team::get();
-        $this->data['locations'] = Location::get();
-        $this->data['budgetYears'] = ManPowerReport::select('budget_year')
-            ->distinct()
-            ->orderBy('budget_year', 'desc')
-            ->get()
-            ->pluck('budget_year');
+        // $this->data['departments'] = Team::get();
+        // $this->data['locations'] = Location::get();
+        // $this->data['budgetYears'] = ManPowerReport::select('budget_year')
+        //     ->distinct()
+        //     ->orderBy('budget_year', 'desc')
+        //     ->get()
+        //     ->pluck('budget_year');
 
-        $this->data['designations'] = Designation::select('id', 'name')
-            ->get();
+        // $this->data['designations'] = Designation::select('id', 'name')
+        //     ->get();
 
         return $dataTable->render('man-power-reports.history', $this->data);
     }
@@ -167,8 +167,7 @@ class ManPowerReportController extends AccountBaseController
             'status' => $manPowerReport->status,
             'remarks' => $manPowerReport->remark,
             'created_by' => user()->id,
-            'approved_date' => $manPowerReport->status == 'approved' ? now() : null,
-
+            'approved_date' => $manPowerReport->approved_date,
             'updated_date' => now(),
         ]);
 
@@ -296,9 +295,9 @@ class ManPowerReportController extends AccountBaseController
             'quarter' => $reports->quarter,
             'position_id' => $reports->position_id,
             'status' => $reports->status,
-            'remarks' => $reports->remark,
+            'remarks' => $reports->remarks,
             'created_by' => user()->id,
-            'approved_date' => $reports->status == 'approved' ? now() : null,
+            'approved_date' => $reports->approved_date,
             'updated_date' => now(),
         ]);
 

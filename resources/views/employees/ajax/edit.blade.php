@@ -497,6 +497,8 @@
                     @endif
                 </div>
 
+                {{-- <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail" ></x-forms.custom-field> --}}
+
                 <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail" :subCriterias="$subCriterias"></x-forms.custom-field>
 
                 <x-form-actions>

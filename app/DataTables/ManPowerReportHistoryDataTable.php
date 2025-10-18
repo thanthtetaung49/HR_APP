@@ -113,12 +113,13 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 }
             })
             ->editColumn('remarks', function ($manPower) {
+                // dd($manPower->remarks);
                 return $manPower->remarks ? $manPower->remarks : '---';
             })
             ->editColumn('approved_date', function ($manPower) {
                 return $manPower->approved_date ? $manPower->approved_date : '---';
             })
-             ->editColumn('approved_date', function ($manPower) {
+             ->editColumn('updated_date', function ($manPower) {
                 return $manPower->updated_date ? $manPower->updated_date  : '---';
             })
             ->editColumn('created_at', function ($manPower) {

@@ -470,7 +470,12 @@ class EmployeeController extends AccountBaseController
         $this->criterias = Criteria::get();
         $this->criteria = Criteria::where('id', $this->employee->employeeDetail->criteria_id)
             ->first();
-        $this->subCriterias = SubCriteria::whereIn('id', $this->criteria->sub_criteria_ids)->get();
+
+        $this->subCriterias = null;
+
+        if ($this->criteria) {
+            $this->subCriterias = SubCriteria::whereIn('id', $this->criteria?->sub_criteria_ids)->get();
+        }
 
         /** @phpstan-ignore-next-line */
         if (count($this->employee->reportingTeam) > 0) {
