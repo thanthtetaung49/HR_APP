@@ -9,10 +9,6 @@
     </style>
 @endpush
 
-@php
-    $addDepartmentPermission = user()->permission('add_department');
-@endphp
-
 
 @section('filter-section')
     <x-filters.filter-box>
@@ -135,58 +131,118 @@
 @endsection
 
 @push('scripts')
-    @include('sections.datatable_js')
+@include('sections.datatable_js')
 
-    <script>
-        $('#manpowerreport-table').on('preXhr.dt', function(e, settings, data) {
-            const teamId = $('#team_id').val();
-            const locationId = $('#location_id').val();
-            const budgetYear = $('#budget_year').val();
-            const position = $('#position').val();
-            const quarter = $('#quarter').val();
+<script>
+    $('#manpowerreport-table').on('preXhr.dt', function(e, settings, data) {
+        const teamId = $('#team_id').val();
+        const locationId = $('#location_id').val();
+        const budgetYear = $('#budget_year').val();
+        const position = $('#position').val();
+        const quarter = $('#quarter').val();
 
-            data['teamId'] = teamId;
-            data['locationId'] = locationId;
-            data['budgetYear'] = budgetYear;
-            data['position'] = position;
-            data['quarter'] = quarter;
-        });
+        data['teamId'] = teamId;
+        data['locationId'] = locationId;
+        data['budgetYear'] = budgetYear;
+        data['position'] = position;
+        data['quarter'] = quarter;
+    });
 
-        const showTable = () => {
-            window.LaravelDataTables["manpowerreport-table"].draw(true);
-        }
+    const showTable = () => {
+        window.LaravelDataTables["manpowerreport-table"].draw(true);
+    }
 
-        $('#team_id, #location_id, #budget_year, #position, #quarter').on('change keyup',
-            function() {
-                if ($('#team_id').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#datatableRange").val() != "") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#location_id").val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#budget_year").val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#position").val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($("#quarter").val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else {
-                    $('#reset-filters').addClass('d-none');
-                }
+    $('#team_id, #location_id, #budget_year, #position, #quarter').on('change keyup',
+        function() {
+            if ($('#team_id').val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+            } else if ($("#datatableRange").val() != "") {
+                $('#reset-filters').removeClass('d-none');
+            } else if ($("#location_id").val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+            } else if ($("#budget_year").val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+            } else if ($("#position").val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+            } else if ($("#quarter").val() != "all") {
+                $('#reset-filters').removeClass('d-none');
+            } else {
+                $('#reset-filters').addClass('d-none');
+            }
 
-                showTable();
-            });
-
-        $('#reset-filters').click(function() {
-            $('#filter-form')[0].reset();
-            $('.filter-box #status').val('not finished');
-            $('.filter-box .select-picker').selectpicker("refresh");
-            $('#reset-filters').addClass('d-none');
             showTable();
         });
 
-        $('body').on('click', '.delete-table-row', function() {
-            var id = $(this).data('manpower-id');
+    $('#reset-filters').click(function() {
+        $('#filter-form')[0].reset();
+        $('.filter-box #status').val('not finished');
+        $('.filter-box .select-picker').selectpicker("refresh");
+        $('#reset-filters').addClass('d-none');
+        showTable();
+    });
+
+    $('body').on('click', '.delete-table-row', function() {
+        var id = $(this).data('manpower-id');
+        Swal.fire({
+            title: "@lang('messages.sweetAlertTitle')",
+            text: "@lang('messages.recoverRecord')",
+            icon: 'warning',
+            showCancelButton: true,
+            focusConfirm: false,
+            confirmButtonText: "@lang('messages.confirmDelete')",
+            cancelButtonText: "@lang('app.cancel')",
+            customClass: {
+                confirmButton: 'btn btn-primary mr-3',
+                cancelButton: 'btn btn-secondary'
+            },
+            showClass: {
+                popup: 'swal2-noanimation',
+                backdrop: 'swal2-noanimation'
+            },
+            buttonsStyling: false
+        }).then((result) => {
+            if (result.isConfirmed) {
+                var url = "{{ route('man-power-reports.destroy', ':id') }}";
+                url = url.replace(':id', id);
+
+                console.log(url);
+
+                var token = "{{ csrf_token() }}";
+
+                $.easyAjax({
+                    type: 'POST',
+                    url: url,
+                    blockUI: true,
+                    data: {
+                        '_token': token,
+                        '_method': 'DELETE'
+                    },
+                    success: function(response) {
+                        console.log(response.redirectUrl);
+                        window.location.href = response.redirectUrl;
+                        // if (response.message == "success") {
+                        //     // showTable();
+                        // }
+                    }
+                });
+            }
+        });
+    });
+
+    $('#quick-action-type').change(function() {
+        const actionValue = $(this).val();
+
+        if (actionValue != '') {
+            $('#quick-action-apply').removeAttr('disabled');
+        } else {
+            $('#quick-action-apply').attr('disabled', true);
+            $('.quick-action-field').addClass('d-none');
+        }
+    });
+
+    $('#quick-action-apply').click(function() {
+        const actionValue = $('#quick-action-type').val();
+        if (actionValue === 'delete') {
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
                 text: "@lang('messages.recoverRecord')",
@@ -206,191 +262,131 @@
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    var url = "{{ route('man-power-reports.destroy', ':id') }}";
-                    url = url.replace(':id', id);
-
-                    console.log(url);
-
-                    var token = "{{ csrf_token() }}";
-
-                    $.easyAjax({
-                        type: 'POST',
-                        url: url,
-                        blockUI: true,
-                        data: {
-                            '_token': token,
-                            '_method': 'DELETE'
-                        },
-                        success: function(response) {
-                            console.log(response.redirectUrl);
-                            window.location.href = response.redirectUrl;
-                            // if (response.message == "success") {
-                            //     // showTable();
-                            // }
-                        }
-                    });
+                    applyQuickAction();
                 }
             });
-        });
 
-        $('#quick-action-type').change(function() {
-            const actionValue = $(this).val();
+        } else {
+            applyQuickAction();
+        }
+    });
 
-            if (actionValue != '') {
-                $('#quick-action-apply').removeAttr('disabled');
-            } else {
-                $('#quick-action-apply').attr('disabled', true);
-                $('.quick-action-field').addClass('d-none');
+    const applyQuickAction = () => {
+        const rowdIds = $("#manpowerreport-table input:checkbox:checked").map(function() {
+            return $(this).val();
+        }).get();
+
+
+        const url = "{{ route('manPowerReports.apply_quick_action') }}?row_ids=" + rowdIds;
+
+        $.easyAjax({
+            url: url,
+            container: '#quick-action-form',
+            type: "POST",
+            disableButton: true,
+            buttonSelector: "#quick-action-apply",
+            data: $('#quick-action-form').serialize(),
+            success: function(response) {
+                if (response.status === 'success') {
+                    showTable();
+                    resetActionButtons();
+                    deSelectAll();
+                    $('#quick-action-form').hide();
+                }
             }
-        });
+        })
+    };
 
-        $('#quick-action-apply').click(function() {
-            const actionValue = $('#quick-action-type').val();
-            if (actionValue === 'delete') {
-                Swal.fire({
-                    title: "@lang('messages.sweetAlertTitle')",
-                    text: "@lang('messages.recoverRecord')",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    focusConfirm: false,
-                    confirmButtonText: "@lang('messages.confirmDelete')",
-                    cancelButtonText: "@lang('app.cancel')",
-                    customClass: {
-                        confirmButton: 'btn btn-primary mr-3',
-                        cancelButton: 'btn btn-secondary'
-                    },
-                    showClass: {
-                        popup: 'swal2-noanimation',
-                        backdrop: 'swal2-noanimation'
-                    },
-                    buttonsStyling: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        applyQuickAction();
-                    }
+    $("#location_id").on('change', function() {
+        let location_id = $(this).val();
+        let designation_id = $("#position").val();
+        let department_id = $("#team_id").val();
+
+        let department_html = `<option value="all">--</option>`;
+        let designation_html = `<option value="all">--</option>`;
+
+        let url = "{{ route('location.select') }}";
+
+        if (department_id != "all" && designation_id != "all") {
+            $("#team_id").html(department_html);
+            $("#team_id").selectpicker('refresh');
+
+            $("#position").html(designation_html);
+            $("#position").selectpicker('refresh');
+
+        } else if (designation_id != "all") {
+            $("#position").html(designation_html);
+            $("#position").selectpicker('refresh');
+        } else {
+            $("#team_id").html(department_html);
+            $("#team_id").selectpicker('refresh');
+        }
+
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                'id': location_id,
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                let teams = response.data;
+                let html = department_html;
+
+                teams.forEach((team) => {
+                    html += `
+                        <option value="${team.id}">${team.team_name}</option>
+                    `
                 });
 
-            } else {
-                applyQuickAction();
+                $("#team_id").html(html);
+                $("#team_id").selectpicker(
+                'refresh'); // refresh the bootstrap select ui
+            }
+
+        });
+
+        showTable();
+    });
+
+    $("#team_id").on('change', function() {
+        let department_id = $(this).val();
+        let location_id = $("#location").val();
+        let designation_id = $("#position").val();
+
+        let url = "{{ route('department.select') }}";
+
+        let designation_html = `<option value="all">--</option>`;
+
+        if (designation_id != "all") {
+            $("#position").html(designation_html);
+            $("#position").selectpicker('refresh');
+        }
+
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: {
+                'id': department_id,
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                let designations = response.data;
+                let html = designation_html;
+
+                designations.forEach((designation) => {
+                    html += `
+                        <option value="${designation.id}">${designation.name}</option>
+                    `
+                });
+
+                $("#position").html(html);
+                $("#position").selectpicker('refresh'); // refresh the bootstrap select ui
             }
         });
 
-        const applyQuickAction = () => {
-            const rowdIds = $("#manpowerreport-table input:checkbox:checked").map(function() {
-                return $(this).val();
-            }).get();
-
-
-            const url = "{{ route('manPowerReports.apply_quick_action') }}?row_ids=" + rowdIds;
-
-            $.easyAjax({
-                url: url,
-                container: '#quick-action-form',
-                type: "POST",
-                disableButton: true,
-                buttonSelector: "#quick-action-apply",
-                data: $('#quick-action-form').serialize(),
-                success: function(response) {
-                    if (response.status === 'success') {
-                        showTable();
-                        resetActionButtons();
-                        deSelectAll();
-                        $('#quick-action-form').hide();
-                    }
-                }
-            })
-        };
-
-        $("#location_id").on('change', function() {
-            let location_id = $(this).val();
-            let designation_id = $("#position").val();
-            let department_id = $("#team_id").val();
-
-            let department_html = `<option value="all">--</option>`;
-            let designation_html = `<option value="all">--</option>`;
-
-            let url = "{{ route('location.select') }}";
-
-            if (department_id != "all" && designation_id != "all") {
-                $("#team_id").html(department_html);
-                $("#team_id").selectpicker('refresh');
-
-                $("#position").html(designation_html);
-                $("#position").selectpicker('refresh');
-
-            } else if (designation_id != "all") {
-                $("#position").html(designation_html);
-                $("#position").selectpicker('refresh');
-            } else {
-                $("#team_id").html(department_html);
-                $("#team_id").selectpicker('refresh');
-            }
-
-
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: {
-                    'id': location_id,
-                    _token: "{{ csrf_token() }}"
-                },
-                success: function(response) {
-                    let teams = response.data;
-                    let html = department_html;
-
-                    teams.forEach((team) => {
-                        html += `
-                            <option value="${team.id}">${team.team_name}</option>
-                        `
-                    });
-
-                    $("#team_id").html(html);
-                    $("#team_id").selectpicker(
-                    'refresh'); // refresh the bootstrap select ui
-                }
-
-            });
-
-            showTable();
-        });
-
-        $("#team_id").on('change', function() {
-            let department_id = $(this).val();
-            let location_id = $("#location").val();
-            let designation_id = $("#position").val();
-
-            let url = "{{ route('department.select') }}";
-
-            let designation_html = `<option value="all">--</option>`;
-
-            if (designation_id != "all") {
-                $("#position").html(designation_html);
-                $("#position").selectpicker('refresh');
-            }
-
-            $.ajax({
-                type: "POST",
-                url: url,
-                data: {
-                    'id': department_id,
-                    _token: "{{ csrf_token() }}"
-                },
-                success: function(response) {
-                    let designations = response.data;
-                    let html = designation_html;
-
-                    designations.forEach((designation) => {
-                        html += `
-                            <option value="${designation.id}">${designation.name}</option>
-                        `
-                    });
-
-                    $("#position").html(html);
-                    $("#position").selectpicker('refresh'); // refresh the bootstrap select ui
-                }
-            });
-
-            showTable();
-        });
-    </script>
+        showTable();
+    });
+</script>
 @endpush

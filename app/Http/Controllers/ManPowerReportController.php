@@ -23,15 +23,6 @@ class ManPowerReportController extends AccountBaseController
 
         parent::__construct();
         $this->pageTitle = __('app.menu.manPowerReport');
-
-        // $this->authorize('view', ManPowerReport::class);
-
-        $this->middleware(function ($request, $next) {
-            // dd('Middleware passed, calling next()');
-            abort_403(!in_array('employees', $this->user->modules));
-
-            return $next($request);
-        });
     }
 
     /**
@@ -40,9 +31,6 @@ class ManPowerReportController extends AccountBaseController
     public function index(ManPowerReportDataTable $dataTable)
     {
         $this->authorize('viewAny', ReportPermission::class);
-
-        $permission = user()->permission('view_man_power_report');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
 
         $this->reports = ManPowerReport::get();
         $this->data['departments'] = Team::get();
@@ -63,21 +51,8 @@ class ManPowerReportController extends AccountBaseController
     {
         $this->authorize('viewAny', ReportPermission::class);
 
-        $permission = user()->permission('view_man_power_report');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $dataTable = new ManPowerReportHistoryDataTable($id);
         $this->reports = ManPowerReport::get();
-        // $this->data['departments'] = Team::get();
-        // $this->data['locations'] = Location::get();
-        // $this->data['budgetYears'] = ManPowerReport::select('budget_year')
-        //     ->distinct()
-        //     ->orderBy('budget_year', 'desc')
-        //     ->get()
-        //     ->pluck('budget_year');
-
-        // $this->data['designations'] = Designation::select('id', 'name')
-        //     ->get();
 
         return $dataTable->render('man-power-reports.history', $this->data);
     }
@@ -123,9 +98,6 @@ class ManPowerReportController extends AccountBaseController
      */
     public function store(Request $request)
     {
-        $permission = user()->permission('add_man_power_report');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $man_power_setup = $request->man_power_setup;
         $man_power_basic_salary = $request->man_power_basic_salary;
         $team_id = $request->team_id;
@@ -260,10 +232,6 @@ class ManPowerReportController extends AccountBaseController
      */
     public function update(string $id, Request $request)
     {
-        // dd($request->all());
-        $permission = user()->permission('edit_man_power_report');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $reports = ManPowerReport::findOrFail($id);
 
         Validator::make($request->all(), [
@@ -309,9 +277,6 @@ class ManPowerReportController extends AccountBaseController
      */
     public function destroy(string $id)
     {
-        $permission = user()->permission('delete_man_power_report');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $reports = ManPowerReport::findOrFail($id);
         $reports->delete();
 
@@ -331,9 +296,6 @@ class ManPowerReportController extends AccountBaseController
 
     protected function deleteRecords($request)
     {
-        // $deletePermission = user()->permission('delete_department');
-        // abort_403($deletePermission != 'all');
-
         $item = explode(',', $request->row_ids);
 
         if (($key = array_search('on', $item)) !== false) {
