@@ -34,46 +34,48 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
     {
         return datatables()
             ->eloquent($query)
-            ->addColumn('check', fn($row) => $this->checkBox($row))
+            // ->addColumn('check', fn($row) => $this->checkBox($row))
             ->addColumn('rowIndex', function () {
                 static $index = 0;
                 return ++$index; // Incremental row indexedi
             })
             ->editColumn('budget_year', function ($manPower) {
-                return $manPower->manPowerReport->budget_year;
+                return $manPower->budget_year;
             })
             ->editColumn('quarter', function ($manPower) {
-                if ($manPower->manPowerReport->quarter == 1) {
+                if ($manPower->quarter == 1) {
                     return 'Q1 (Jan - Dec)';
-                } elseif ($manPower->manPowerReport->quarter == 2) {
+                } elseif ($manPower->quarter == 2) {
                     return 'Q2 (Apr - Dec)';
-                } elseif ($manPower->manPowerReport->quarter == 3) {
+                } elseif ($manPower->quarter == 3) {
                     return 'Q3 (Jul - Dec)';
                 } else {
                     return 'Q4 (Oct - Dec)';
                 }
             })
             ->editColumn('location', function ($manPower) {
-                $department = Team::where('id', $manPower->manPowerReport->team_id)->first();
+                $department = Team::where('id', $manPower->team_id)->first();
                 $location = Location::where('id', $department->location_id)->first();
 
                 return $location->location_name;
             })
             ->editColumn('team', function ($manPower) {
-                return $manPower->manPowerReport->teams->team_name ;
+                $department = Team::where('id', $manPower->team_id)->first();
+
+                return $department ? $department->team_name : '---';
             })
             ->editColumn('position', function ($manPower) {
-                $designation = Designation::where('id', $manPower->manPowerReport->position_id)->first();
+                $designation = Designation::where('id', $manPower->position_id)->first();
 
                 return $designation ? $designation->name : '---';
             })
             ->editColumn('man_power_setup', function ($manPower) {
-                return $manPower->manPowerReport->man_power_setup;
+                return $manPower->man_power_setup;
             })
             ->editColumn('actual_man_power', function ($manPower) {
-                $count =  ($manPower->manPowerReport->count_employee > 0) ? $manPower->manPowerReport->count_employee : 0;
+                $count =  ($manPower->count_employee > 0) ? $manPower->count_employee : 0;
 
-                if ($manPower->manPowerReport->man_power_setup <= $count) {
+                if ($manPower->man_power_setup <= $count) {
                     $icon = '<i class="fa fa-check text-success"></i>';
                 } else {
                     $icon = '<i class="fa fa-exclamation-triangle text-danger"></i>';
@@ -85,12 +87,12 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 </div>';
             })
             ->editColumn('max_man_power_basic_salary', function ($manPower) {
-                return $manPower->manPowerReport->man_power_basic_salary;
+                return $manPower->man_power_basic_salary;
             })
             ->editColumn('total_man_power_basic_salary', function ($manPower) {
-                $salaries =  ($manPower->manPowerReport->total_allowance > 0) ? $manPower->manPowerReport->total_allowance : 0;
+                $salaries =  ($manPower->total_allowance > 0) ? $manPower->total_allowance : 0;
 
-                if ($manPower->manPowerReport->man_power_basic_salary > $salaries) {
+                if ($manPower->man_power_basic_salary > $salaries) {
                     $icon = '<i class="fa fa-check text-success"></i>';
                 } else {
                     $icon = '<i class="fa fa-exclamation-triangle text-danger"></i>';
@@ -102,19 +104,19 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 </div>';
             })
             ->editColumn('status', function ($manPower) {
-                if ($manPower->manPowerReport->status == 'approved') {
-                    return '<span class="bg-success p-1 rounded-sm text-white">' . $manPower->manPowerReport->status . '</span>';
-                } elseif ($manPower->manPowerReport->status == 'pending') {
-                    return '<span class="bg-info p-1 rounded-sm text-white">' . $manPower->manPowerReport->status . '</span>';
+                if ($manPower->status == 'approved') {
+                    return '<span class="bg-success p-1 rounded-sm text-white">' . $manPower->status . '</span>';
+                } elseif ($manPower->status == 'pending') {
+                    return '<span class="bg-info p-1 rounded-sm text-white">' . $manPower->status . '</span>';
                 } else {
-                    return '<span class="bg-warning p-1 rounded-sm text-white">' . $manPower->manPowerReport->status . '</span>';
+                    return '<span class="bg-warning p-1 rounded-sm text-white">' . $manPower->status . '</span>';
                 }
             })
             ->editColumn('remarks', function ($manPower) {
-                return $manPower->manPowerReport->remarks ? $manPower->manPowerReport->remarks : '---';
+                return $manPower->remarks ? $manPower->remarks : '---';
             })
             ->editColumn('approved_date', function ($manPower) {
-                return $manPower->manPowerReport->approved_date ? $manPower->manPowerReport->approved_date : '---';
+                return $manPower->approved_date ? $manPower->approved_date : '---';
             })
              ->editColumn('approved_date', function ($manPower) {
                 return $manPower->updated_date ? $manPower->updated_date  : '---';
@@ -126,14 +128,14 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 return $manPower->updated_at->format('Y-m-d');
             })
             ->editColumn('vacancy_percent', function ($manPower) {
-                $count =  ($manPower->manPowerReport->count_employee > 0) ? $manPower->manPowerReport->count_employee : 0;
+                $count =  ($manPower->count_employee > 0) ? $manPower->count_employee : 0;
 
                 $vacancy = 100;
 
-                if ($manPower->manPowerReport->man_power_setup <= $count) {
+                if ($manPower->man_power_setup <= $count) {
                     $vacancy = 0;
                 } else if ($count > 0) {
-                    $vacancy = 100 - ($count / $manPower->manPowerReport->man_power_setup) * 100;
+                    $vacancy = 100 - ($count / $manPower->man_power_setup) * 100;
                 } else {
                     $vacancy = 100;
                 }
@@ -167,6 +169,8 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
             $query->where('man_power_report_id', $this->id);
         }
 
+        // dd($query->get()->toArray());
+
         return $query;
     }
 
@@ -197,13 +201,13 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
-            'check' => [
-                'title' => '<input type="checkbox" name="select_all_table" id="select-all-table" onclick="selectAllTable(this)">',
-                'exportable' => false,
-                'orderable' => false,
-                'searchable' => false,
-                'visible' => !in_array('client', user_roles())
-            ],
+            // 'check' => [
+            //     'title' => '<input type="checkbox" name="select_all_table" id="select-all-table" onclick="selectAllTable(this)">',
+            //     'exportable' => false,
+            //     'orderable' => false,
+            //     'searchable' => false,
+            //     'visible' => !in_array('client', user_roles())
+            // ],
 
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             'budget_year' => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => 'Year'],

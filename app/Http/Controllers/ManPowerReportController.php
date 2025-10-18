@@ -158,6 +158,17 @@ class ManPowerReportController extends AccountBaseController
 
         ManPowerReportHistory::create([
             'man_power_report_id' => $manPowerReport->id,
+            'man_power_setup' => $manPowerReport->man_power_setup,
+            'man_power_basic_salary' => $manPowerReport->man_power_basic_salary,
+            'team_id' => $manPowerReport->team_id,
+            'budget_year' => $manPowerReport->budget_year,
+            'quarter' => $manPowerReport->quarter,
+            'position_id' => $manPowerReport->position_id,
+            'status' => $manPowerReport->status,
+            'remarks' => $manPowerReport->remark,
+            'created_by' => user()->id,
+            'approved_date' => $manPowerReport->status == 'approved' ? now() : null,
+
             'updated_date' => now(),
         ]);
 
@@ -278,6 +289,16 @@ class ManPowerReportController extends AccountBaseController
 
         ManPowerReportHistory::create([
             'man_power_report_id' => $reports->id,
+            'man_power_setup' => $reports->man_power_setup,
+            'man_power_basic_salary' => $reports->man_power_basic_salary,
+            'team_id' => $reports->team_id,
+            'budget_year' => $reports->budget_year,
+            'quarter' => $reports->quarter,
+            'position_id' => $reports->position_id,
+            'status' => $reports->status,
+            'remarks' => $reports->remark,
+            'created_by' => user()->id,
+            'approved_date' => $reports->status == 'approved' ? now() : null,
             'updated_date' => now(),
         ]);
 

@@ -14,7 +14,7 @@
 @endphp
 
 
-@section('filter-section')
+{{-- @section('filter-section')
     <x-filters.filter-box>
         <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
@@ -36,9 +36,6 @@
                 <select class="form-control select-picker" name="team_id" id="team_id" data-live-search="true"
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
-                    {{-- @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
-                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -50,9 +47,6 @@
                 <select class="form-control select-picker" name="position" id="position" data-live-search="true"
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
-                    {{-- @foreach ($designations as $position)
-                        <option value="{{ $position->id }}">{{ $position->name }}</option>
-                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -98,7 +92,7 @@
         </div>
         <!-- RESET END -->
     </x-filters.filter-box>
-@endsection
+@endsection --}}
 
 
 @section('content')
@@ -113,14 +107,18 @@
             </div>
         </div> --}}
 
-        <x-datatable.actions>
+        {{-- <x-datatable.actions>
             <div class="select-status mr-3 pl-3">
                 <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
                     <option value="">@lang('app.selectAction')</option>
                     <option value="delete">@lang('app.delete')</option>
                 </select>
             </div>
-        </x-datatable.actions>
+        </x-datatable.actions> --}}
+
+        <div>
+            <h4 class="mb-0 f-21 font-weight">{{ __('app.menu.budgetHistory') }}</h4>
+        </div>
 
         <!-- leave table Box Start -->
         <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive">

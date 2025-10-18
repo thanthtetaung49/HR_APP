@@ -150,6 +150,7 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'budgetHistory' => 'Budget History',
         'updatedDate' => 'Updated Date',
         'approvedDate' => 'Approved Date',
         'remark' => 'Remark',
