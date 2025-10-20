@@ -16,8 +16,51 @@
 
 @section('filter-section')
     <x-filters.filter-box>
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location_id" id="location_id" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->location_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <!-- CLIENT START -->
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.teams')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="team_id" id="team_id" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    {{-- @foreach ($departments as $department)
+                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
+                    @endforeach --}}
+                </select>
+            </div>
+        </div>
+
+        <!-- CLIENT START -->
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3 me-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.position')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="position" id="position" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    {{-- @foreach ($designations as $position)
+                        <option value="{{ $position->id }}">{{ $position->name }}</option>
+                    @endforeach --}}
+                </select>
+            </div>
+        </div>
+
+        <!-- DATE END -->
+
         <!-- SEARCH BY TASK START -->
-        <div class="task-search d-flex py-1 pr-lg-2 px-0 border-right-grey align-items-center">
+        <div class="task-search d-flex  py-1 px-lg-3 px-0 border-right-grey align-items-center">
             <form class="w-100 mr-1 mr-lg-0 mr-md-1 ml-md-1 ml-0 ml-lg-0">
                 <div class="input-group bg-grey rounded">
                     <div class="input-group-prepend">
@@ -26,7 +69,7 @@
                         </span>
                     </div>
                     <input type="text" class="form-control f-14 p-1 border-additional-grey" id="search-text-field"
-                           placeholder="@lang('app.startTyping')">
+                        placeholder="@lang('app.startTyping')">
                 </div>
             </form>
         </div>
@@ -82,8 +125,14 @@
     <script>
         $('#reportpermission-table').on('preXhr.dt', function(e, settings, data) {
             $searchText = $('#search-text-field').val();
+            $location = $('#location_id').val();
+            $department = $('#team_id').val();
+            $designation = $('#position').val();
 
             data['searchText'] = $searchText;
+            data['location'] = $location;
+            data['department'] = $department;
+            data['designation'] = $designation;
         });
 
         const showTable = () => {
@@ -96,6 +145,22 @@
                 showTable();
             }
         });
+
+        $(`#location_id, #team_id, #position`)
+            .on(
+                'change keyup',
+                function() {
+                    if ($('#location_id').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#team_id').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#position').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else {
+                        $('#reset-filters').addClass('d-none');
+                    }
+                    showTable();
+                });
 
         $('#reset-filters').click(function() {
             $('#filter-form')[0].reset();
@@ -219,5 +284,97 @@
                 }
             })
         };
+
+        $("#location_id").on('change', function() {
+            let location_id = $(this).val();
+            let designation_id = $("#position").val();
+            let department_id = $("#team_id").val();
+
+            let department_html = `<option value="all">--</option>`;
+            let designation_html = `<option value="all">--</option>`;
+
+            let url = "{{ route('location.select') }}";
+
+            if (department_id != "all" && designation_id != "all") {
+                $("#team_id").html(department_html);
+                $("#team_id").selectpicker('refresh');
+
+                $("#position").html(designation_html);
+                $("#position").selectpicker('refresh');
+
+            } else if (designation_id != "all") {
+                $("#position").html(designation_html);
+                $("#position").selectpicker('refresh');
+            } else {
+                $("#team_id").html(department_html);
+                $("#team_id").selectpicker('refresh');
+            }
+
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': location_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    let teams = response.data;
+                    let html = department_html;
+
+                    teams.forEach((team) => {
+                        html += `
+                        <option value="${team.id}">${team.team_name}</option>
+                    `
+                    });
+
+                    $("#team_id").html(html);
+                    $("#team_id").selectpicker(
+                        'refresh'); // refresh the bootstrap select ui
+                }
+
+            });
+
+            showTable();
+        });
+
+        $("#team_id").on('change', function() {
+            let department_id = $(this).val();
+            let location_id = $("#location").val();
+            let designation_id = $("#position").val();
+
+            let url = "{{ route('department.select') }}";
+
+            let designation_html = `<option value="all">--</option>`;
+
+            if (designation_id != "all") {
+                $("#position").html(designation_html);
+                $("#position").selectpicker('refresh');
+            }
+
+            $.ajax({
+                type: "POST",
+                url: url,
+                data: {
+                    'id': department_id,
+                    _token: "{{ csrf_token() }}"
+                },
+                success: function(response) {
+                    let designations = response.data;
+                    let html = designation_html;
+
+                    designations.forEach((designation) => {
+                        html += `
+                        <option value="${designation.id}">${designation.name}</option>
+                    `
+                    });
+
+                    $("#position").html(html);
+                    $("#position").selectpicker('refresh'); // refresh the bootstrap select ui
+                }
+            });
+
+            showTable();
+        });
     </script>
 @endpush

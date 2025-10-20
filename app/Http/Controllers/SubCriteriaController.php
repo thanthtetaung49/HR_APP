@@ -154,7 +154,7 @@ class SubCriteriaController extends AccountBaseController
         }
 
         foreach ($item as $id) {
-            Criteria::where('id', $id)->delete();
+            SubCriteria::where('id', $id)->delete();
         }
     }
 }

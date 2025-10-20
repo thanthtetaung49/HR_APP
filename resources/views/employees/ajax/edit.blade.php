@@ -872,4 +872,34 @@
             })
         });
     @endif
+
+     $('#criteria_id').on('change', function() {
+            const criteriaId = $(this).val();
+
+            const data = {
+                criteriaId: criteriaId
+            }
+
+            $.ajax({
+                type: "GET",
+                url: "{{ route('filterExistReason') }}",
+                data: data,
+                dataType: "json",
+                success: function(response) {
+                    console.log(response);
+                    const subCriterias = response.subCriterias;
+                    let options = '<option value="">--</option>';
+
+                    if (subCriterias) {
+                        subCriterias.forEach(element => {
+                            options +=
+                                `<option value="${element.id}">${element.sub_criteria}</option>`
+                        });
+                    }
+
+                    $('#sub_criteria_id').html(options);
+                    $('#sub_criteria_id').selectpicker('refresh');
+                }
+            });
+        })
 </script>

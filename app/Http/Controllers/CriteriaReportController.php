@@ -27,8 +27,8 @@ class CriteriaReportController extends AccountBaseController
      */
     public function index(CriteriaReportDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_criteria_reports');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        // $viewPermission = user()->permission('view_criteria_reports');
+        // abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->locations = Location::get();
 

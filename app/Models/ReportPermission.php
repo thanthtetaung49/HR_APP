@@ -19,7 +19,7 @@ class ReportPermission extends Model
         return $this->belongsTo(Team::class, 'team_id');
     }
 
-    public function desingation() {
+    public function designation() {
         return $this->belongsTo(Designation::class, 'designation_id');
     }
 

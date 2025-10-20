@@ -118,7 +118,6 @@
             data['location'] = $location;
             data['department'] = $department;
             data['designation'] = $designation;
-            data['searchText'] = $searchText;
         });
 
         const showTable = () => {

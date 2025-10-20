@@ -475,7 +475,7 @@ class EmployeeController extends AccountBaseController
         $this->subCriterias = null;
 
         if ($this->criteria) {
-            $this->subCriterias = SubCriteria::whereIn('id', json_decode($this->criteria?->sub_criteria_ids))->get();
+            $this->subCriterias = SubCriteria::whereIn('id', $this->criteria?->sub_criteria_ids)->get();
         }
 
         /** @phpstan-ignore-next-line */
@@ -1300,7 +1300,7 @@ class EmployeeController extends AccountBaseController
 
             $subCriteriaIds = $criteria->sub_criteria_ids;
 
-            $subCriterias =  SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+            $subCriterias =  SubCriteria::whereIn('id',$subCriteriaIds)->get();
         }
 
         return response()->json([

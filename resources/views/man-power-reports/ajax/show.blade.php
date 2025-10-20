@@ -24,9 +24,27 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <x-cards.data-row :label="__('app.menu.budgetYear')" :value="$reports->budget_year" html="true" />
+
+                    @if ($reports->quarter == 1)
+                        <x-cards.data-row :label="__('app.menu.quarter')" :value="'Q1 (Jan - Dec)'" html="true" />
+                    @elseif ($reports->quarter == 2)
+                        <x-cards.data-row :label="__('app.menu.quarter')" :value="'Q2 (Apr - Dec)'" html="true" />
+                    @elseif ($reports->quarter == 3)
+                        <x-cards.data-row :label="__('app.menu.quarter')" :value="'Q3 (Jul - Dec)'" html="true" />
+                    @else
+                        <x-cards.data-row :label="__('app.menu.quarter')" :value="'Q4 (Oct - Dec)'" html="true" />
+                    @endif
+
                     <x-cards.data-row :label="__('app.menu.manPowerSetup')" :value="$reports->man_power_setup" html="true" />
                     <x-cards.data-row :label="__('app.menu.maxBasicSalary')" :value="$reports->man_power_basic_salary" html="true" />
-                    <x-cards.data-row :label="__('app.menu.teams')" :value="$reports->team_id" html="true" />
+                    <x-cards.data-row :label="__('app.menu.teams')" :value="$reports->teams->team_name" html="true" />
+                    <x-cards.data-row :label="__('app.menu.designation')" :value="$reports->designation->name" html="true" />
+                    <x-cards.data-row :label="__('app.menu.status')" :value="$reports->status" html="true" />
+                    <x-cards.data-row :label="__('app.menu.remark')" :value="$reports->remarks ? $reports->remarks : '-----'" html="true" />
+
+
+
                 </div>
             </div>
         </div>

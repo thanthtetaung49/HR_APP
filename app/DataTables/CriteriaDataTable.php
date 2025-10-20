@@ -51,67 +51,67 @@ class CriteriaDataTable extends BaseDataTable
 
                 return $exitReason;
             })
-            ->editColumn('sub_criteria', function ($criteria) {
-                $subCriteriaIds = $criteria->sub_criteria_ids;
-                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+            // ->editColumn('sub_criteria', function ($criteria) {
+            //     $subCriteriaIds = $criteria->sub_criteria_ids;
+            //     $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
 
-                $li = '';
+            //     $li = '';
 
-                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
-                    $li .= '<li>' . $subCriteria->sub_criteria . '</li>';
-                    return $li;
-                });
+            //     collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+            //         $li .= '<li>' . $subCriteria->sub_criteria . '</li>';
+            //         return $li;
+            //     });
 
-                return '<ul>'
-                    . $li .
-                    '</ul>';
-            })
-            ->editColumn('responsible_person', function ($criteria) {
-                $subCriteriaIds = $criteria->sub_criteria_ids;
-                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+            //     return '<ul>'
+            //         . $li .
+            //         '</ul>';
+            // })
+            // ->editColumn('responsible_person', function ($criteria) {
+            //     $subCriteriaIds = $criteria->sub_criteria_ids;
+            //     $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
 
-                $li = '';
+            //     $li = '';
 
-                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
-                    $li .= '<li>' . $subCriteria->responsible_person . '</li>';
-                    return $li;
-                });
+            //     collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+            //         $li .= '<li>' . $subCriteria->responsible_person . '</li>';
+            //         return $li;
+            //     });
 
-                return '<ul>'
-                    . $li .
-                    '</ul>';
-            })
-            ->editColumn('accountability', function ($criteria) {
-                $subCriteriaIds = $criteria->sub_criteria_ids;
-                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+            //     return '<ul>'
+            //         . $li .
+            //         '</ul>';
+            // })
+            // ->editColumn('accountability', function ($criteria) {
+            //     $subCriteriaIds = $criteria->sub_criteria_ids;
+            //     $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
 
-                $li = '';
+            //     $li = '';
 
-                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
-                    $li .= '<li>' . $subCriteria->accountability . '</li>';
-                    return $li;
-                });
+            //     collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+            //         $li .= '<li>' . $subCriteria->accountability . '</li>';
+            //         return $li;
+            //     });
 
-                return '<ul>'
-                    . $li .
-                    '</ul>';
-            })
-            ->editColumn('action_taken', function ($criteria) {
+            //     return '<ul>'
+            //         . $li .
+            //         '</ul>';
+            // })
+            // ->editColumn('action_taken', function ($criteria) {
 
-                $subCriteriaIds = $criteria->sub_criteria_ids;
-                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+            //     $subCriteriaIds = $criteria->sub_criteria_ids;
+            //     $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
 
-                $li = '';
+            //     $li = '';
 
-                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
-                    $li .= '<li>' . $subCriteria->action_taken . '</li>';
-                    return $li;
-                });
+            //     collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+            //         $li .= '<li>' . $subCriteria->action_taken . '</li>';
+            //         return $li;
+            //     });
 
-                return '<ul>'
-                    . $li .
-                    '</ul>';
-            })
+            //     return '<ul>'
+            //         . $li .
+            //         '</ul>';
+            // })
             ->addColumn('action', function ($criteria) {
                 $action = '<div class="task_view">
 <a href="' . route('criteria.show', [$criteria->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
@@ -145,39 +145,45 @@ class CriteriaDataTable extends BaseDataTable
      */
     public function query(Criteria $model): QueryBuilder
     {
-
-        $model = $model->select('*');
-
+       $model = $model->select(
+            'criterias.id',
+            'criterias.exit_reason_id',
+            'sub_criterias.sub_criteria',
+            'sub_criterias.responsible_person',
+            'sub_criterias.accountability',
+            'sub_criterias.action_taken'
+        )
+            ->leftJoin('sub_criterias', function ($join) {
+                $join->on(DB::raw("JSON_CONTAINS(criterias.sub_criteria_ids, CONCAT('\"', sub_criterias.id, '\"'))"), '=', DB::raw('1'));
+            });
 
         $searchText = request()->searchText;
 
         if (!empty($searchText)) {
             $employee = new EmployeeDetails();
-            $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
-
+            $fields = optional($employee->getCustomFieldGroupsWithFields())->fields ?? [];
             $exitReasonIds = [];
 
-            if ($getCustomFieldGroupsWithFields && $getCustomFieldGroupsWithFields->fields) {
-                foreach ($getCustomFieldGroupsWithFields->fields as $field) {
-                    if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
-                        foreach ($field->values as $id => $label) {
-                            if (stripos($label, $searchText) !== false) {
-                                $exitReasonIds[] = $id;
-                            }
+            foreach ($fields as $field) {
+                if ($field->type === 'select' && $field->name === 'exit-reasons-1') {
+                    foreach ($field->values as $id => $label) {
+                        if (stripos($label, $searchText) !== false) {
+                            $exitReasonIds[] = $id;
                         }
                     }
                 }
             }
 
             if (!empty($exitReasonIds)) {
-                $model = $model->whereIn('exit_reason_id', $exitReasonIds);
+                $model->whereIn('criteria.exit_reason_id', $exitReasonIds);
             } else {
-                $model = $model->where('exit_reason_id', 'like', '%' . $searchText . '%');
+                $model->where('criteria.exit_reason_id', 'like', '%' . $searchText . '%');
             }
         }
 
         return $model;
     }
+
 
     /**
      * Optional method if you want to use the html builder.

@@ -41,11 +41,8 @@
                             }
                         }
                     @endphp
+
                     <x-cards.data-row :label="__('app.menu.exitsReason')" :value="$exitReason" html="true" />
-                    <x-cards.data-row :label="__('app.menu.subCriteria')" :value="$criteria->subCriteria->sub_criteria" html="true" />
-                    <x-cards.data-row :label="__('app.menu.responsiblePerson')" :value="$criteria->subCriteria->responsible_person" html="true" />
-                    <x-cards.data-row :label="__('app.menu.accountability')" :value="$criteria->subCriteria->accountability" html="true" />
-                    <x-cards.data-row :label="__('app.menu.actionTaken')" :value="$criteria->subCriteria->action_taken" html="true" />
                 </div>
             </div>
         </div>

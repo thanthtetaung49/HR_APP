@@ -28,19 +28,7 @@ class ReportPermissionDataTable extends BaseDataTable
                 static $index = 0;
                 return ++$index; // Incremental row indexedi
             })
-            ->editColumn('location', function ($report) {
-                return $report->location->location_name;
-            })
-            ->editColumn('department', function ($report) {
-                return $report->team->team_name;
-            })
-            ->editColumn('designation', function ($report) {
-                return $report->desingation->name;
-            })
-            ->editColumn('user', function ($report) {
-                return $report->user->name;
-            })
-            ->editColumn('report', function ($report) {
+            ->editColumn('report', function () {
                 return "Man Power Report";
             })
             ->editColumn('permission', function ($report) {
@@ -86,7 +74,27 @@ class ReportPermissionDataTable extends BaseDataTable
      */
     public function query(ReportPermission $model): QueryBuilder
     {
-        $model = $model->select('*');
+        $model = $model->select('locations.location_name as location', 'teams.team_name as department', 'designations.name as designation', 'users.name as user', 'report_permissions.permission as permission', 'report_permissions.id as id')
+            ->leftJoin('locations', 'locations.id', '=', 'report_permissions.location_id', 'report_permissions.location_id', 'report_permissions.team_id', 'report_permissions.designation_id', 'report_permissions.user_id')
+            ->leftJoin('teams', 'teams.id', '=', 'report_permissions.team_id')
+            ->leftJoin('designations', 'designations.id', '=', 'report_permissions.designation_id')
+            ->leftJoin('users', 'users.id', '=', 'report_permissions.user_id');
+
+        if (request()->location != 'all' && request()->location != '') {
+            $model->where('report_permissions.location_id', request()->location);
+        }
+
+        if (request()->department != 'all' && request()->department != '') {
+            $model->where('report_permissions.team_id', request()->department);
+        }
+
+        if (request()->designation != 'all' && request()->designation != '') {
+            $model->where('report_permissions.designation_id', request()->designation);
+        }
+
+        if (request()->searchText != 'all' && request()->searchText != '') {
+            $model->where('users.name', 'like', '%' . request()->searchText . '%');
+        }
 
         return $model;
     }

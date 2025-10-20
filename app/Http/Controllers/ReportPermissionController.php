@@ -35,6 +35,7 @@ class ReportPermissionController extends AccountBaseController
     {
         $permission = user()->permission('view_report_permission');
         abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
+        $this->locations = Location::get();
 
         return $dataTable->render('report-permission.index', $this->data);
     }
@@ -47,7 +48,12 @@ class ReportPermissionController extends AccountBaseController
         $this->data['pageTitle'] = 'Add Report Permission';
         $this->locations = Location::get();
         $this->users = User::with('roles')->select('name', 'id')
+            ->whereHas('roles', function ($query) {
+                $query->where('roles.name', '!=', 'admin')
+                    ->orWhere('roles.name', '!=', 'hr-manager');
+            })
             ->get();
+
 
         return view('report-permission.create', $this->data);
     }
@@ -83,7 +89,15 @@ class ReportPermissionController extends AccountBaseController
      */
     public function show(string $id)
     {
-        //
+        $this->report = ReportPermission::findOrFail($id);
+        $this->data['pageTitle'] = 'Show Report Permission';
+        $this->view = 'report-permission.ajax.show';
+
+        if (request()->ajax()) {
+            return $this->returnAjax($this->view);
+        }
+
+        return view('report-permission.show', $this->data);
     }
 
     /**
@@ -96,7 +110,14 @@ class ReportPermissionController extends AccountBaseController
         $this->locations = Location::get();
         $this->departments = Team::where('location_id', $this->report->location_id)->get();
         $this->designations = Designation::whereIn('id', json_decode($this->report->team->designation_ids))->get();
-        $this->users = User::where('designation_id', $this->report->desingation->id)->get();
+        // $this->users = User::where('designation_id', $this->report->designation->id)->get();
+        $this->users = User::with('roles')->select('name', 'id')
+            ->where('designation_id', $this->report->designation->id)
+            ->whereHas('roles', function ($query) {
+                $query->where('roles.name', '!=', 'admin')
+                    ->orWhere('roles.name', '!=', 'hr-manager');
+            })
+            ->get();
 
         return view('report-permission.ajax.edit', $this->data);
     }

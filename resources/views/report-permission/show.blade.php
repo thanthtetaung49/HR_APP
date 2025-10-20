@@ -8,6 +8,6 @@
     </style>
 
     <div class="p-20">
-        @include('criteria.ajax.show')
+        @include('report-permission.ajax.show')
     </div>
 @endsection

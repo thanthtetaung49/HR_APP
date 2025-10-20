@@ -8,6 +8,7 @@ use App\Models\Criteria;
 use App\Models\EmployeeDetails;
 use App\Models\SubCriteria;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CriteriaController extends AccountBaseController
 {
@@ -78,7 +79,7 @@ class CriteriaController extends AccountBaseController
 
         Criteria::create([
             'exit_reason_id' => $request->exit_reason_id,
-            'sub_criteria_ids' => json_encode($request->sub_criteria_ids),
+            'sub_criteria_ids' => $request->sub_criteria_ids,
         ]);
 
         return redirect()->route('criteria.index');
@@ -92,6 +93,21 @@ class CriteriaController extends AccountBaseController
         $this->criteria = Criteria::findOrFail($id);
         $this->data['pageTitle'] = 'Show Exit Reason';
         $this->view = 'criteria.ajax.show';
+
+        $subCriterias = Criteria::select(
+            'criterias.id',
+            'criterias.exit_reason_id',
+            'sub_criterias.sub_criteria',
+            'sub_criterias.responsible_person',
+            'sub_criterias.accountability',
+            'sub_criterias.action_taken'
+        )
+            ->leftJoin('sub_criterias', function ($join) {
+                $join->on(DB::raw("JSON_CONTAINS(criterias.sub_criteria_ids, CONCAT('\"', sub_criterias.id, '\"'))"), '=', DB::raw('1'));
+            })
+            ->where('criterias.id', $id)->get();
+
+        // dd($this->criterias->toArray());
 
         if (request()->ajax()) {
             return $this->returnAjax($this->view);
@@ -150,7 +166,7 @@ class CriteriaController extends AccountBaseController
 
         $criteria->update([
             'exit_reason_id' => $request->exit_reason_id,
-            'sub_criteria_ids' => json_encode($request->sub_criteria_ids),
+            'sub_criteria_ids' => $request->sub_criteria_ids,
         ]);
 
         return redirect()->route('criteria.index');

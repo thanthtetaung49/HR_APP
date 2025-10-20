@@ -135,6 +135,7 @@ return array(
     'subCriteriaDetails' => 'Sub Criteria Detail',
     'criteriaDetails' => 'Exit Reason Detail',
     'causeDetails' => 'Cause Detail',
+    'reportPermissionDetails' => 'Report Permission Detail',
     'managementRankDetials' => 'Management Rank Details',
     'months' => array(
         'January' => 'January',
