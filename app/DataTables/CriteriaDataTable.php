@@ -7,6 +7,7 @@ use App\Models\Criterion;
 use App\Models\EmployeeDetails;
 use App\Models\SubCriteria;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
@@ -52,13 +53,12 @@ class CriteriaDataTable extends BaseDataTable
             })
             ->editColumn('sub_criteria', function ($criteria) {
                 $subCriteriaIds = $criteria->sub_criteria_ids;
-
-                $subCriterias = SubCriteria::select('sub_criteria')->whereIn('id', $subCriteriaIds)->get();
+                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
 
                 $li = '';
 
                 collect($subCriterias)->map(function ($subCriteria) use (&$li) {
-                    $li .= '<li><i class="fa fa-check text-success mr-3"></i>' . $subCriteria->sub_criteria . '</li>';
+                    $li .= '<li>' . $subCriteria->sub_criteria . '</li>';
                     return $li;
                 });
 
@@ -67,13 +67,50 @@ class CriteriaDataTable extends BaseDataTable
                     '</ul>';
             })
             ->editColumn('responsible_person', function ($criteria) {
-                return $criteria->responsible_person;
+                $subCriteriaIds = $criteria->sub_criteria_ids;
+                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+
+                $li = '';
+
+                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+                    $li .= '<li>' . $subCriteria->responsible_person . '</li>';
+                    return $li;
+                });
+
+                return '<ul>'
+                    . $li .
+                    '</ul>';
             })
             ->editColumn('accountability', function ($criteria) {
-                return $criteria->accountability;
+                $subCriteriaIds = $criteria->sub_criteria_ids;
+                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+
+                $li = '';
+
+                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+                    $li .= '<li>' . $subCriteria->accountability . '</li>';
+                    return $li;
+                });
+
+                return '<ul>'
+                    . $li .
+                    '</ul>';
             })
-             ->editColumn('action_taken', function ($criteria) {
-                return $criteria->action_taken;
+            ->editColumn('action_taken', function ($criteria) {
+
+                $subCriteriaIds = $criteria->sub_criteria_ids;
+                $subCriterias = SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
+
+                $li = '';
+
+                collect($subCriterias)->map(function ($subCriteria) use (&$li) {
+                    $li .= '<li>' . $subCriteria->action_taken . '</li>';
+                    return $li;
+                });
+
+                return '<ul>'
+                    . $li .
+                    '</ul>';
             })
             ->addColumn('action', function ($criteria) {
                 $action = '<div class="task_view">
@@ -98,7 +135,7 @@ class CriteriaDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->rawColumns(['action', 'check', 'sub_criteria'])
+            ->rawColumns(['action', 'check', 'sub_criteria', 'responsible_person', 'accountability', 'action_taken'])
             ->setRowId('id')
             ->addIndexColumn();
     }
@@ -108,7 +145,10 @@ class CriteriaDataTable extends BaseDataTable
      */
     public function query(Criteria $model): QueryBuilder
     {
+
         $model = $model->select('*');
+
+
         $searchText = request()->searchText;
 
         if (!empty($searchText)) {

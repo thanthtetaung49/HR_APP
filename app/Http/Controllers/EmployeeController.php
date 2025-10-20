@@ -468,13 +468,14 @@ class EmployeeController extends AccountBaseController
         $this->companyAddresses = CompanyAddress::all();
         $this->locations = Location::all();
         $this->criterias = Criteria::get();
+        // dd($this->criterias->toArray());
         $this->criteria = Criteria::where('id', $this->employee->employeeDetail->criteria_id)
             ->first();
 
         $this->subCriterias = null;
 
         if ($this->criteria) {
-            $this->subCriterias = SubCriteria::whereIn('id', $this->criteria?->sub_criteria_ids)->get();
+            $this->subCriterias = SubCriteria::whereIn('id', json_decode($this->criteria?->sub_criteria_ids))->get();
         }
 
         /** @phpstan-ignore-next-line */
@@ -1295,9 +1296,11 @@ class EmployeeController extends AccountBaseController
 
         if ($request->criteriaId) {
             $criteriaId = $request->criteriaId;
-            $manPowerReport = Criteria::where('id', $criteriaId)->first();
-            $subCriteriaIds = $manPowerReport->sub_criteria_ids;
-            $subCriterias =  SubCriteria::whereIn('id', $subCriteriaIds)->get();
+            $criteria = Criteria::where('id', $criteriaId)->first();
+
+            $subCriteriaIds = $criteria->sub_criteria_ids;
+
+            $subCriterias =  SubCriteria::whereIn('id', json_decode($subCriteriaIds))->get();
         }
 
         return response()->json([

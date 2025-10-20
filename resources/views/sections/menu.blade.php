@@ -125,7 +125,7 @@
                     <x-sub-menu-item :link="route('holidays.index')" :text="__('app.menu.holiday')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                @if (isset($sidebarUserPermissions['view_location']) && $sidebarUserPermissions['view_location'] == 4)
                     <x-sub-menu-item :link="route('location.index')" :text="__('app.menu.location')" />
                 @endif
 
@@ -145,11 +145,15 @@
                     <x-sub-menu-item :link="route('awards.index')" :text="__('app.menu.appreciation')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
-                    <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
+                @if (isset($sidebarUserPermissions['view_management_ranks']) && $sidebarUserPermissions['view_management_ranks'] == 4)
+                    <x-sub-menu-item :link="route('management-ranks.index')" :text="__('app.menu.managementRanks')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                @if (isset($sidebarUserPermissions['view_sub_criteria']) && $sidebarUserPermissions['view_sub_criteria'] == 4)
+                <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
+                @endif
+
+                @if (isset($sidebarUserPermissions['view_criteria']) && $sidebarUserPermissions['view_criteria'] == 4)
                     <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.exitsReason')" />
                 @endif
 
@@ -157,11 +161,15 @@
                     <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_man_power_report']) && $sidebarUserPermissions['view_man_power_report'] == 4)
-                    <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
+                @if (isset($sidebarUserPermissions['view_turn_over_reports']) && $sidebarUserPermissions['view_turn_over_reports'] == 4)
+                    <x-sub-menu-item :link="route('criteria-reports.index')" :text="__('app.menu.criteriaReport')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_department']) && $sidebarUserPermissions['view_department'] == 4)
+                @can('viewAny', App\Models\ManPowerReport::class)
+                    <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
+                @endcan
+
+                @if (isset($sidebarUserPermissions['view_turn_over_reports']) && $sidebarUserPermissions['view_turn_over_reports'] == 4)
                     <x-sub-menu-item :link="route('turn-over-reports.index')" :text="__('app.menu.turnOverReport')" />
                 @endif
 

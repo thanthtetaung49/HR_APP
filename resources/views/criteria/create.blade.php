@@ -19,7 +19,7 @@
                         @if (isset($fields) && count($fields) > 0)
                             @foreach ($fields as $field)
                                 @if ($field->type == 'select' && $field->name == 'exit-reasons-1')
-                                    <div class="col-md-4">
+                                    <div class="col-md-6">
 
                                         <x-forms.label class="my-3" fieldId="exit_reason_id"
                                             :fieldLabel="$field->label" :fieldRequired="($field->required === 'yes') ? true : false">
@@ -38,7 +38,7 @@
                             @endforeach
                         @endif
 
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <x-forms.label class="my-3" fieldId="sub_criteria_ids" :fieldLabel="__('app.menu.subCriteria')"
                                 fieldName="sub_criteria_ids">
                             </x-forms.label>
@@ -55,36 +55,6 @@
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </x-forms.input-group>
-                        </div>
-
-                        <div class="col-md-4">
-                            <x-forms.text fieldId="accountability" :fieldLabel="__('app.menu.accountability')" fieldName="accountability" fieldRequired="true"
-                                :fieldPlaceholder="__('placeholders.accountability')">
-                            </x-forms.text>
-
-                            @error('accountability')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <x-forms.text fieldId="action_taken" :fieldLabel="__('app.menu.actionTaken')" fieldName="action_taken"
-                                fieldRequired="true" :fieldPlaceholder="__('placeholders.actionTaken')">
-                            </x-forms.text>
-
-                            @error('action_taken')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
-                        </div>
-
-                        <div class="col-md-4">
-                            <x-forms.text fieldId="responsible_person" :fieldLabel="__('app.menu.responsiblePerson')" fieldName="responsible_person" fieldRequired="true"
-                                :fieldPlaceholder="__('placeholders.responsiblePerson')">
-                            </x-forms.text>
-
-                            @error('responsible_person')
-                                <span class="text-danger">{{ $message }}</span>
-                            @enderror
                         </div>
                     </div>
 

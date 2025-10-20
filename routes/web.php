@@ -108,6 +108,7 @@ use App\Http\Controllers\KnowledgeBaseFileController;
 use App\Http\Controllers\ContractDiscussionController;
 use App\Http\Controllers\CrietiaController;
 use App\Http\Controllers\CriteriaController;
+use App\Http\Controllers\CriteriaReportController;
 use App\Http\Controllers\DealNoteController;
 use App\Http\Controllers\DiscussionCategoryController;
 use App\Http\Controllers\ProductSubCategoryController;
@@ -126,6 +127,7 @@ use App\Http\Controllers\NoticeFileController;
 use App\Http\Controllers\InvoicePaymentDetailController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\ManagementRankController;
 use App\Http\Controllers\ManPowerReportController;
 use App\Http\Controllers\ReportPermissionController;
 use App\Http\Controllers\SubCriteriaController;
@@ -402,6 +404,13 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     );
     Route::post('appreciations/apply-quick-action', [AppreciationController::class, 'applyQuickAction'])->name('appreciations.apply_quick_action');
     Route::resource('appreciations', AppreciationController::class);
+
+    /* Criteria Reports */
+    Route::resource('criteria-reports', CriteriaReportController::class);
+
+    /* Management Ranks */
+    Route::post('management-ranks/apply-quick-action', [ManagementRankController::class, 'applyQuickAction'])->name('managementRanks.apply_quick_action');
+    Route::resource('management-ranks', ManagementRankController::class);
 
     /* Man Power Report */
     Route::resource('man-power-reports', ManPowerReportController::class);

@@ -10,21 +10,6 @@
                             :fieldValue="$designation->name" fieldRequired="true" :fieldPlaceholder="__('placeholders.designation')">
                         </x-forms.text>
                     </div>
-                    {{-- <div class="col-md-6">
-                            <x-forms.label class="mt-3" fieldId="parent_label" :fieldLabel="__('app.menu.parent_id')" fieldName="parent_label">
-                            </x-forms.label>
-                            <x-forms.input-group>
-                                <select class="form-control select-picker" name="parent_id" id="parent_id"
-                                    data-live-search="true">
-                                    <option value="">--</option>
-                                    @foreach ($designations as $designations)
-                                        @if ($designation->id != $designations->id)
-                                            <option value="{{ $designations->id }}" @if ($designation->parent_id == $designations->id) selected @endif>{{ $designations->name }}</option>
-                                        @endif
-                                    @endforeach
-                                </select>
-                            </x-forms.input-group>
-                        </div> --}}
 
                     <div class="col-md-6">
                         <x-forms.label class="mt-3" fieldId="rank_id" :fieldLabel="__('app.menu.rank')" fieldName="rank">

@@ -16,7 +16,7 @@ class CriteriaController extends AccountBaseController
     public function __construct()
     {
         parent::__construct();
-        $this->pageTitle = __('app.menu.criteria');
+        $this->pageTitle = __('app.menu.exitsReason');
 
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('employees', $this->user->modules));
@@ -30,7 +30,7 @@ class CriteriaController extends AccountBaseController
      */
     public function index(CriteriaDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_department');
+        $viewPermission = user()->permission('view_criteria');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         return $dataTable->render('criteria.index', $this->data);
@@ -41,7 +41,7 @@ class CriteriaController extends AccountBaseController
      */
     public function create()
     {
-        $this->data['pageTitle'] = 'Add Criteria';
+        $this->data['pageTitle'] = 'Add Exit Reason';
         $this->data['subCriterias'] = SubCriteria::get();
 
         $employee = new EmployeeDetails();
@@ -63,17 +63,22 @@ class CriteriaController extends AccountBaseController
             'exit_reason_id' => 'required|string',
             'sub_criteria_ids' => 'required|array',
             'sub_criteria_ids.*' => 'integer',
-            'responsible_person' => 'required|string',
-            'accountability' => 'required|string',
-            'action_taken' => 'required|string'
         ]);
+
+        // $data = collect($request->sub_criteria_ids)->map(function ($subCriteriaId) use ($request) {
+        //     return [
+        //         'exit_reason_id' => $request->exit_reason_id,
+        //         'sub_criteria_id' => $subCriteriaId,
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ];
+        // })->toArray();
+
+        // Criteria::insert($data);
 
         Criteria::create([
             'exit_reason_id' => $request->exit_reason_id,
-            'sub_criteria_ids' => $request->sub_criteria_ids,
-            'responsible_person' => $request->responsible_person,
-            'accountability' => $request->accountability,
-            'action_taken' => $request->action_taken,
+            'sub_criteria_ids' => json_encode($request->sub_criteria_ids),
         ]);
 
         return redirect()->route('criteria.index');
@@ -85,7 +90,7 @@ class CriteriaController extends AccountBaseController
     public function show(string $id)
     {
         $this->criteria = Criteria::findOrFail($id);
-        $this->data['pageTitle'] = 'Show Criteria';
+        $this->data['pageTitle'] = 'Show Exit Reason';
         $this->view = 'criteria.ajax.show';
 
         if (request()->ajax()) {
@@ -101,7 +106,7 @@ class CriteriaController extends AccountBaseController
     public function edit(string $id)
     {
         $this->criteria = Criteria::findOrFail($id);
-        $this->data['pageTitle'] = 'Edit Criteria';
+        $this->data['pageTitle'] = 'Edit Exit Reason';
         $this->data['subCriterias'] = SubCriteria::get();
 
         $employee = new EmployeeDetails();
@@ -125,17 +130,27 @@ class CriteriaController extends AccountBaseController
             'exit_reason_id' => 'required|string',
             'sub_criteria_ids' => 'required|array',
             'sub_criteria_ids.*' => 'integer',
-            'responsible_person' => 'required|string',
-            'accountability' => 'required|string',
-            'action_taken' => 'required|string'
         ]);
+
+        // $subCriteriaIds = $request->sub_criteria_ids;
+
+        // $criteria->delete();
+
+        // // Insert new rows
+        // $data = collect($subCriteriaIds)->map(function ($subId) use ($request) {
+        //     return [
+        //         'exit_reason_id' => $request->exit_reason_id,
+        //         'sub_criteria_id' => $subId,
+        //         'created_at' => now(),
+        //         'updated_at' => now(),
+        //     ];
+        // })->toArray();
+
+        // Criteria::insert($data);
 
         $criteria->update([
             'exit_reason_id' => $request->exit_reason_id,
-            'sub_criteria_ids' => $request->sub_criteria_ids,
-            'responsible_person' => $request->responsible_person,
-            'accountability' => $request->accountability,
-            'action_taken' => $request->action_taken,
+            'sub_criteria_ids' => json_encode($request->sub_criteria_ids),
         ]);
 
         return redirect()->route('criteria.index');

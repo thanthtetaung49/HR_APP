@@ -33,7 +33,7 @@ class LocationController extends AccountBaseController
 
     public function index(LocationDataTable $dataTable) {
 
-        $viewPermission = user()->permission('view_department');
+        $viewPermission = user()->permission('view_location');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->locations = Location::get();

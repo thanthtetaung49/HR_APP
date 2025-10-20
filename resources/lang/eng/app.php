@@ -53,7 +53,7 @@ return array(
     'selectStatus' => 'Select Status',
     'task' => 'Task',
     'tasks' => 'Tasks',
-    'print'=>'Print',
+    'print' => 'Print',
     'client' => 'Client',
     'stop' => 'Stop',
     'remove' => 'Remove',
@@ -69,7 +69,7 @@ return array(
     'license_expired' => 'License Expired',
     'clientName' => 'Client Name',
     'lead' => 'Lead',
-    'NewLeadContact'=> 'Total New Lead Contact',
+    'NewLeadContact' => 'Total New Lead Contact',
     'paymentOn' => 'Payment On',
     'amount' => 'Amount',
     'gateway' => 'Gateway',
@@ -133,8 +133,9 @@ return array(
     'doItLater' => 'Do It Later',
     'manPowerDetails' => 'Man Power Detail',
     'subCriteriaDetails' => 'Sub Criteria Detail',
-    'criteriaDetails' => 'Criteria Detail',
+    'criteriaDetails' => 'Exit Reason Detail',
     'causeDetails' => 'Cause Detail',
+    'managementRankDetials' => 'Management Rank Details',
     'months' => array(
         'January' => 'January',
         'February' => 'February',
@@ -150,6 +151,9 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'noticePeriodEndDate' => 'Notice Period End Date',
+        'criteriaReport' => 'Criteria Report',
+        'managementRanks' => 'Management Ranks',
         'budgetHistory' => 'Budget History',
         'updatedDate' => 'Updated Date',
         'approvedDate' => 'Approved Date',
@@ -1332,4 +1336,3 @@ return array(
     'downloadSampleImport' => 'Download Sample Import File',
     'spending' => 'Spending',
 );
-

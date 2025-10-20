@@ -108,17 +108,6 @@ class AccountBaseController extends Controller
         }
 
         $this->sidebarUserPermissions = sidebar_user_perms();
-
-        // dd([
-        //     'user_id' => user()->id,
-        //     'user_name' => user()->name,
-        //     'user_roles' => user()->roles->pluck('name')->toArray(),
-        //     'view_permission' => user()->permission('view_man_power_report'),
-        //     'add_permission' => user()->permission('add_man_power_report'),
-        //     'edit_permission' => user()->permission('edit_man_power_report'),
-        //     'delete_permission' => user()->permission('delete_man_power_report'),
-        //     'sidebar_perms' => $this->sidebarUserPermissions,
-        // ]);
     }
 
     public function logProjectActivity($projectId, $text)

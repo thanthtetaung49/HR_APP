@@ -1,6 +1,7 @@
 <?php
 
 return array(
+    'managementRanks' => 'Management Ranks',
     'remark' => 'Enter remark here',
     'accountability' => 'Accountability',
     'exitsReason' => 'Exit Reason',

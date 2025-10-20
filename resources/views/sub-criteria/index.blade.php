@@ -10,7 +10,7 @@
 @endpush
 
 @php
-    $addDepartmentPermission = user()->permission('add_department');
+    $addDepartmentPermission = user()->permission('add_sub_criteria');
 @endphp
 
 

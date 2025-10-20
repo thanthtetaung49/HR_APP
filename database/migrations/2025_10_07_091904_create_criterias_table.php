@@ -15,9 +15,7 @@ return new class extends Migration
             $table->id();
             $table->text('exit_reason_id')->nullable();
             $table->json('sub_criteria_ids')->nullable();
-            $table->string('responsible_person')->nullable();
-            $table->string('accountability')->nullable();
-            $table->string('action_taken')->nullable();
+            // $table->foreignId('sub_criteria_id')->constrained('sub_criterias')->cascadeOnDelete('set null');
             $table->timestamps();
         });
     }

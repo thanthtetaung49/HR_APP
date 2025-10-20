@@ -32,7 +32,7 @@ class TurnOverReportController extends AccountBaseController
      */
     public function index()
     {
-        $viewPermission = user()->permission('view_department');
+        $viewPermission = user()->permission('view_turn_over_reports');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->months = $this->months();

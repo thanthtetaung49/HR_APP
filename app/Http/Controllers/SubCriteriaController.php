@@ -30,7 +30,7 @@ class SubCriteriaController extends AccountBaseController
      */
     public function index(SubCriteriaDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_department');
+        $viewPermission = user()->permission('view_sub_criteria');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->subCriteria = SubCriteria::get();
@@ -55,10 +55,16 @@ class SubCriteriaController extends AccountBaseController
     {
         $request->validate([
             'sub_criteria' => 'required|unique:sub_criterias,sub_criteria',
+            'responsible_person' => 'required|string',
+            'accountability' => 'required|string',
+            'action_taken' => 'required|string'
         ]);
 
         SubCriteria::create([
             'sub_criteria' => $request->sub_criteria,
+            'responsible_person' => $request->responsible_person,
+            'accountability' => $request->accountability,
+            'action_taken' => $request->action_taken,
         ]);
 
         return redirect()->route('sub-criteria.index');
@@ -100,10 +106,16 @@ class SubCriteriaController extends AccountBaseController
 
         $request->validate([
             'sub_criteria' => ['required', 'unique:sub_criterias,sub_criteria,' . $subCriteria->id],
+            'responsible_person' => 'required|string',
+            'accountability' => 'required|string',
+            'action_taken' => 'required|string'
         ]);
 
         $subCriteria->update([
             'sub_criteria' => $request->sub_criteria,
+            'responsible_person' => $request->responsible_person,
+            'accountability' => $request->accountability,
+            'action_taken' => $request->action_taken,
         ]);
 
         return redirect()->route('sub-criteria.index');

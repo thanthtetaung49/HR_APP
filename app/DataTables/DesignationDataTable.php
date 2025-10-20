@@ -63,7 +63,8 @@ class DesignationDataTable extends BaseDataTable
 
                 $managementRank = ManagementRank::all();
 
-                $lookupRankId = ($row->rank_id >= 7) ? 7 : $row->rank_id;
+                // $lookupRankId = ($row->rank_id >= 7) ? 7 : $row->rank_id;
+                $lookupRankId = $row->rank_id;
 
                 $relatedRank = $managementRank->first(function ($item) use ($lookupRankId) {
                     $ranks = json_decode($item->rank, true);

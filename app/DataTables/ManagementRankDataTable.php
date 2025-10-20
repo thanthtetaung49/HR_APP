@@ -2,8 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\SubCriteria;
-use App\Models\SubCriterion;
+use App\Models\ManagementRank;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -13,7 +12,7 @@ use Yajra\DataTables\Html\Editor\Editor;
 use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
-class SubCriteriaDataTable extends BaseDataTable
+class ManagementRankDataTable extends BaseDataTable
 {
     /**
      * Build the DataTable class.
@@ -29,32 +28,39 @@ class SubCriteriaDataTable extends BaseDataTable
                 static $index = 0;
                 return ++$index; // Incremental row indexedi
             })
-            ->editColumn('sub_criteria', function ($subCriteria) {
-                return $subCriteria->sub_criteria;
+            ->editColumn('name', function ($managementRank) {
+                return $managementRank->name;
             })
-            ->editColumn('responsible_person', function ($criteria) {
-                return $criteria->responsible_person;
+            ->editColumn('rank', function ($managementRank) {
+                $managementRanks = json_decode($managementRank->rank);
+
+                $li = '';
+
+                collect($managementRanks)->map(function ($item) use (&$li) {
+                    $li .= '<li><i class="fa fa-check text-success mr-3"></i>Rank - ' . $item . '</li>';
+                    return $li;
+                });
+
+                return '<ul>'
+                    . $li .
+                    '</ul>';
+
+                return $managementRank->name;
             })
-            ->editColumn('accountability', function ($criteria) {
-                return $criteria->accountability;
-            })
-            ->editColumn('action_taken', function ($criteria) {
-                return $criteria->action_taken;
-            })
-            ->addColumn('action', function ($subCriteria) {
+            ->addColumn('action', function ($managementRank) {
                 $action = '<div class="task_view">
-<a href="' . route('sub-criteria.show', [$subCriteria->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
+<a href="' . route('management-ranks.show', [$managementRank->id]) . '" class="taskView text-darkest-grey f-w-500 openRightModal">' . __('app.view') . '</a>
 <div class="dropdown">
                         <a class="task_view_more d-flex align-items-center justify-content-center dropdown-toggle" type="link"
-                            id="dropdownMenuLink-' . $subCriteria->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            id="dropdownMenuLink-' . $managementRank->id . '" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i class="icon-options-vertical icons"></i>
                         </a>
-                            <div class="dropdown-menu dropdown-menu-right " aria-labelledby="dropdownMenuLink-' . $subCriteria->id . '" tabindex="0">
-                                <a class="dropdown-item" href="' . route('sub-criteria.edit', [$subCriteria->id]) . '">
+                            <div class="dropdown-menu dropdown-menu-right " aria-labelledby="dropdownMenuLink-' . $managementRank->id . '" tabindex="0">
+                                <a class="dropdown-item" href="' . route('management-ranks.edit', [$managementRank->id]) . '">
                                     <i class="fa fa-edit mr-2"></i>
                                     ' . trans('app.edit') . '
                                 </a>
-                                <a class="dropdown-item delete-table-row" href="javascript:;" data-subcriteria-id="' . $subCriteria->id . '">
+                                <a class="dropdown-item delete-table-row" href="javascript:;" data-managementrank-id="' . $managementRank->id . '">
                                     <i class="fa fa-trash mr-2"></i>
                                     ' . trans('app.delete') . '
                                 </a>
@@ -64,7 +70,7 @@ class SubCriteriaDataTable extends BaseDataTable
 
                 return $action;
             })
-            ->rawColumns(['action', 'check'])
+            ->rawColumns(['action', 'check', 'rank'])
             ->setRowId('id')
             ->addIndexColumn();
     }
@@ -72,17 +78,9 @@ class SubCriteriaDataTable extends BaseDataTable
     /**
      * Get the query source of dataTable.
      */
-    public function query(SubCriteria $model): QueryBuilder
+    public function query(ManagementRank $model): QueryBuilder
     {
-        $model = $model->select('*');
-        $searchText = request()->searchText;
-
-        if (request()->has('searchText') && request()->searchText != '') {
-
-            $model = $model->where('sub_criteria', 'like', '%' . $searchText . '%');
-        }
-
-        return $model;
+        return $model->newQuery();
     }
 
     /**
@@ -91,19 +89,19 @@ class SubCriteriaDataTable extends BaseDataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-            ->setTableId('subcriteria-table')
-            ->columns($this->getColumns())
-            ->minifiedAjax()
-            //->dom('Bfrtip')
-            ->orderBy(1)
-            ->selectStyleSingle()
-            ->buttons([
-                Button::make('create'),
-                Button::make('export'),
-                Button::make('print'),
-                Button::make('reset'),
-                Button::make('reload')
-            ]);
+                    ->setTableId('managementrank-table')
+                    ->columns($this->getColumns())
+                    ->minifiedAjax()
+                    //->dom('Bfrtip')
+                    ->orderBy(1)
+                    ->selectStyleSingle()
+                    ->buttons([
+                        Button::make('create'),
+                        Button::make('export'),
+                        Button::make('print'),
+                        Button::make('reset'),
+                        Button::make('reload')
+                    ]);
     }
 
     /**
@@ -121,10 +119,8 @@ class SubCriteriaDataTable extends BaseDataTable
             ],
 
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
-            'sub_criteria' => ['data' => 'sub_criteria', 'name' => 'sub_criteria', 'title' => __('app.menu.subCriteria')],
-            __('app.menu.responsiblePerson') => ['data' => 'responsible_person', 'name' => 'responsible_person', 'title' => __('app.menu.responsiblePerson')],
-            __('app.menu.accountability') => ['data' => 'accountability', 'name' => 'accountability', 'title' => __('app.menu.accountability')],
-            __('app.menu.actionTaken') => ['data' => 'action_taken', 'name' => 'action_taken', 'title' => __('app.menu.actionTaken')],
+            __('app.menu.managementRanks') => ['data' => 'name', 'name' => 'name', 'title' => __('app.menu.managementRanks')],
+            __('app.menu.rank') => ['data' => 'rank', 'name' => 'rank', 'title' => __('app.menu.rank')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)
@@ -139,6 +135,6 @@ class SubCriteriaDataTable extends BaseDataTable
      */
     protected function filename(): string
     {
-        return 'SubCriteria_' . date('YmdHis');
+        return 'ManagementRank_' . date('YmdHis');
     }
 }

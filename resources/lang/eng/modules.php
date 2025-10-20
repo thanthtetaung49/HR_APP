@@ -1724,16 +1724,16 @@ return array(
         'addTitle' => 'Add Sub Criteria',
     ),
     'criteria' => array(
-        'title' => 'Criteria',
-        'addTitle' => 'Add Criteria',
-    ),
-    'criteria' => array(
-        'title' => 'Criteria',
-        'addTitle' => 'Add Criteria',
+        'title' => 'Exit Reason',
+        'addTitle' => 'Add Exit Reason',
     ),
     'reportPermission' => array(
         'title' => 'Report Permission',
         'addTitle' => 'Add Report Permission',
+    ),
+    'managementRank' => array(
+        'title' => 'Management Rank',
+        'addTitle' => 'Add Management Rank',
     ),
     'offlinePayment' => array(
         'title' => 'Offline Payment Method',

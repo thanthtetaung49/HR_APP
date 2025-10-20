@@ -10,7 +10,7 @@
 @endpush
 
 @php
-    $addDepartmentPermission = user()->permission('add_sub_criteria');
+    $addDepartmentPermission = user()->permission('add_management_ranks');
 @endphp
 
 
@@ -49,8 +49,8 @@
 
         <div class="d-grid d-lg-flex d-md-flex action-bar">
             <div id="table-actions" class="flex-grow-1 align-items-center">
-                <x-forms.link-primary :link="route('criteria.create')" class="mr-3 float-left" icon="plus">
-                    @lang('app.menu.exitsReason')
+                <x-forms.link-primary :link="route('management-ranks.create')" class="mr-3 float-left" icon="plus">
+                    @lang('app.menu.managementRanks')
                 </x-forms.link-primary>
             </div>
         </div>
@@ -80,14 +80,14 @@
     @include('sections.datatable_js')
 
     <script>
-        $('#criteria-table').on('preXhr.dt', function(e, settings, data) {
+        $('#managementrank-table').on('preXhr.dt', function(e, settings, data) {
             $searchText = $('#search-text-field').val();
 
             data['searchText'] = $searchText;
         });
 
         const showTable = () => {
-            window.LaravelDataTables["criteria-table"].draw(true);
+            window.LaravelDataTables["managementrank-table"].draw(true);
         }
 
         $('#search-text-field').on('keyup', function() {
@@ -106,7 +106,7 @@
         });
 
         $('body').on('click', '.delete-table-row', function() {
-            var id = $(this).data('criteria-id');
+            var id = $(this).data('managementrank-id');
             console.log(id);
             Swal.fire({
                 title: "@lang('messages.sweetAlertTitle')",
@@ -127,7 +127,7 @@
                 buttonsStyling: false
             }).then((result) => {
                 if (result.isConfirmed) {
-                    var url = "{{ route('criteria.destroy', ':id') }}";
+                    var url = "{{ route('management-ranks.destroy', ':id') }}";
                     url = url.replace(':id', id);
 
                     var token = "{{ csrf_token() }}";
@@ -195,12 +195,12 @@
         });
 
         const applyQuickAction = () => {
-            const rowdIds = $("#criteria-table input:checkbox:checked").map(function() {
+            const rowdIds = $("#managementrank-table input:checkbox:checked").map(function() {
                 return $(this).val();
             }).get();
 
 
-            const url = "{{ route('criteria.apply_quick_action') }}?row_ids=" + rowdIds;
+            const url = "{{ route('managementRanks.apply_quick_action') }}?row_ids=" + rowdIds;
 
             $.easyAjax({
                 url: url,

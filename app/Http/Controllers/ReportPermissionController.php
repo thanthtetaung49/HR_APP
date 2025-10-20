@@ -44,7 +44,6 @@ class ReportPermissionController extends AccountBaseController
      */
     public function create()
     {
-
         $this->data['pageTitle'] = 'Add Report Permission';
         $this->locations = Location::get();
         $this->users = User::with('roles')->select('name', 'id')
@@ -58,9 +57,6 @@ class ReportPermissionController extends AccountBaseController
      */
     public function store(Request $request)
     {
-        $permission = user()->permission('add_report_permission');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $request->validate([
             'location_id' => 'required',
             'team_id' => 'required',
@@ -95,8 +91,6 @@ class ReportPermissionController extends AccountBaseController
      */
     public function edit(string $id)
     {
-
-
         $this->report = ReportPermission::findOrFail($id);
         $this->data['pageTitle'] = 'Edit Report Permission';
         $this->locations = Location::get();
@@ -112,9 +106,6 @@ class ReportPermissionController extends AccountBaseController
      */
     public function update(Request $request, string $id)
     {
-        $permission = user()->permission('edit_report_permission');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $report = ReportPermission::findOrFail($id);
 
         $request->validate([
@@ -143,9 +134,6 @@ class ReportPermissionController extends AccountBaseController
      */
     public function destroy(string $id)
     {
-        $permission = user()->permission('delete_report_permission');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
-
         $report = ReportPermission::findOrFail($id);
         $report->delete();
 
@@ -164,9 +152,6 @@ class ReportPermissionController extends AccountBaseController
 
     protected function deleteRecords($request)
     {
-        $deletePermission = user()->permission('delete_department');
-        abort_403($deletePermission != 'all');
-
         $item = explode(',', $request->row_ids);
 
         if (($key = array_search('on', $item)) !== false) {

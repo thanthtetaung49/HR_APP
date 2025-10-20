@@ -24,6 +24,36 @@
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                         </div>
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="accountability" :fieldLabel="__('app.menu.accountability')" fieldName="accountability"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.accountability')">
+                            </x-forms.text>
+
+                            @error('accountability')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="action_taken" :fieldLabel="__('app.menu.actionTaken')" fieldName="action_taken"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.actionTaken')">
+                            </x-forms.text>
+
+                            @error('action_taken')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="responsible_person" :fieldLabel="__('app.menu.responsiblePerson')" fieldName="responsible_person"
+                                fieldRequired="true" :fieldPlaceholder="__('placeholders.responsiblePerson')">
+                            </x-forms.text>
+
+                            @error('responsible_person')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
 
                     <x-form-actions>

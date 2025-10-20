@@ -21,7 +21,7 @@
 @endpush
 
 @php
-    $addDepartmentPermission = user()->permission('add_department');
+    $addDepartmentPermission = user()->permission('add_turn_over_reports');
 @endphp
 
 

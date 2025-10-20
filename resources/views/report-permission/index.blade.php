@@ -10,7 +10,7 @@
 @endpush
 
 @php
-    $addDepartmentPermission = user()->permission('add_department');
+    $addDepartmentPermission = user()->permission('add_report_permission');
 @endphp
 
 
