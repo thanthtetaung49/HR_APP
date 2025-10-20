@@ -805,7 +805,11 @@ if (!function_exists('sidebar_user_perms')) {
                 'view_turn_over_reports',
                 'add_turn_over_reports',
                 'edit_turn_over_reports',
-                'delete_turn_over_reports'
+                'delete_turn_over_reports',
+                'view_criteria_reports',
+                'add_criteria_reports',
+                'edit_criteria_reports',
+                'delete_criteria_reports'
             ];
 
             $sidebarPermissions = Permission::whereIn('name', $sidebarPermissionsArray)

@@ -161,7 +161,7 @@
                     <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_turn_over_reports']) && $sidebarUserPermissions['view_turn_over_reports'] == 4)
+                @if (isset($sidebarUserPermissions['view_criteria_reports']) && $sidebarUserPermissions['view_criteria_reports'] == 4)
                     <x-sub-menu-item :link="route('criteria-reports.index')" :text="__('app.menu.criteriaReport')" />
                 @endif
 

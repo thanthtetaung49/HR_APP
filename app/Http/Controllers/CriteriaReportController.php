@@ -13,7 +13,7 @@ class CriteriaReportController extends AccountBaseController
     public function __construct()
     {
         parent::__construct();
-        $this->pageTitle = __('app.menu.exitsReason');
+        $this->pageTitle = __('app.menu.criteriaReport');
 
         $this->middleware(function ($request, $next) {
             abort_403(!in_array('employees', $this->user->modules));
@@ -27,7 +27,7 @@ class CriteriaReportController extends AccountBaseController
      */
     public function index(CriteriaReportDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_criteria');
+        $viewPermission = user()->permission('view_criteria_reports');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->locations = Location::get();
