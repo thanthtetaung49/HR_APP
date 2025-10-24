@@ -32,9 +32,6 @@
                 <select class="form-control select-picker" name="team_id" id="team_id" data-live-search="true"
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
-                    {{-- @foreach ($departments as $department)
-                        <option value="{{ $department->id }}">{{ $department->team_name }}</option>
-                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -46,9 +43,6 @@
                 <select class="form-control select-picker" name="position" id="position" data-live-search="true"
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
-                    {{-- @foreach ($designations as $position)
-                        <option value="{{ $position->id }}">{{ $position->name }}</option>
-                    @endforeach --}}
                 </select>
             </div>
         </div>
@@ -204,8 +198,6 @@
             if (result.isConfirmed) {
                 var url = "{{ route('man-power-reports.destroy', ':id') }}";
                 url = url.replace(':id', id);
-
-                console.log(url);
 
                 var token = "{{ csrf_token() }}";
 

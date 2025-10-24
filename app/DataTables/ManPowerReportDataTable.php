@@ -95,8 +95,11 @@ class ManPowerReportDataTable extends BaseDataTable
                     return '<span class="bg-warning p-1 rounded-sm text-white">' . $manPower->status . '</span>';
                 }
             })
-            ->editColumn('remarks', function ($manPower) {
-                return $manPower->remarks ? $manPower->remarks : '---';
+            ->editColumn('remark_from', function ($manPower) {
+                return $manPower->remark_from ? $manPower->remark_from : '---';
+            })
+            ->editColumn('remark_to', function ($manPower) {
+                return $manPower->remark_to ? $manPower->remark_to : '---';
             })
             ->editColumn('approved_date', function ($manPower) {
                 return $manPower->approved_date ? $manPower->approved_date : '---';
@@ -454,7 +457,8 @@ class ManPowerReportDataTable extends BaseDataTable
             'team' => ['data' => 'team', 'name' => 'team', 'title' => __('app.menu.department')],
             'status' => ['data' => 'status', 'name' => 'status', 'title' => __('app.menu.status')],
             __('app.menu.approvedDate') => ['data' => 'approved_date', 'name' => 'approved_date', 'title' => __('app.menu.approvedDate')],
-            __('app.menu.remark') => ['data' => 'remarks', 'name' => 'remarks', 'title' => __('app.menu.remark')],
+            __('app.menu.remarkFrom') => ['data' => 'remark_from', 'name' => 'remark_from', 'title' => __('app.menu.remarkFrom')],
+            __('app.menu.remarkTo') => ['data' => 'remark_to', 'name' => 'remark_to', 'title' => __('app.menu.remarkTo')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)

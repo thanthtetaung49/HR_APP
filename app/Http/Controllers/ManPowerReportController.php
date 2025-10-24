@@ -105,7 +105,8 @@ class ManPowerReportController extends AccountBaseController
         $quarter = $request->quarter;
         $position_id = $request->position_id;
         $status = $request->status ? $request->status : 'pending';
-        $remark = $request->remark;
+        $remark_from = $request->remark_from;
+        $remark_to = $request->remark_to;
 
         Validator::make($request->all(), [
             'man_power_setup' => 'required',
@@ -123,7 +124,8 @@ class ManPowerReportController extends AccountBaseController
             'quarter' => $quarter,
             'position_id' => $position_id,
             'status' => $status,
-            'remarks' => $remark,
+            'remark_from' => $remark_from,
+            'remark_to' => $remark_to,
             'created_by' => user()->id,
             'approved_date' => $status == 'approved' ? now() : null,
         ]);
@@ -137,7 +139,8 @@ class ManPowerReportController extends AccountBaseController
             'quarter' => $manPowerReport->quarter,
             'position_id' => $manPowerReport->position_id,
             'status' => $manPowerReport->status,
-            'remarks' => $manPowerReport->remark,
+            'remark_from' => $manPowerReport->remark_from,
+            'remark_to' => $manPowerReport->remark_to,
             'created_by' => user()->id,
             'approved_date' => $manPowerReport->approved_date,
             'updated_date' => now(),
@@ -250,7 +253,8 @@ class ManPowerReportController extends AccountBaseController
             'quarter' => $request->quarter,
             'position_id' => $request->position_id,
             'status' => $request->status ? $request->status : 'pending',
-            'remarks' => $request->remark,
+            'remark_from' => $request->remark_from,
+            'remark_to' => $request->remark_to,
             'approved_date' => $request->status == 'approved' ? now() : null,
         ]);
 
@@ -263,7 +267,8 @@ class ManPowerReportController extends AccountBaseController
             'quarter' => $reports->quarter,
             'position_id' => $reports->position_id,
             'status' => $reports->status,
-            'remarks' => $reports->remarks,
+            'remark_from' => $request->remark_from,
+            'remark_to' => $request->remark_to,
             'created_by' => user()->id,
             'approved_date' => $reports->approved_date,
             'updated_date' => now(),

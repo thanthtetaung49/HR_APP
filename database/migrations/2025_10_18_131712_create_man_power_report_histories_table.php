@@ -23,7 +23,9 @@ return new class extends Migration
             $table->string('quarter')->nullable();
             $table->enum('status', ['pending', 'approved', 'review'])->default('pending');
 
-            $table->text('remarks')->nullable();
+            $table->text('remark_from')->nullable();
+            $table->text('remark_to')->nullable();
+
             $table->integer('created_by')->nullable();
             $table->date('approved_date')->nullable();
 

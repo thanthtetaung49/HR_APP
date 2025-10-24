@@ -126,11 +126,23 @@
                             </div>
 
                             <div class="col-md-4">
-                                <x-forms.text fieldId="remark" :fieldLabel="__('app.menu.remark')"
-                                    fieldName="remark" fieldRequired="true" :fieldPlaceholder="__('placeholders.remark')">
+                                <x-forms.text fieldId="remark_from" :fieldLabel="__('app.menu.remarkFrom')" fieldName="remark_from"
+                                    fieldRequired="true" :fieldPlaceholder="__('placeholders.remark')">
                                 </x-forms.text>
 
-                                @error('remark')
+                                @error('remark_from')
+                                    <span class="text-danger">{{ $message }}</span>
+                                @enderror
+                            </div>
+                        @endcan
+
+                        @can('canRemarkByEmployee', App\Models\ManPowerReport::class)
+                            <div class="col-md-4">
+                                <x-forms.text fieldId="remark_to" :fieldLabel="__('app.menu.remarkTo')" fieldName="remark_to"
+                                    fieldRequired="true" :fieldPlaceholder="__('placeholders.remark')">
+                                </x-forms.text>
+
+                                @error('remark_to')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>

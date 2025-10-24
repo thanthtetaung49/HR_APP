@@ -112,14 +112,16 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                     return '<span class="bg-warning p-1 rounded-sm text-white">' . $manPower->status . '</span>';
                 }
             })
-            ->editColumn('remarks', function ($manPower) {
-                // dd($manPower->remarks);
-                return $manPower->remarks ? $manPower->remarks : '---';
+            ->editColumn('remark_from', function ($manPower) {
+                return $manPower->remark_from ? $manPower->remark_from : '---';
+            })
+            ->editColumn('remark_to', function ($manPower) {
+                return $manPower->remark_to ? $manPower->remark_to : '---';
             })
             ->editColumn('approved_date', function ($manPower) {
                 return $manPower->approved_date ? $manPower->approved_date : '---';
             })
-             ->editColumn('updated_date', function ($manPower) {
+            ->editColumn('updated_date', function ($manPower) {
                 return $manPower->updated_date ? $manPower->updated_date  : '---';
             })
             ->editColumn('created_at', function ($manPower) {
@@ -170,8 +172,6 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
             $query->where('man_power_report_id', $this->id);
         }
 
-        // dd($query->get()->toArray());
-
         return $query;
     }
 
@@ -202,14 +202,6 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
-            // 'check' => [
-            //     'title' => '<input type="checkbox" name="select_all_table" id="select-all-table" onclick="selectAllTable(this)">',
-            //     'exportable' => false,
-            //     'orderable' => false,
-            //     'searchable' => false,
-            //     'visible' => !in_array('client', user_roles())
-            // ],
-
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
             'budget_year' => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => 'Year'],
             'quarter' => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
@@ -224,13 +216,8 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
             'status' => ['data' => 'status', 'name' => 'status', 'title' => __('app.menu.status')],
             __('app.menu.approvedDate') => ['data' => 'approved_date', 'name' => 'approved_date', 'title' => __('app.menu.approvedDate')],
             __('app.menu.updatedDate') => ['data' => 'updated_date', 'name' => 'updated_date', 'title' => __('app.menu.updatedDate')],
-            __('app.menu.remark') => ['data' => 'remarks', 'name' => 'remarks', 'title' => __('app.menu.remark')],
-            // Column::computed('action', __('app.action'))
-            //     ->exportable(false)
-            //     ->printable(false)
-            //     ->orderable(false)
-            //     ->searchable(false)
-            //     ->addClass('text-right pr-20')
+            __('app.menu.remarkFrom') => ['data' => 'remark_from', 'name' => 'remark_from', 'title' => __('app.menu.remarkFrom')],
+            __('app.menu.remarkTo') => ['data' => 'remark_to', 'name' => 'remark_to', 'title' => __('app.menu.remarkTo')],
         ];
     }
 

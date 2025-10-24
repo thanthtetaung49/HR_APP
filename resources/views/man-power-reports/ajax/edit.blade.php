@@ -136,15 +136,44 @@
                             </div>
 
                             <div class="col-md-4">
-                                <x-forms.text fieldId="remark" :fieldLabel="__('app.menu.remark')" fieldName="remark" fieldRequired="true"
-                                    :fieldPlaceholder="__('placeholders.remark')" :fieldValue="old('remark', $reports->remark)">
+                                <x-forms.text fieldId="remark_from" :fieldLabel="__('app.menu.remarkFrom')" fieldName="remark_from"
+                                    fieldRequired="true" :fieldPlaceholder="__('placeholders.remark')" :fieldValue="old('remark_from', $reports->remark_from)">
                                 </x-forms.text>
 
-                                @error('remark')
+                                @error('remark_from')
                                     <span class="text-danger">{{ $message }}</span>
                                 @enderror
                             </div>
                         @endcan
+
+                        @php
+                            $roles = user()->roles;
+
+                            $isAdmin = $roles->contains(function ($role) {
+                                return $role->name === 'admin';
+                            });
+
+                            $isHRmanager = $roles->contains(function ($role) {
+                                return $role->name === 'hr-manager';
+                            });
+
+                            $readOnly = false;
+
+                            if ($isAdmin || $isHRmanager) {
+                                $readOnly = true;
+                            }
+
+                        @endphp
+
+                        <div class="col-md-4">
+                            <x-forms.text fieldId="remark_to" :fieldLabel="__('app.menu.remarkTo')" fieldName="remark_to" fieldRequired="true"
+                                :fieldPlaceholder="__('placeholders.remark')" :fieldValue="old('remark_to', $reports->remark_to)" :fieldReadOnly="$readOnly">
+                            </x-forms.text>
+
+                            @error('remark_to')
+                                <span class="text-danger">{{ $message }}</span>
+                            @enderror
+                        </div>
                     </div>
 
                     <x-form-actions>
