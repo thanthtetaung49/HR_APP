@@ -75,8 +75,9 @@ class ManPowerReportDataTable extends BaseDataTable
             ->editColumn('total_man_power_basic_salary', function ($manPower) {
                 $basicSalary =  ($manPower->basic_salary > 0) ? $manPower->basic_salary : 0;
                 $technicalAllowance = ($manPower->technical_allowance > 0) ? $manPower->technical_allowance : 0;
+                $livingCostAllowance = ($manPower->living_cost_allowance > 0) ? $manPower->living_cost_allowance : 0;
 
-                $salaries = $basicSalary + $technicalAllowance;
+                $salaries = $basicSalary + $technicalAllowance + $livingCostAllowance;
 
                 if ($manPower->man_power_basic_salary > $salaries) {
                     $icon = '<i class="fa fa-check text-success"></i>';
@@ -247,6 +248,15 @@ class ManPowerReportDataTable extends BaseDataTable
         THEN allowances.technical_allowance
         ELSE 0
     END) as technical_allowance'),
+    DB::raw('SUM(CASE
+        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
+        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+        AND (
+            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+        )
+        THEN allowances.living_cost_allowance
+        ELSE 0
+    END) as living_cost_allowance'),
             )
                 ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
                 ->leftJoin('designations', 'man_power_reports.position_id', '=', 'designations.id')
@@ -325,6 +335,15 @@ class ManPowerReportDataTable extends BaseDataTable
         THEN allowances.technical_allowance
         ELSE 0
     END) as technical_allowance'),
+     DB::raw('SUM(CASE
+        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
+        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+        AND (
+            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+        )
+        THEN allowances.living_cost_allowance
+        ELSE 0
+    END) as living_cost_allowance'),
             )
                 ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
                 ->leftJoin('designations', 'man_power_reports.position_id', '=', 'designations.id')
