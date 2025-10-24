@@ -125,9 +125,9 @@
                     <x-sub-menu-item :link="route('holidays.index')" :text="__('app.menu.holiday')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_location']) && $sidebarUserPermissions['view_location'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('location.index')" :text="__('app.menu.location')" />
-                @endif
+                @endcan
 
                 @if (isset($sidebarUserPermissions['view_designation']) && $sidebarUserPermissions['view_designation'] == 4)
                     <x-sub-menu-item :link="route('designations.index')" :text="__('app.menu.designation')" />
@@ -145,38 +145,37 @@
                     <x-sub-menu-item :link="route('awards.index')" :text="__('app.menu.appreciation')" />
                 @endif
 
-                @if (isset($sidebarUserPermissions['view_management_ranks']) && $sidebarUserPermissions['view_management_ranks'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('management-ranks.index')" :text="__('app.menu.managementRanks')" />
-                @endif
+                @endcan
 
-                @if (isset($sidebarUserPermissions['view_sub_criteria']) && $sidebarUserPermissions['view_sub_criteria'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
-                @endif
+                @endcan
 
-                @if (isset($sidebarUserPermissions['view_criteria']) && $sidebarUserPermissions['view_criteria'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.exitsReason')" />
-                @endif
+                @endcan
 
-                @if (isset($sidebarUserPermissions['view_report_permission']) && $sidebarUserPermissions['view_report_permission'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
-                @endif
+                @endcan
 
-                @if (isset($sidebarUserPermissions['view_criteria_reports']) && $sidebarUserPermissions['view_criteria_reports'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('criteria-reports.index')" :text="__('app.menu.criteriaReport')" />
-                @endif
+                @endcan
 
                 @can('viewAny', App\Models\ManPowerReport::class)
                     <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
                 @endcan
 
-                @if (isset($sidebarUserPermissions['view_turn_over_reports']) && $sidebarUserPermissions['view_turn_over_reports'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('turn-over-reports.index')" :text="__('app.menu.turnOverReport')" />
-                @endif
+                @endcan
 
-                @if (isset($sidebarUserPermissions['view_bank_reports']) && $sidebarUserPermissions['view_bank_reports'] == 4)
+                @can('viewAny', App\Models\User::class)
                     <x-sub-menu-item :link="route('bank-reports.index')" :text="__('app.menu.bankReport')" />
-                @endif
-
+                @endcan
 
                 <!-- NAV ITEM - CUSTOM MODULES  -->
                 @foreach ($worksuitePlugins as $item)

@@ -6,6 +6,7 @@ use App\DataTables\SubCriteriaDataTable;
 use App\Helper\Reply;
 use App\Models\Criteria;
 use App\Models\SubCriteria;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -30,8 +31,7 @@ class SubCriteriaController extends AccountBaseController
      */
     public function index(SubCriteriaDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_sub_criteria');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        $this->authorize('viewAny', User::class);
 
         $this->subCriteria = SubCriteria::get();
 

@@ -33,9 +33,7 @@ class LocationController extends AccountBaseController
 
     public function index(LocationDataTable $dataTable) {
 
-        $viewPermission = user()->permission('view_location');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
-
+        $this->authorize('viewAny', User::class);
         $this->locations = Location::get();
 
         return $dataTable->render('location.index', $this->data);
@@ -43,7 +41,6 @@ class LocationController extends AccountBaseController
 
     public function create()
     {
-
         $this->view = 'location.ajax.create';
         $this->data['pageTitle'] = 'Add Location';
 

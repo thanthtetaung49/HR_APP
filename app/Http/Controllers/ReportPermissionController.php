@@ -33,8 +33,8 @@ class ReportPermissionController extends AccountBaseController
      */
     public function index(ReportPermissionDataTable $dataTable)
     {
-        $permission = user()->permission('view_report_permission');
-        abort_403(!in_array($permission, ['all', 'added', 'owned', 'both']));
+        $this->authorize('viewAny', User::class);
+
         $this->locations = Location::get();
 
         return $dataTable->render('report-permission.index', $this->data);

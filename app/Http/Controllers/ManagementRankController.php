@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\ManagementRankDataTable;
 use App\Helper\Reply;
 use App\Models\ManagementRank;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ManagementRankController extends AccountBaseController
@@ -28,8 +29,7 @@ class ManagementRankController extends AccountBaseController
      */
     public function index(ManagementRankDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_management_ranks');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        $this->authorize('viewAny', User::class);
 
         return $dataTable->render('management-ranks.index', $this->data);
     }

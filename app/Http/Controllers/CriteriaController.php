@@ -7,6 +7,7 @@ use App\Helper\Reply;
 use App\Models\Criteria;
 use App\Models\EmployeeDetails;
 use App\Models\SubCriteria;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,8 +32,7 @@ class CriteriaController extends AccountBaseController
      */
     public function index(CriteriaDataTable $dataTable)
     {
-        $viewPermission = user()->permission('view_criteria');
-        abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
+        $this->authorize('viewAny', User::class);
 
         return $dataTable->render('criteria.index', $this->data);
     }
