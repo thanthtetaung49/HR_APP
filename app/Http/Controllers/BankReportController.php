@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\BankReportDataTable;
 use App\Models\Location;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class BankReportController extends AccountBaseController
@@ -27,56 +28,29 @@ class BankReportController extends AccountBaseController
      */
     public function index(BankReportDataTable $dataTable)
     {
+        $this->authorize('viewAny', User::class);
+
         $this->locations = Location::get();
+        $this->months = $this->months();
 
         return $dataTable->render('bank-reports.index', $this->data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    protected function months()
     {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return  [
+            1 => "Jan",
+            2 => "Feb",
+            3 => "Mar",
+            4 => "Apr",
+            5 => "May",
+            6 => "Jun",
+            7 => "Jul",
+            8 => "Aug",
+            9 => "Sep",
+            10 => "Oct",
+            11 => "Nov",
+            12 => "Dec"
+        ];
     }
 }

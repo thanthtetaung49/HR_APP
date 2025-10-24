@@ -458,7 +458,8 @@ return array(
         'leadReport' => 'Lead Report',
         'quickBookSettings' => 'Quickbooks Settings',
         'salesReport' => 'Sales Report',
-
+        'year' => 'Year',
+        'month' => 'Month',
         'addContract' => 'Add Contract',
         'customLinkSetting' => 'Custom Link Settings',
         'addProducts' => 'Add Products',

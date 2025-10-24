@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\CriteriaReportDataTable;
 use App\Models\Location;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class CriteriaReportController extends AccountBaseController
@@ -27,9 +28,7 @@ class CriteriaReportController extends AccountBaseController
      */
     public function index(CriteriaReportDataTable $dataTable)
     {
-        // $viewPermission = user()->permission('view_criteria_reports');
-        // abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
-
+        $this->authorize('viewAny', User::class);
         $this->locations = Location::get();
 
         return $dataTable->render('criteria-reports.index', $this->data);

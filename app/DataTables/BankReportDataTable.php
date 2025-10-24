@@ -12,6 +12,7 @@ use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 
 class BankReportDataTable extends BaseDataTable
 {
@@ -29,7 +30,7 @@ class BankReportDataTable extends BaseDataTable
                 return ++$index;
             })
             ->editColumn('net_salary', function ($user) {
-                return $user->net_salary ? $user->net_salary : 0;
+                return $user->net_salary ? $user->net_salary . ' MMK' : 0 . ' MMK';
             })
             ->editColumn('nrc', function ($user) {
                 $employee = EmployeeDetails::where('user_id', $user->id)->first();
@@ -63,12 +64,16 @@ class BankReportDataTable extends BaseDataTable
      */
     public function query(User $model): QueryBuilder
     {
-        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id')
+        $month = request()->month;
+        $year = request()->year;
+
+        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', DB::raw('CAST(salary_slips.month AS SIGNED) + 1 as test'))
             ->leftJoin('salary_slips', 'salary_slips.user_id', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
             ->leftJoin('locations', 'teams.location_id', 'locations.id')
-            ->groupBy('users.id');
+            ->where('salary_slips.year', $year)
+            ->where(DB::raw('CAST(salary_slips.month AS SIGNED) + 1'), $month);
 
         if (isset(request()->locationId) && request()->locationId != '') {
             $model->where('locations.id', request()->locationId);

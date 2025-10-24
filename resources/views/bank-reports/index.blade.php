@@ -42,6 +42,34 @@
             </div>
         </div>
 
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.month')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="month" id="month" data-live-search="true"
+                    data-size="8">
+                    @foreach ($months as $key => $month)
+                        <option value="{{ $key }}" {{ date('M') == $month ? 'selected' : '' }}>
+                            {{ $month }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.year')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="year" id="year" data-live-search="true"
+                    data-size="8">
+                    @foreach (range(date('Y'), date('Y') - 10) as $year)
+                        <option value="{{ $year }}" {{ request('year', date('Y')) == $year ? 'selected' : '' }}>
+                            {{ $year }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <!-- SEARCH BY TASK START -->
         <div class="task-search d-flex  py-1 px-lg-3 px-0 border-right-grey align-items-center">
             <form class="w-100 mr-1 mr-lg-0 mr-md-1 ml-md-1 ml-0 ml-lg-0">
@@ -73,6 +101,10 @@
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
 
+        <div>
+            <h4>Bank Report For <span id="monthName"></span></h3>
+        </div>
+
         <!-- leave table Box Start -->
         <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive">
 
@@ -92,20 +124,46 @@
     <script>
         $('#bankreport-table').on('preXhr.dt', function(e, settings, data) {
             const locationId = $('#location_id').val();
+            const month = $('#month').val();
+            const year = parseInt($("#year").val());
 
             $searchText = $('#search-text-field').val();
 
             data['searchText'] = $searchText;
             data['locationId'] = locationId;
+            data['month'] = month;
+            data['year'] = year;
+
+            const currentMonthMinusOne = parseInt($("#month").val()) - 1;
+
+            const monthName = new Date(year, currentMonthMinusOne - 1).toLocaleString('en-US', {
+                month: 'long'
+            });
+
+            $("#monthName").html(monthName)
+
         });
 
         const showTable = () => {
             window.LaravelDataTables["bankreport-table"].draw(true);
         }
 
-        $('#location_id').on('change keyup',
+        $('#location_id, #month, #year').on('change keyup',
             function() {
                 if ($('#location_id').val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($('#month').val() != "all") {
+                    const currentMonthMinusOne = parseInt($("#month").val()) - 1;
+                    const currentYear = parseInt($("#year").val());
+
+                    const monthName = new Date(currentYear, currentMonthMinusOne - 1).toLocaleString('en-US', {
+                        month: 'long'
+                    });
+
+                    $("#monthName").html(monthName);
+
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($('#year').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');
