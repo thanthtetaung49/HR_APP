@@ -141,6 +141,7 @@
         <div class="col-md-4">
             <x-forms.label class="my-3" fieldId="criteria_id" :fieldLabel="__('app.menu.exitsReason')" fieldRequired="true">
             </x-forms.label>
+
             <x-forms.input-group>
                 <select class="form-control select-picker" name="criteria_id" id="criteria_id" data-live-search="true">
                     <option value="">-----</option>
@@ -164,8 +165,13 @@
                             }
                         @endphp
 
-                        <option value="{{ $criteria->id }}" @if ($criteria->id == $model->criteria_id) selected @endif>
-                            {{ $exitReason }}</option>
+                        @if ($model)
+                            <option value="{{ $criteria->id }}" @if ($criteria->id == $model->criteria_id) selected @endif>
+                                {{ $exitReason }}</option>
+                        @else
+                            <option value="{{ $criteria->id }}">
+                                {{ $exitReason }}</option>
+                        @endif
                     @endforeach
                 </select>
             </x-forms.input-group>

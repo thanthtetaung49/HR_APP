@@ -809,7 +809,11 @@ if (!function_exists('sidebar_user_perms')) {
                 'view_criteria_reports',
                 'add_criteria_reports',
                 'edit_criteria_reports',
-                'delete_criteria_reports'
+                'delete_criteria_reports',
+                'view_bank_reports',
+                'add_bank_reports',
+                'edit_bank_reports',
+                'delete_bank_reports'
             ];
 
             $sidebarPermissions = Permission::whereIn('name', $sidebarPermissionsArray)

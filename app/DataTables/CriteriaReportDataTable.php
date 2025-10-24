@@ -119,7 +119,7 @@ class CriteriaReportDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => true, 'title' => '#'],
             __('app.menu.employees') => ['data' => 'employee_name', 'name' => 'employee_name', 'title' => __('app.menu.employees')],
             __('app.menu.exitsReason') => ['data' => 'criteria', 'name' => 'criteria', 'title' => __('app.menu.exitsReason')],
             __('app.menu.subCriteria') => ['data' => 'sub_criteria', 'name' => 'sub_criteria', 'title' => __('app.menu.subCriteria')],

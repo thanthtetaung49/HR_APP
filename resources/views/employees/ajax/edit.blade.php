@@ -886,7 +886,6 @@
                 data: data,
                 dataType: "json",
                 success: function(response) {
-                    console.log(response);
                     const subCriterias = response.subCriterias;
                     let options = '<option value="">--</option>';
 

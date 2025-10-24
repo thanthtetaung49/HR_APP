@@ -202,7 +202,7 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
     public function getColumns(): array
     {
         return [
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
+            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => true, 'title' => '#'],
             'budget_year' => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => 'Year'],
             'quarter' => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
             'location' => ['data' => 'location', 'name' => 'location', 'title' => 'Location'],

@@ -152,6 +152,7 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'bankReport' => 'Bank Report',
         'noticePeriodEndDate' => 'Notice Period End Date',
         'criteriaReport' => 'Criteria Report',
         'managementRanks' => 'Management Ranks',
@@ -447,6 +448,9 @@ return array(
         'advanced' => 'Advanced',
         'miroboard' => 'Miroboard',
         'bankaccount' => 'Bank Account',
+        'bankaccountNumber' => 'Bank Account Number',
+        'amount' => 'Amount',
+        'nrc' => 'NRC',
         'award' => 'Award',
         'appreciation' => 'Appreciation',
         'consentSettings' => 'Consent Settings',

@@ -94,6 +94,7 @@ use App\Http\Controllers\ProjectCategoryController;
 use App\Http\Controllers\ProjectTemplateController;
 use App\Http\Controllers\TimelogCalendarController;
 use App\Http\Controllers\AttendanceReportController;
+use App\Http\Controllers\BankReportController;
 use App\Http\Controllers\CauseController;
 use App\Http\Controllers\ContractTemplateController;
 use App\Http\Controllers\EmergencyContactController;
@@ -438,6 +439,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('turn-over-reports/export-all-leave', [TurnOverReportController::class, 'exportTurnOverReport'])->name('turnOverReports.export');
     Route::get('turn-over-reports/filter', [TurnOverReportController::class, 'filterTurnOverReport'])->name('turnOverReports.filter');
     Route::resource('turn-over-reports', TurnOverReportController::class);
+
+    /* Bank Report */
+    Route::resource('bank-reports', BankReportController::class);
 
     /* KnowledgeBase */
     Route::get('knowledgebase/create/{id?}', [KnowledgeBaseController::class, 'create'])->name('knowledgebase.create');

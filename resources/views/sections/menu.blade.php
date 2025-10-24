@@ -150,7 +150,7 @@
                 @endif
 
                 @if (isset($sidebarUserPermissions['view_sub_criteria']) && $sidebarUserPermissions['view_sub_criteria'] == 4)
-                <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
+                    <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
                 @endif
 
                 @if (isset($sidebarUserPermissions['view_criteria']) && $sidebarUserPermissions['view_criteria'] == 4)
@@ -171,6 +171,10 @@
 
                 @if (isset($sidebarUserPermissions['view_turn_over_reports']) && $sidebarUserPermissions['view_turn_over_reports'] == 4)
                     <x-sub-menu-item :link="route('turn-over-reports.index')" :text="__('app.menu.turnOverReport')" />
+                @endif
+
+                @if (isset($sidebarUserPermissions['view_bank_reports']) && $sidebarUserPermissions['view_bank_reports'] == 4)
+                    <x-sub-menu-item :link="route('bank-reports.index')" :text="__('app.menu.bankReport')" />
                 @endif
 
 
