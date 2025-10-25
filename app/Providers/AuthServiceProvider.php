@@ -6,6 +6,7 @@ use App\Models\Location;
 use App\Models\ManPowerReport;
 use App\Models\ReportPermission;
 use App\Models\User;
+use App\Policies\AdminHRManagerPolicy;
 use App\Policies\BankReportPolicy;
 use App\Policies\CriteriaPolicy;
 use App\Policies\CriteriaReportPolicy;
@@ -28,14 +29,7 @@ class AuthServiceProvider extends ServiceProvider
     protected $policies = [
         /* 'App\Models\Model' => 'App\Policies\ModelPolicy', */
         ReportPermission::class => ManPowerReportPolicy::class,
-        User::class => BankReportPolicy::class,
-        User::class => CriteriaReportPolicy::class,
-        User::class => ManagementRankPolicy::class,
-        User::class => SubCriteriaPolicy::class,
-        User::class => CriteriaPolicy::class,
-        User::class => ReportPermissionPolicy::class,
-        User::class => TurnOverReportPolicy::class,
-        User::class => LocationPolicy::class
+        User::class => AdminHRManagerPolicy::class
     ];
 
     /**
@@ -46,8 +40,6 @@ class AuthServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerPolicies();
-
-        // dd('AuthServiceProvider loaded', $this->policies);
     }
 
 }
