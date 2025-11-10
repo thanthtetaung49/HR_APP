@@ -1334,6 +1334,8 @@ return array(
         ),
     ),
     'attendance' => array(
+        'exclamationlate' => 'Late',
+        'breakTime' => 'Break Time',
         'autoClockIn' => 'Auto clock-in employee by first sign in',
         'officeStartTime' => 'Shift Start Time',
         'officeEndTime' => 'Shift End Time',

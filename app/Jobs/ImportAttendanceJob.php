@@ -66,14 +66,14 @@ class ImportAttendanceJob implements ShouldQueue
                 try {
                     $now = now($this->company->timezone);
 
-                    // dd($this->break_time_late);
-
                     $clock_in_time = Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_in_time'))->format('Y-m-d H:i:s');
                     $clock_in_ip = $this->isColumnExists('clock_in_ip') ? $this->getColumnValue('clock_in_ip') : '127.0.0.1';
                     $clock_out_time = $this->isColumnExists('clock_out_time') ? Carbon::createFromFormat('Y-m-d H:i:s', $this->getColumnValue('clock_out_time'))->format('Y-m-d H:i:s') : null;
                     $clock_out_ip = $this->isColumnExists('clock_out_ip') ? $this->getColumnValue('clock_out_ip') : '127.0.0.1';
                     $work_from_type = $this->isColumnExists('working_from') ? $this->getColumnValue('working_from') : 'office';
                     $half_day = $this->isColumnExists('half_day') && str($this->getColumnValue('half_day'))->lower() == 'yes' ? 'yes' : 'no';
+
+                    $carbonDate = Carbon::parse($this->getColumnValue('clock_in_time'))->startOfDay();
 
                     $employeeShift = EmployeeShiftSchedule::with('shift')
                         ->where('user_id', $user->id)
@@ -82,7 +82,8 @@ class ImportAttendanceJob implements ShouldQueue
 
                     $showClockIn = AttendanceSetting::first();
 
-                    $attendanceSettings = $this->attendanceShift($showClockIn);
+                    // $attendanceSettings = $this->attendanceShift($showClockIn);
+                    $attendanceSettings = $this->attendanceShift($showClockIn, $user->id, $carbonDate, $clock_in_time);
 
                     if (isset($employeeShift)) {
                         $startTimestamp = now($this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
@@ -175,25 +176,30 @@ class ImportAttendanceJob implements ShouldQueue
     }
 
 
-    public function attendanceShift($defaultAttendanceSettings)
+    public function attendanceShift($defaultAttendanceSettings = null, $userId = null, $date = null, $clockInTime = null)
     {
-        $checkPreviousDayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
-            ->where('date', now($this->company->timezone)->subDay()->toDateString())
+        // dd($defaultAttendanceSettings, $userId, $date, $clockInTime);
+
+        $checkPreviousDayShift = EmployeeShiftSchedule::without('shift')->where('user_id', $userId)
+            ->where('date', $date->copy()->subDay()->toDateString())
             ->first();
 
-        $checkTodayShift = EmployeeShiftSchedule::with('shift')->where('user_id', user()->id)
-            ->where('date', now(company()->timezone)->toDateString())
+        $checkTodayShift = EmployeeShiftSchedule::without('shift')->where('user_id', $userId)
+            ->where('date', $date->copy()->toDateString())
             ->first();
 
-        $backDayFromDefault = Carbon::parse(now($this->company->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_start_time, $this->company->timezone);
+        $backDayFromDefault = Carbon::parse($date->copy()->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_start_time);
 
-        $backDayToDefault = Carbon::parse(now($this->company->timezone)->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_end_time, $this->company->timezone);
+        $backDayToDefault = Carbon::parse($date->copy()->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_end_time);
 
         if ($backDayFromDefault->gt($backDayToDefault)) {
             $backDayToDefault->addDay();
         }
 
-        $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', now($this->company->timezone)->toDateTimeString(), 'UTC');
+        $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', $clockInTime, 'UTC');
+
+
+        // $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', $date->copy()->toDateString() . ' ' . $clockInTime, 'UTC');
 
         if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
             $attendanceSettings = $checkPreviousDayShift;
@@ -201,22 +207,15 @@ class ImportAttendanceJob implements ShouldQueue
             $attendanceSettings = $defaultAttendanceSettings;
         } else if (
             $checkTodayShift &&
-            ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time)
-                || $nowTime->gt($checkTodayShift->shift_end_time)
-                || (!$nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) && $defaultAttendanceSettings->show_clock_in_button == 'no'))
+            ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) || $nowTime->gt($checkTodayShift->shift_end_time))
         ) {
             $attendanceSettings = $checkTodayShift;
-        } else if ($checkTodayShift && !is_null($checkTodayShift->shift->early_clock_in)) {
+        } else if ($checkTodayShift && $checkTodayShift->shift->shift_type == 'flexible') {
             $attendanceSettings = $checkTodayShift;
         } else {
             $attendanceSettings = $defaultAttendanceSettings;
         }
 
-
-        if (isset($attendanceSettings->shift)) {
-            return $attendanceSettings->shift;
-        }
-
-        return $attendanceSettings;
+        return $attendanceSettings->shift;
     }
 }

@@ -127,11 +127,11 @@ class FortifyServiceProvider extends ServiceProvider
             $globalSetting = global_setting();
             // Is worksuite
             $company = Company::withCount('users')->first();
-
+/**
             if (!$this->isLegal()) {
                 return redirect('verify-purchase');
             }
-
+**/
             App::setLocale($globalSetting->locale);
             Carbon::setLocale($globalSetting->locale);
             setlocale(LC_TIME, $globalSetting->locale . '_' . mb_strtoupper($globalSetting->locale));

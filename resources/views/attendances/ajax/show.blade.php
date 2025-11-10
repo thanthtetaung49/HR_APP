@@ -129,8 +129,8 @@
                                         @endphp
 
                                         @if ($showLateIcon)
-                                            <i class="fa fa-exclamation-triangle ml-2"></i>
-                                            @lang('modules.attendance.late')
+                                            <i class="fa fa--triangle ml-2"></i>
+                                            @lang('modules.attendance.exclamationlate')
                                         @endif
 
                                         @if ($item->half_day === 'yes')

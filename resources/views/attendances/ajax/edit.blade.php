@@ -135,11 +135,9 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                             </x-forms.select>
                         </div>
 
-                        {{-- {{ $row }} --}}
-
                         @if ($row->total_clock_in == 0)
                             <div class="col-lg-2 col-md-6">
-                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->break_time_late == 'yes' && $row->number_of_rows == 2)"
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->break_time_late == 'yes')"
                                     :fieldLabel="__('modules.attendance.breakTime')" fieldName="breakTime"
                                     fieldId="breakTime" />
                             </div>
