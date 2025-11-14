@@ -106,10 +106,6 @@ class ImportAttendanceJob implements ShouldQueue
                     }
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
-                        if ($attendanceSettings->halfday_mark_time) {
-                            $halfDayTimes = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time, $this->company->timezone);
-                        }
-
                         // Check maximum attendance in a day
                         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $officeStartTime->format('H:i:s'), $this->company->timezone);
 
@@ -177,8 +173,6 @@ class ImportAttendanceJob implements ShouldQueue
 
     public function attendanceShift($defaultAttendanceSettings = null, $userId = null, $date = null, $clockInTime = null)
     {
-        // dd($defaultAttendanceSettings, $userId, $date, $clockInTime);
-
         $checkPreviousDayShift = EmployeeShiftSchedule::without('shift')->where('user_id', $userId)
             ->where('date', $date->copy()->subDay()->toDateString())
             ->first();

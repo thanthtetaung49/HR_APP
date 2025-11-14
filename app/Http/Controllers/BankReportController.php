@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\BankReportDataTable;
-use App\Models\Location;
 use App\Models\User;
+use App\Models\Location;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\DataTables\BankReportDataTable;
+use App\Exports\BankReportExport;
 
 class BankReportController extends AccountBaseController
 {
@@ -52,5 +54,14 @@ class BankReportController extends AccountBaseController
             11 => "Nov",
             12 => "Dec"
         ];
+    }
+
+    public function exportAllAttendance($location, $month, $year)
+    {
+        abort_403(!canDataTableExport());
+
+        $date = now()->format('Y-m-d');
+
+        return Excel::download(new BankReportExport($location, $month, $year), 'Bank_Report_' . $date . '.xlsx');
     }
 }

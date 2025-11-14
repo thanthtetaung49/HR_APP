@@ -408,6 +408,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     /* Criteria Reports */
     Route::resource('criteria-reports', CriteriaReportController::class);
+    Route::get('criteria-reports/export-all-criteria-report/{location}/{department}/{designation}', [CriteriaReportController::class, 'exportAllAttendance'])->name('criteria-reports.export_all_attendance');
 
     /* Management Ranks */
     Route::post('management-ranks/apply-quick-action', [ManagementRankController::class, 'applyQuickAction'])->name('managementRanks.apply_quick_action');
@@ -418,6 +419,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('man-power-reports/apply-quick-action', [ManPowerReportController::class, 'applyQuickAction'])->name('manPowerReports.apply_quick_action');
     Route::get('man-power-reports/filter/departments', [ManPowerReportController::class, 'applyDepartmentFilter'])->name('manPowerReports.apply_department_filter');
     Route::get('man-power-reports/history/{id?}', [ManPowerReportController::class, 'history'])->name('manPowerReports.history');
+    Route::get('man-power-reports/export-all-man-power-report/{location}/{team}/{position}/{budgetYear}/{quarter}', [ManPowerReportController::class, 'exportAllAttendance'])->name('man-power-reports.export_all_attendance');
 
     /* Sub criteria */
     Route::resource('sub-criteria', SubCriteriaController::class);
@@ -442,6 +444,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     /* Bank Report */
     Route::resource('bank-reports', BankReportController::class);
+    Route::get('bank-reports/export-all-bank-report/{location}/{month}/{year}', [BankReportController::class, 'exportAllAttendance'])->name('bank-reports.export_all_attendance');
 
     /* KnowledgeBase */
     Route::get('knowledgebase/create/{id?}', [KnowledgeBaseController::class, 'create'])->name('knowledgebase.create');

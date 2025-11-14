@@ -239,7 +239,7 @@ class ManPowerReportDataTable extends BaseDataTable
         THEN allowances.basic_salary
         ELSE 0
     END) as basic_salary'),
-    DB::raw('SUM(CASE
+                DB::raw('SUM(CASE
         WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
         AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
         AND (
@@ -248,7 +248,7 @@ class ManPowerReportDataTable extends BaseDataTable
         THEN allowances.technical_allowance
         ELSE 0
     END) as technical_allowance'),
-    DB::raw('SUM(CASE
+                DB::raw('SUM(CASE
         WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
         AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
         AND (
@@ -326,7 +326,7 @@ class ManPowerReportDataTable extends BaseDataTable
         THEN allowances.basic_salary
         ELSE 0
     END) as basic_salary'),
-    DB::raw('SUM(CASE
+                DB::raw('SUM(CASE
         WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
         AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
         AND (
@@ -335,7 +335,7 @@ class ManPowerReportDataTable extends BaseDataTable
         THEN allowances.technical_allowance
         ELSE 0
     END) as technical_allowance'),
-     DB::raw('SUM(CASE
+                DB::raw('SUM(CASE
         WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
         AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
         AND (
@@ -478,17 +478,17 @@ class ManPowerReportDataTable extends BaseDataTable
             ],
 
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
-            'budget_year' => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => 'Year'],
-            'quarter' => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
-            'location' => ['data' => 'location', 'name' => 'location', 'title' => 'Location'],
-            'position' => ['data' => 'position', 'name' => 'position', 'title' => 'Position'],
-            'man_power_setup' => ['data' => 'man_power_setup', 'name' => 'man_power_setup', 'title' => 'Man Power Budget'],
-            'actual_man_power' => ['data' => 'actual_man_power', 'name' => 'actual_man_power', 'title' => 'Man Power Actual'],
-            'max_man_power_basic_salary' => ['data' => 'max_man_power_basic_salary', 'name' => 'max_man_power_basic_salary', 'title' => 'Max Salary Budget'],
-            'total_man_power_basic_salary' => ['data' => 'total_man_power_basic_salary', 'name' => 'total_man_power_basic_salary', 'title' => 'Salary Actual'],
-            'vacancy_percent' => ['data' => 'vacancy_percent', 'name' => 'vacancy_percent', 'title' => 'Vacancy %'],
-            'team' => ['data' => 'team', 'name' => 'team', 'title' => __('app.menu.department')],
-            'status' => ['data' => 'status', 'name' => 'status', 'title' => __('app.menu.status')],
+            __('app.menu.budgetYear') => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => __('app.menu.budgetYear')],
+            __('app.menu.quarter') => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
+            __('app.menu.location') => ['data' => 'location', 'name' => 'location', 'title' =>  __('app.menu.location')],
+            __('app.menu.position') => ['data' => 'position', 'name' => 'position', 'title' =>__('app.menu.position')],
+            __('app.menu.manPowerSetup') => ['data' => 'man_power_setup', 'name' => 'man_power_setup', 'title' =>  __('app.menu.manPowerSetup')],
+            __('app.menu.actualManPower') => ['data' => 'actual_man_power', 'name' => 'actual_man_power', 'title' =>  __('app.menu.actualManPower')],
+            __('app.menu.maxManPowerBasicSalary') => ['data' => 'max_man_power_basic_salary', 'name' => 'max_man_power_basic_salary', 'title' =>__('app.menu.maxManPowerBasicSalary')],
+            __('app.menu.totalManPowerBasicSalary') => ['data' => 'total_man_power_basic_salary', 'name' => 'total_man_power_basic_salary', 'title' => __('app.menu.totalManPowerBasicSalary')],
+            __('app.menu.vacancyPercent') => ['data' => 'vacancy_percent', 'name' => 'vacancy_percent', 'title' => __('app.menu.vacancyPercent')],
+            __('app.menu.department') => ['data' => 'team', 'name' => 'team', 'title' => __('app.menu.department')],
+            __('app.menu.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.menu.status')],
             __('app.menu.approvedDate') => ['data' => 'approved_date', 'name' => 'approved_date', 'title' => __('app.menu.approvedDate')],
             __('app.menu.remarkFrom') => ['data' => 'remark_from', 'name' => 'remark_from', 'title' => __('app.menu.remarkFrom')],
             __('app.menu.remarkTo') => ['data' => 'remark_to', 'name' => 'remark_to', 'title' => __('app.menu.remarkTo')],

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\CriteriaReportDataTable;
-use App\Models\Location;
 use App\Models\User;
+use App\Models\Location;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CriteriaReportExport;
+use App\DataTables\CriteriaReportDataTable;
 
 class CriteriaReportController extends AccountBaseController
 {
@@ -34,51 +36,12 @@ class CriteriaReportController extends AccountBaseController
         return $dataTable->render('criteria-reports.index', $this->data);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function exportAllAttendance($location, $department, $designation)
     {
-        //
-    }
+        abort_403(!canDataTableExport());
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        $date = now()->format('Y-m-d');
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return Excel::download(new CriteriaReportExport($location, $department, $designation), 'Criteria_Report_' . $date . '.xlsx');
     }
 }

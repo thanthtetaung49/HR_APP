@@ -335,7 +335,7 @@ class BiometricEmployee extends BaseModel
 
         $attendance = Attendance::where('user_id', $user->id)
             ->whereDate('clock_in_time', $carbonDate)
-            ->orderBy('clock_in_time', 'desc')
+            // ->orderBy('id', 'asec')
             ->take(2)
             ->get();
 
@@ -351,7 +351,7 @@ class BiometricEmployee extends BaseModel
         if ($breakIn && $breakOut) {
 
             $breakInBeforeHalfday = $breakIn->lt($halfdayMark);
-            $clockInAfterBreakOut = $clockIn->gt($breakOut);
+            $clockInAfterBreakOut = $breakIn->gt($breakOut);
 
             if ($breakInBeforeHalfday && $clockInAfterBreakOut) {
                 $break_time_late = 'yes';

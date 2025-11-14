@@ -5,14 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Team;
 use App\Helper\Reply;
 use App\Models\Location;
+use App\Models\Designation;
 use Illuminate\Http\Request;
 use App\Models\ManPowerReport;
+use App\Models\ReportPermission;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ManPowerReportExport;
+use App\Models\ManPowerReportHistory;
 use Illuminate\Support\Facades\Validator;
 use App\DataTables\ManPowerReportDataTable;
 use App\DataTables\ManPowerReportHistoryDataTable;
-use App\Models\Designation;
-use App\Models\ManPowerReportHistory;
-use App\Models\ReportPermission;
 
 class ManPowerReportController extends AccountBaseController
 {
@@ -319,5 +321,14 @@ class ManPowerReportController extends AccountBaseController
         $designations = Designation::whereIn('id', json_decode($team->designation_ids))->get();
 
         return response()->json(['designations' => $designations]);
+    }
+
+    public function exportAllAttendance($location, $team, $position, $budgetYear, $quarter)
+    {
+        abort_403(!canDataTableExport());
+
+        $date = now()->format('Y-m-d');
+
+        return Excel::download(new ManPowerReportExport($location, $team, $position, $budgetYear, $quarter), 'Man_Power_Report_' . $date . '.xlsx');
     }
 }

@@ -61,7 +61,7 @@
 
         <!-- DATE END -->
 
-         <!-- SEARCH BY TASK START -->
+        <!-- SEARCH BY TASK START -->
         <div class="task-search d-flex  py-1 px-lg-3 px-0 border-right-grey align-items-center">
             <form class="w-100 mr-1 mr-lg-0 mr-md-1 ml-md-1 ml-0 ml-lg-0">
                 <div class="input-group bg-grey rounded">
@@ -91,6 +91,15 @@
 @section('content')
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
+        <div class="d-grid d-lg-flex d-md-flex action-bar">
+            <div id="table-actions" class="flex-grow-1 align-items-center">
+                @if (canDataTableExport())
+                    <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                        @lang('app.exportExcel')
+                    </x-forms.button-secondary>
+                @endif
+            </div>
+        </div>
 
         <!-- leave table Box Start -->
         <div class="d-flex flex-column w-tables rounded mt-3 bg-white">
@@ -246,5 +255,21 @@
 
             showTable();
         });
+
+        @if (canDataTableExport())
+            $('#export-all').click(function() {
+                let location = $('#location_id').val();
+                let department = $('#team_id').val();
+                let designation = $('#position').val();
+
+
+                var url =
+                    "{{ route('criteria-reports.export_all_attendance', [':location', ':department', ':designation']) }}";
+                url = url.replace(':location', location).replace(
+                    ':department', department).replace(':designation', designation);
+                window.location.href = url;
+
+            });
+        @endif
     </script>
 @endpush

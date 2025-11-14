@@ -100,9 +100,18 @@
 @section('content')
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
-
         <div>
             <h4>Bank Report For <span id="monthName"></span></h3>
+        </div>
+
+        <div class="d-grid d-lg-flex d-md-flex action-bar mt-2">
+            <div id="table-actions" class="flex-grow-1 align-items-center">
+                @if (canDataTableExport())
+                    <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                        @lang('app.exportExcel')
+                    </x-forms.button-secondary>
+                @endif
+            </div>
         </div>
 
         <!-- leave table Box Start -->
@@ -186,5 +195,20 @@
                 showTable();
             }
         });
+
+        @if (canDataTableExport())
+            $('#export-all').click(function() {
+                var location = $('#location_id').val() ? $('#location_id').val() : 'all';
+                var month = $('#month').val();
+                var year = parseInt($("#year").val());
+
+                var url =
+                    "{{ route('bank-reports.export_all_attendance', [':location', ':month', ':year']) }}";
+                url = url.replace(':location', location).replace(
+                    ':month', month).replace(':year', year);
+                window.location.href = url;
+
+            });
+        @endif
     </script>
 @endpush
