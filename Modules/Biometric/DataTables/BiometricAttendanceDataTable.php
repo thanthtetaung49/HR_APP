@@ -106,7 +106,7 @@ class BiometricAttendanceDataTable extends BaseDataTable
         }
 
 
-
+        // dd($model->get()->toArray());
 
         return $model;
     }

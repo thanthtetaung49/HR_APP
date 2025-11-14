@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Biometric\Http\Controllers\ZKTecoController;
+use Modules\Biometric\Http\Controllers\BiometricAttendanceController;
 
 // ZKTeco device routes
 
@@ -13,3 +14,6 @@ Route::post('/iclock/cdata', [ZKTecoController::class, 'handleAttendanceData']);
 Route::post('/iclock/devicecmd', [ZKTecoController::class, 'handleDeviceCommand']);
 Route::get('/iclock/getrequest', [ZKTecoController::class, 'handleGetRequest']);
 Route::get('/iclock/ping', [ZKTecoController::class, 'handlePing']);
+
+
+

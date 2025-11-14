@@ -82,7 +82,6 @@ class ImportAttendanceJob implements ShouldQueue
 
                     $showClockIn = AttendanceSetting::first();
 
-                    // $attendanceSettings = $this->attendanceShift($showClockIn);
                     $attendanceSettings = $this->attendanceShift($showClockIn, $user->id, $carbonDate, $clock_in_time);
 
                     if (isset($employeeShift)) {

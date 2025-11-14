@@ -125,7 +125,7 @@
 @include('sections.datatable_js')
 
 <script>
-    
+
     "use strict"; // Enforces strict mode for the entire script
     $('#biometric-attendance-table').on('preXhr.dt', function(e, settings, data) {
 
