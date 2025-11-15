@@ -253,8 +253,6 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             $model->where('man_power_reports.budget_year', request()->budgetYear);
         }
 
-        // dd($model->get()->toArray());
-
         return $model->get();
     }
 
@@ -290,7 +288,6 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
     {
         static $index = 0;
 
-        // Quarter mapping
         $quarterMap = [
             1 => 'Q1 (Jan - Mar)',
             2 => 'Q2 (Apr - Jun)',
@@ -299,7 +296,6 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
         ];
         $quarter = $quarterMap[$row['quarter']] ?? '';
 
-        // Force numeric values
         $manPowerSetup       = (int) ($row['man_power_setup'] ?? 0);
         $actualManPower      = (int) ($row['count_employee'] ?? 0);
         $basicSalary         = (int) ($row['basic_salary'] ?? 0);
@@ -309,7 +305,6 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
 
         $totalManPowerBasicSalary = $basicSalary + $technicalAllowance + $livingCostAllowance;
 
-        // Vacancy %
         if ($manPowerSetup <= 0) {
             $vacancy = 100;
         } elseif ($manPowerSetup <= $actualManPower) {

@@ -259,7 +259,7 @@ class BiometricEmployee extends BaseModel
             }
         }
 
-        dd('Attendance marking completed.');
+        // dd('Attendance marking completed.');
     }
 
 
@@ -315,11 +315,14 @@ class BiometricEmployee extends BaseModel
         $employee_shift_id = $employeeShiftId;
         $location_id = $user->employeeDetail->company_address_id;
 
+
         if ($clockInCarbon->greaterThan($lateTime)) {
             $late = 'yes';
         } else {
             $late = 'no';
         }
+
+        // dd($clockInCarbon, $lateTime, $late);
 
         $shift_start_time = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $user->company->timezone);
         $clockInOfficeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $user->company->timezone);
@@ -333,34 +336,6 @@ class BiometricEmployee extends BaseModel
 
         $shift_end_time = Carbon::createFromFormat('Y-m-d H:i:s', $shift_end_time, $user->company->timezone);
 
-        $attendance = Attendance::where('user_id', $user->id)
-            ->whereDate('clock_in_time', $carbonDate)
-            // ->orderBy('id', 'asec')
-            ->take(2)
-            ->get();
-
-        $breakIn  = $attendance[1]->clock_in_time ?? null;
-        $breakOut = isset($attendance[0])
-            ? Carbon::parse($attendance[0]->clock_out_time)->addMinutes(45)
-            : null;
-
-        $halfdayMark = Carbon::parse($halfday_mark_time);
-
-        $break_time_late = 'no';
-
-        if ($breakIn && $breakOut) {
-
-            $breakInBeforeHalfday = $breakIn->lt($halfdayMark);
-            $clockInAfterBreakOut = $breakIn->gt($breakOut);
-
-            if ($breakInBeforeHalfday && $clockInAfterBreakOut) {
-                $break_time_late = 'yes';
-            } elseif (!$breakInBeforeHalfday) {
-                $break_time_late = 'yes';
-            }
-        }
-
-
         // Get the last attendance record for this user on this day
         $lastAttendance = Attendance::where('user_id', $user->id)
             ->whereDate('clock_in_time', $carbonDate)
@@ -371,32 +346,61 @@ class BiometricEmployee extends BaseModel
             // If no record exists or last record has clock_out_time, create a new clock in
             if (!$lastAttendance || $lastAttendance->clock_out_time !== null) {
                 // Clock In
-                $user->attendance()->create([
+                $lastAttendanceBeforeClockOut = $user->attendance()->create([
                     'clock_in_time' => $appTimezone,
                     'half_day' => 'no',
                     'clock_in_type' => 'biometric',
                     'work_from_type' => 'office',
                     'clock_in_ip' => request()->ip(),
-                    'late' => $late,
+                    'late' => $late, // first record
                     'employee_shift_id' => $employee_shift_id,
                     'location_id' => $location_id,
                     'shift_start_time' => $shift_start_time,
                     'shift_end_time' => $shift_end_time,
-                    'break_time_late' => $break_time_late
                 ]);
+
+                $firstAttendance = Attendance::where('user_id', $user->id)
+                    ->whereDate('clock_in_time', $carbonDate)
+                    ->first();
+
+                $breakIn  = $lastAttendanceBeforeClockOut->clock_in_time ?? null;
+                $breakOut = isset($firstAttendance)
+                    ? Carbon::parse($firstAttendance->clock_out_time)->addMinutes(45)
+                    : null;
+
+                Log::info("breakIn", ["breakIn" => $breakIn]);
+                Log::info("breakOut", ["breakOut" => $breakOut]);
+
+                $halfdayMark = Carbon::parse($halfday_mark_time);
+
+                $break_time_late = 'no';
+
+                if ($breakIn && $breakOut) {
+
+                    $breakInBeforeHalfday = $breakIn->lt($halfdayMark);
+                    $clockInAfterBreakOut = $breakIn->gt($breakOut);
+
+                    if ($breakInBeforeHalfday && $clockInAfterBreakOut) {
+                        $break_time_late = 'yes';
+                    } elseif (!$breakInBeforeHalfday) {
+                        $break_time_late = 'yes';
+                    }
+
+                    $lastAttendanceBeforeClockOut->update([
+                        'break_time_late' => $break_time_late // update the second record
+                    ]);
+
+                    Log::info("breakInBeforeHalfday", ["breakInBeforeHalfday" => $breakIn->lt($halfdayMark)]);
+                    Log::info("clockInAfterBreakOut", ["clockInAfterBreakOut" => $breakIn->gt($breakOut)]);
+                    Log::info("break_time_late", ["break_time_late" => $break_time_late]);
+                }
             } else {
                 // Clock Out - if last record exists and has no clock_out_time
                 $lastAttendance->update([
                     'clock_out_time' => $appTimezone,
                     'clock_out_type' => 'biometric',
                     'work_from_type' => 'office',
-                    'clock_out_ip' => request()->ip(),
-                    'late' => $late,
-                    'employee_shift_id' => $employee_shift_id,
-                    'location_id' => $location_id,
-                    'shift_start_time' => $shift_start_time,
-                    'shift_end_time' => $shift_end_time,
-                    'break_time_late' => $break_time_late
+                    'clock_out_ip' => request()->ip()
                 ]);
             }
         }
