@@ -48,13 +48,6 @@ class BiometricAttendanceController extends AccountBaseController
         // $rows = ["1\t2025-11-11 12:40:34\t0\t1\t0\t0\t0\t0\t0\t0\t", ""];
         $rows = ["1\t2025-11-11 13:30:34\t0\t1\t0\t0\t0\t0\t0\t0\t", ""];
 
-        // $rows = ["1\t2025-11-08 13:02:34\t0\t1\t0\t0\t0\t0\t0\t0\t", ""];
-
-
-        // $rows = ["1\t2025-11-10 15:30:34\t0\t1\t0\t0\t0\t0\t0\t0\t", ""];
-        // $rows = ["1\t2025-11-10 17:12:34\t0\t1\t0\t0\t0\t0\t0\t0\t", ""];
-        // $rows = ["1\t2025-11-10 17:15:34\t0\t1\t0\t0\t0\t0\t0\t0\t", ""];
-
 
         $device = new stdClass();
         $device->id = 1;
