@@ -149,14 +149,19 @@
                     <x-sub-menu-item :link="route('management-ranks.index')" :text="__('app.menu.managementRanks')" />
                     <x-sub-menu-item :link="route('sub-criteria.index')" :text="__('app.menu.subCriteria')" />
                     <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.exitsReason')" />
-                    <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                     <x-sub-menu-item :link="route('criteria-reports.index')" :text="__('app.menu.criteriaReport')" />
                     <x-sub-menu-item :link="route('turn-over-reports.index')" :text="__('app.menu.turnOverReport')" />
                     <x-sub-menu-item :link="route('bank-reports.index')" :text="__('app.menu.bankReport')" />
+                    <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                 @endcan
 
                 @can('viewAny', App\Models\ManPowerReport::class)
                     <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
+                @endcan
+
+
+                @can('viewAny', App\Models\User::class)
+                    <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                 @endcan
 
                 <!-- NAV ITEM - CUSTOM MODULES  -->

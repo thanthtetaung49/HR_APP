@@ -97,7 +97,7 @@
                     <thead>
                         <tr>
                             <th colspan="6">
-                                <h3>Turn Over Report
+                                <h3>Turnover Report
                                     <span id="locationTitle">(All Location)</span>
                                 </h3>
                             </th>
