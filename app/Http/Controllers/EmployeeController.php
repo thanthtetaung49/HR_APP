@@ -457,8 +457,8 @@ class EmployeeController extends AccountBaseController
 
         $this->pageTitle = __('app.update') . ' ' . __('app.employee');
         $this->skills = Skill::all()->pluck('name')->toArray();
-        $this->teams = Team::allDepartments();
-        $this->designations = Designation::allDesignations();
+        // $this->teams = Team::allDepartments();
+        // $this->designations = Designation::allDesignations();
         $this->countries = countries();
         $this->languages = LanguageSetting::where('status', 'enabled')->get();
         $exceptUsers = [$id];
@@ -471,6 +471,10 @@ class EmployeeController extends AccountBaseController
         // dd($this->criterias->toArray());
         $this->criteria = Criteria::where('id', $this->employee->employeeDetail->criteria_id)
             ->first();
+
+        $this->teams = Team::where('location_id', $this->employee->location_id)->get();
+        $selectedTeams = Team::where('id', $this->employee->department_id)->first();
+        $this->designations = Designation::whereIn('id', json_decode($selectedTeams->designation_ids))->get();
 
         $this->subCriterias = null;
 

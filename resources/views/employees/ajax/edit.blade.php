@@ -106,10 +106,9 @@
                                         id="employee_department" data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($teams as $team)
-                                            @if ($team->id == $employee->department_id)
-                                                <option value="{{ $team->id }}" selected>{{ $team->team_name }}
-                                                </option>
-                                            @endif
+                                            <option value="{{ $team->id }}"
+                                                @if ($team->id == $employee->department_id) selected @endif>{{ $team->team_name }}
+                                            </option>
                                         @endforeach
                                     </select>
 
@@ -130,10 +129,9 @@
                                         id="employee_designation" data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($designations as $designation)
-                                            @if ($designation->id == $employee->designation_id)
-                                                <option value="{{ $designation->id }}" selected>
-                                                    {{ $designation->name }}</option>
-                                            @endif
+                                            <option value="{{ $designation->id }}"
+                                                @if ($designation->id == $employee->designation_id) selected @endif>
+                                                {{ $designation->name }}</option>
                                         @endforeach
                                     </select>
 
@@ -499,7 +497,8 @@
 
                 {{-- <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail" ></x-forms.custom-field> --}}
 
-                <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail" :subCriterias="$subCriterias"></x-forms.custom-field>
+                <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail"
+                    :subCriterias="$subCriterias"></x-forms.custom-field>
 
                 <x-form-actions>
                     <x-forms.button-primary id="save-form" class="mr-3" icon="check">@lang('app.save')
@@ -873,32 +872,32 @@
         });
     @endif
 
-     $('#criteria_id').on('change', function() {
-            const criteriaId = $(this).val();
+    $('#criteria_id').on('change', function() {
+        const criteriaId = $(this).val();
 
-            const data = {
-                criteriaId: criteriaId
-            }
+        const data = {
+            criteriaId: criteriaId
+        }
 
-            $.ajax({
-                type: "GET",
-                url: "{{ route('filterExistReason') }}",
-                data: data,
-                dataType: "json",
-                success: function(response) {
-                    const subCriterias = response.subCriterias;
-                    let options = '<option value="">--</option>';
+        $.ajax({
+            type: "GET",
+            url: "{{ route('filterExistReason') }}",
+            data: data,
+            dataType: "json",
+            success: function(response) {
+                const subCriterias = response.subCriterias;
+                let options = '<option value="">--</option>';
 
-                    if (subCriterias) {
-                        subCriterias.forEach(element => {
-                            options +=
-                                `<option value="${element.id}">${element.sub_criteria}</option>`
-                        });
-                    }
-
-                    $('#sub_criteria_id').html(options);
-                    $('#sub_criteria_id').selectpicker('refresh');
+                if (subCriterias) {
+                    subCriterias.forEach(element => {
+                        options +=
+                            `<option value="${element.id}">${element.sub_criteria}</option>`
+                    });
                 }
-            });
-        })
+
+                $('#sub_criteria_id').html(options);
+                $('#sub_criteria_id').selectpicker('refresh');
+            }
+        });
+    })
 </script>

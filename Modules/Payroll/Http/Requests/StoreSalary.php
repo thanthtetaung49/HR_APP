@@ -22,6 +22,10 @@ class StoreSalary extends FormRequest
             'living_cost_allowance' => 'required',
             'special_allowance' => 'required',
             'other_detection' => 'required',
+            'credit_sales' => 'required',
+            'deposit' => 'required',
+            'loan' => 'required',
+            'ssb' => 'required'
         ];
     }
 

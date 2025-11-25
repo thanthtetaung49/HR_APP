@@ -91,8 +91,6 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $allowance->technical_allowance = $request->technical_allowance;
         $allowance->living_cost_allowance = $request->living_cost_allowance;
         $allowance->special_allowance = $request->special_allowance;
-
-        $allowance->special_allowance = $request->special_allowance;
         $allowance->save();
 
         // detection

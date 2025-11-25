@@ -196,6 +196,13 @@ class ManPowerReportDataTable extends BaseDataTable
             4 => [10, 12],
         ];
 
+        $cumulativeRanges = [
+            1 => [1, 12],  // Q1: Jan-Dec
+            2 => [4, 12],  // Q2: Apr-Dec
+            3 => [7, 12],  // Q3: Jul-Dec
+            4 => [10, 12], // Q4: Oct-Dec
+        ];
+
         $roles = auth()->user()->roles;
         $isAdmin = $roles->contains(function ($role) {
             return $role->name === 'admin';
@@ -214,37 +221,57 @@ class ManPowerReportDataTable extends BaseDataTable
             'designations.name as position',
             DB::raw(
                 'COUNT(DISTINCT CASE
-            WHEN (YEAR(employee_details.created_at) = man_power_reports.budget_year OR employee_details.created_at IS NULL)
-            AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
-            AND (
-                employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
-            )
-            THEN employee_details.id
-        END) as count_employee'
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(employee_details.created_at) = man_power_reports.budget_year
+             OR employee_details.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
+        AND (
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
+        )
+        THEN employee_details.id
+    END) as count_employee'
             ),
             DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+             OR allowances.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
         AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
         )
         THEN allowances.basic_salary
         ELSE 0
     END) as basic_salary'),
             DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+             OR allowances.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
         AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
         )
         THEN allowances.technical_allowance
         ELSE 0
     END) as technical_allowance'),
             DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+             OR allowances.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
         AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
         )
         THEN allowances.living_cost_allowance
         ELSE 0
@@ -252,28 +279,39 @@ class ManPowerReportDataTable extends BaseDataTable
         )
             ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
             ->leftJoin('designations', 'man_power_reports.position_id', '=', 'designations.id')
-            ->leftJoin('employee_details', function ($join) use ($quarter, $quarterMonths) {
+            ->leftJoin('employee_details', function ($join) use ($quarter, $quarterMonths, $cumulativeRanges) {
                 // position match
                 $join->on('teams.id', '=', 'employee_details.department_id')
                     ->whereColumn('employee_details.designation_id', 'man_power_reports.position_id');
 
                 if ($quarter != 'all' && $quarter != null && isset($quarterMonths[$quarter])) {
-                    // Filter by specific quarter months (Q1=Jan-Mar, Q4=Oct-Dec)
+                    // Filter by specific quarter months
                     [$start, $end] = $quarterMonths[$quarter];
                     $join->where(function ($q) use ($start, $end) {
                         $q->whereRaw("MONTH(employee_details.created_at) BETWEEN ? AND ?", [$start, $end])
                             ->orWhereNull('employee_details.created_at');
                     });
                 }
+                $join->where(function ($q) use ($cumulativeRanges) {
+                    $q->whereRaw("(
+            (man_power_reports.quarter = 1 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
+            (man_power_reports.quarter = 2 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
+            (man_power_reports.quarter = 3 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
+            (man_power_reports.quarter = 4 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
+            employee_details.created_at IS NULL
+        )");
+                });
             })
-            ->leftJoin('users', 'employee_details.user_id', '=', 'users.id')
+            ->leftJoin('users as u', function ($join) {
+                $join->on('employee_details.user_id', '=', 'u.id')
+                    ->where('u.status', 'active')
+                    ->whereNull('employee_details.notice_period_start_date');
+            })
             ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
-            ->leftJoin('allowances', 'users.id', '=', 'allowances.user_id')
+            ->leftJoin('allowances', 'u.id', '=', 'allowances.user_id')
             ->when(!$isAdmin && !$isHRmanager, function ($query) {
                 $query->where('man_power_reports.created_by', user()->id);
             })
-            ->where('users.status', 'active')
-            ->whereNull('employee_details.notice_period_start_date')
             ->groupBy([
                 'man_power_reports.id',
                 'man_power_reports.team_id',
@@ -375,17 +413,17 @@ class ManPowerReportDataTable extends BaseDataTable
             ],
 
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false, 'title' => '#'],
-            __('app.menu.budgetYear') => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => __('app.menu.budgetYear')],
-            __('app.menu.quarter') => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
-            __('app.menu.location') => ['data' => 'location', 'name' => 'location', 'title' =>  __('app.menu.location')],
-            __('app.menu.position') => ['data' => 'position', 'name' => 'position', 'title' => __('app.menu.position')],
-            __('app.menu.manPowerSetup') => ['data' => 'man_power_setup', 'name' => 'man_power_setup', 'title' =>  __('app.menu.manPowerSetup')],
-            __('app.menu.actualManPower') => ['data' => 'actual_man_power', 'name' => 'actual_man_power', 'title' =>  __('app.menu.actualManPower')],
-            __('app.menu.maxManPowerBasicSalary') => ['data' => 'max_man_power_basic_salary', 'name' => 'max_man_power_basic_salary', 'title' => __('app.menu.maxManPowerBasicSalary')],
-            __('app.menu.totalManPowerBasicSalary') => ['data' => 'total_man_power_basic_salary', 'name' => 'total_man_power_basic_salary', 'title' => __('app.menu.totalManPowerBasicSalary')],
-            __('app.menu.vacancyPercent') => ['data' => 'vacancy_percent', 'name' => 'vacancy_percent', 'title' => __('app.menu.vacancyPercent')],
-            __('app.menu.department') => ['data' => 'team', 'name' => 'team', 'title' => __('app.menu.department')],
-            __('app.menu.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.menu.status')],
+            'budget_year' => ['data' => 'budget_year', 'name' => 'budget_year', 'title' => 'Year'],
+            'quarter' => ['data' => 'quarter', 'name' => 'quarter', 'title' => __('app.menu.quarter')],
+            'location' => ['data' => 'location', 'name' => 'location', 'title' => 'Location'],
+            'position' => ['data' => 'position', 'name' => 'position', 'title' => 'Position'],
+            'man_power_setup' => ['data' => 'man_power_setup', 'name' => 'man_power_setup', 'title' => 'Man Power Budget'],
+            'actual_man_power' => ['data' => 'actual_man_power', 'name' => 'actual_man_power', 'title' => 'Man Power Actual'],
+            'max_man_power_basic_salary' => ['data' => 'max_man_power_basic_salary', 'name' => 'max_man_power_basic_salary', 'title' => 'Max Salary Budget'],
+            'total_man_power_basic_salary' => ['data' => 'total_man_power_basic_salary', 'name' => 'total_man_power_basic_salary', 'title' => 'Salary Actual'],
+            'vacancy_percent' => ['data' => 'vacancy_percent', 'name' => 'vacancy_percent', 'title' => 'Vacancy %'],
+            'team' => ['data' => 'team', 'name' => 'team', 'title' => __('app.menu.department')],
+            'status' => ['data' => 'status', 'name' => 'status', 'title' => __('app.menu.status')],
             __('app.menu.approvedDate') => ['data' => 'approved_date', 'name' => 'approved_date', 'title' => __('app.menu.approvedDate')],
             __('app.menu.remarkFrom') => ['data' => 'remark_from', 'name' => 'remark_from', 'title' => __('app.menu.remarkFrom')],
             __('app.menu.remarkTo') => ['data' => 'remark_to', 'name' => 'remark_to', 'title' => __('app.menu.remarkTo')],

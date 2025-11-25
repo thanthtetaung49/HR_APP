@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedBigInteger('designation_id');
             $table->foreign('designation_id')->references('id')->on('designations');
             $table->unsignedInteger('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->integer('report_id');
             $table->enum('permission', ['yes', 'no'])->default('no');
             $table->timestamps();
