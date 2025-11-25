@@ -376,28 +376,6 @@ class ManPowerReportDataTable extends BaseDataTable
             ]);
     }
 
-    // public function html()
-    // {
-    //     $dataTable = $this->setBuilder('manpowerreport-table', 2)
-    //         ->parameters([
-    //             'initComplete' => 'function () {
-    //                window.LaravelDataTables["departments-table"].buttons().container()
-    //                 .appendTo("#table-actions")
-    //             }',
-    //             'fnDrawCallback' => 'function( oSettings ) {
-    //                 $("body").tooltip({
-    //                     selector: \'[data-toggle="tooltip"]\'
-    //                 })
-    //             }',
-    //         ]);
-
-    //     if (canDataTableExport()) {
-    //         $dataTable->buttons(Button::make(['extend' => 'excel', 'text' => '<i class="fa fa-file-export"></i> ' . trans('app.exportExcel')]));
-    //     }
-
-    //     return $dataTable;
-    // }
-
     /**
      * Get the dataTable columns definition.
      */

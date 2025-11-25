@@ -60,182 +60,117 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             return $role->name === 'hr-manager';
         });
 
-        if ($isAdmin || $isHRmanager) {
-            $model = ManPowerReport::select(
-                'man_power_reports.*',
-                'locations.id as location_id',
-                'locations.location_name as location',
-                'teams.team_name as team',
-                'designations.id as designation_id',
-                'designations.name as position',
-                DB::raw(
-                    'COUNT(DISTINCT CASE
-            WHEN (YEAR(employee_details.created_at) = man_power_reports.budget_year OR employee_details.created_at IS NULL)
-            AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
-            AND (
-                employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
-            )
-            THEN employee_details.id
-        END) as count_employee'
-                ),
-                DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+         $model = ManPowerReport::select(
+            'man_power_reports.*',
+            'locations.id as location_id',
+            'locations.location_name as location',
+            'teams.team_name as team',
+            'designations.id as designation_id',
+            'designations.name as position',
+            DB::raw(
+                'COUNT(DISTINCT CASE
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(employee_details.created_at) = man_power_reports.budget_year
+             OR employee_details.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
         AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
+        )
+        THEN employee_details.id
+    END) as count_employee'
+            ),
+            DB::raw('SUM(CASE
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+             OR allowances.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
+        AND (
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
         )
         THEN allowances.basic_salary
         ELSE 0
     END) as basic_salary'),
-                DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+            DB::raw('SUM(CASE
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+             OR allowances.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
         AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
         )
         THEN allowances.technical_allowance
         ELSE 0
     END) as technical_allowance'),
-                DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
+            DB::raw('SUM(CASE
+        WHEN u.status = "active"
+        AND employee_details.notice_period_start_date IS NULL
+        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+             OR allowances.created_at IS NULL)
+        AND (YEAR(u.created_at) = man_power_reports.budget_year
+             OR u.created_at IS NULL)
         AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
+            employee_details.designation_id = man_power_reports.position_id
+            OR u.designation_id = man_power_reports.position_id
         )
         THEN allowances.living_cost_allowance
         ELSE 0
     END) as living_cost_allowance'),
-            )
-                ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
-                ->leftJoin('designations', 'man_power_reports.position_id', '=', 'designations.id')
-                ->leftJoin('employee_details', function ($join) use ($quarter, $quarterMonths, $cumulativeRanges) {
-                    // position match
-                    $join->on('teams.id', '=', 'employee_details.department_id')
-                        ->whereColumn('employee_details.designation_id', 'man_power_reports.position_id');
+        )
+            ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
+            ->leftJoin('designations', 'man_power_reports.position_id', '=', 'designations.id')
+            ->leftJoin('employee_details', function ($join) use ($quarter, $quarterMonths, $cumulativeRanges) {
+                // position match
+                $join->on('teams.id', '=', 'employee_details.department_id')
+                    ->whereColumn('employee_details.designation_id', 'man_power_reports.position_id');
 
-                    if ($quarter != 'all' && $quarter != null && isset($quarterMonths[$quarter])) {
-                        // Filter by specific quarter months (Q1=Jan-Mar, Q4=Oct-Dec)
-                        [$start, $end] = $quarterMonths[$quarter];
-                        $join->where(function ($q) use ($start, $end) {
-                            $q->whereRaw("MONTH(employee_details.created_at) BETWEEN ? AND ?", [$start, $end])
-                                ->orWhereNull('employee_details.created_at');
-                        });
-                    }
-
-                    // CRITICAL: Also check if employee falls within the cumulative range
-                    $join->where(function ($q) use ($cumulativeRanges) {
-                        $q->whereRaw("(
+                if ($quarter != 'all' && $quarter != null && isset($quarterMonths[$quarter])) {
+                    // Filter by specific quarter months
+                    [$start, $end] = $quarterMonths[$quarter];
+                    $join->where(function ($q) use ($start, $end) {
+                        $q->whereRaw("MONTH(employee_details.created_at) BETWEEN ? AND ?", [$start, $end])
+                            ->orWhereNull('employee_details.created_at');
+                    });
+                }
+                $join->where(function ($q) use ($cumulativeRanges) {
+                    $q->whereRaw("(
             (man_power_reports.quarter = 1 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
             (man_power_reports.quarter = 2 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
             (man_power_reports.quarter = 3 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
             (man_power_reports.quarter = 4 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
             employee_details.created_at IS NULL
         )");
-                    });
-                })
-                ->leftJoin('users', 'employee_details.user_id', '=', 'users.id')
-                ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
-                ->leftJoin('allowances', 'users.id', '=', 'allowances.user_id')
-                ->groupBy([
-                    'man_power_reports.id',
-                    'man_power_reports.team_id',
-                    'man_power_reports.budget_year',
-                    'man_power_reports.man_power_setup',
-                    'man_power_reports.man_power_basic_salary',
-                    'man_power_reports.quarter',
-                    'man_power_reports.position_id',
-                    'man_power_reports.created_at',
-                    'man_power_reports.updated_at',
-                ]);
-        } else {
-            $model = ManPowerReport::select(
-                'man_power_reports.*',
-                'locations.id as location_id',
-                'locations.location_name as location',
-                'teams.team_name as team',
-                'designations.id as designation_id',
-                'designations.name as position',
-                DB::raw(
-                    'COUNT(DISTINCT CASE
-            WHEN (YEAR(employee_details.created_at) = man_power_reports.budget_year OR employee_details.created_at IS NULL)
-            AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
-            AND (
-                employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
-            )
-            THEN employee_details.id
-        END) as count_employee'
-                ),
-                DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
-        AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
-        )
-        THEN allowances.basic_salary
-        ELSE 0
-    END) as basic_salary'),
-                DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
-        AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
-        )
-        THEN allowances.technical_allowance
-        ELSE 0
-    END) as technical_allowance'),
-                DB::raw('SUM(CASE
-        WHEN (YEAR(allowances.created_at) = man_power_reports.budget_year OR allowances.created_at IS NULL)
-        AND (YEAR(users.created_at) = man_power_reports.budget_year OR users.created_at IS NULL)
-        AND (
-            employee_details.designation_id = man_power_reports.position_id OR users.designation_id = man_power_reports.position_id
-        )
-        THEN allowances.living_cost_allowance
-        ELSE 0
-    END) as living_cost_allowance'),
-            )
-                ->leftJoin('teams', 'man_power_reports.team_id', '=', 'teams.id')
-                ->leftJoin('designations', 'man_power_reports.position_id', '=', 'designations.id')
-                ->leftJoin('employee_details', function ($join) use ($quarter, $quarterMonths, $cumulativeRanges) {
-                    // position match
-                    $join->on('teams.id', '=', 'employee_details.department_id')
-                        ->whereColumn('employee_details.designation_id', 'man_power_reports.position_id');
-
-                    if ($quarter != 'all' && $quarter != null && isset($quarterMonths[$quarter])) {
-                        // Filter by specific quarter months (Q1=Jan-Mar, Q4=Oct-Dec)
-                        [$start, $end] = $quarterMonths[$quarter];
-                        $join->where(function ($q) use ($start, $end) {
-                            $q->whereRaw("MONTH(employee_details.created_at) BETWEEN ? AND ?", [$start, $end])
-                                ->orWhereNull('employee_details.created_at');
-                        });
-                    }
-
-                    // CRITICAL: Also check if employee falls within the cumulative range
-                    $join->where(function ($q) use ($cumulativeRanges) {
-                        $q->whereRaw("(
-            (man_power_reports.quarter = 1 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
-            (man_power_reports.quarter = 2 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
-            (man_power_reports.quarter = 3 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
-            (man_power_reports.quarter = 4 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
-            employee_details.created_at IS NULL
-        )");
-                    });
-                })
-                ->leftJoin('users', 'employee_details.user_id', '=', 'users.id')
-                ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
-                ->leftJoin('allowances', 'users.id', '=', 'allowances.user_id')
-                ->where('created_by', user()->id)
-                ->groupBy([
-                    'man_power_reports.id',
-                    'man_power_reports.team_id',
-                    'man_power_reports.budget_year',
-                    'man_power_reports.man_power_setup',
-                    'man_power_reports.man_power_basic_salary',
-                    'man_power_reports.quarter',
-                    'man_power_reports.position_id',
-                    'man_power_reports.created_at',
-                    'man_power_reports.updated_at',
-                ]);
-        }
+                });
+            })
+            ->leftJoin('users as u', function ($join) {
+                $join->on('employee_details.user_id', '=', 'u.id')
+                    ->where('u.status', 'active')
+                    ->whereNull('employee_details.notice_period_start_date');
+            })
+            ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
+            ->leftJoin('allowances', 'u.id', '=', 'allowances.user_id')
+            ->when(!$isAdmin && !$isHRmanager, function ($query) {
+                $query->where('man_power_reports.created_by', user()->id);
+            })
+            ->groupBy([
+                'man_power_reports.id',
+                'man_power_reports.team_id',
+                'man_power_reports.budget_year',
+                'man_power_reports.man_power_setup',
+                'man_power_reports.man_power_basic_salary',
+                'man_power_reports.quarter',
+                'man_power_reports.position_id',
+                'man_power_reports.created_at',
+                'man_power_reports.updated_at',
+            ]);
 
         if ($this->team != 'all' && $this->team != null) {
             $model->where('man_power_reports.team_id', $this->team);
