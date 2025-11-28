@@ -428,10 +428,6 @@
                     const employeeTotal = response.employeeTotal;
                     const months = Object.values(response.months);
                     const turnOverReports = response.turnOverReports;
-                    // const locationName = response.turnOverReports ? response.turnOverReports[0]
-                    //     .location_name : null;
-
-                    // $("#locationTitle").html(locationName)
 
                     let theadMonth = '';
                     let theadCategory = '';
@@ -487,30 +483,6 @@
                                 }
                             }
                         });
-
-                        // probation.forEach(item => {
-                        //     if (item.month == monthNumber) {
-                        //         if (item.department_type == 'operation') {
-                        //             operationProbation = item.total;
-                        //         }
-
-                        //         if (item.department_type == 'supporting') {
-                        //             supportingProbation = item.total;
-                        //         }
-                        //     }
-                        // });
-
-                        // permanent.forEach(item => {
-                        //     if (item.month == monthNumber) {
-                        //         if (item.department_type == 'operation') {
-                        //             operationPermanent = item.total;
-                        //         }
-
-                        //         if (item.department_type == 'supporting') {
-                        //             supportingPermanent = item.total;
-                        //         }
-                        //     }
-                        // });
 
                         const totalMp = parseInt(operationTotalMp) + parseInt(
                         supportingTotalMp);
@@ -594,7 +566,7 @@
                         <thead>
                             <tr>
                             <th colspan="6">
-                                <h3>Turn Over Report
+                                <h3>Turnover Report
                                     <span id="locationTitle">(${locationName})</span>
                                 </h3>
                             </th>

@@ -139,7 +139,7 @@
         @endforeach
 
         <div class="col-md-4">
-            <x-forms.label class="my-3" fieldId="criteria_id" :fieldLabel="__('app.menu.exitsReason')" fieldRequired="true">
+            <x-forms.label class="my-3" fieldId="criteria_id" :fieldLabel="__('app.menu.exitsReason')" fieldRequired="false">
             </x-forms.label>
 
             <x-forms.input-group>

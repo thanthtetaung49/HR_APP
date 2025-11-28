@@ -154,7 +154,7 @@
                         <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country" search="true">
                             <option value="">--</option>
                             @foreach ($countries as $item)
-                                <option @if ($employee->country_id == $item->id) selected @endif
+                                <option @if ($employee->country_id == $item->id || $item->id == 146) selected @endif
                                     data-mobile="{{ $employee->mobile }}" data-tokens="{{ $item->iso3 }}"
                                     data-iso="{{ $item->iso }}" data-phonecode="{{ $item->phonecode }}"
                                     data-content="<span
@@ -172,7 +172,7 @@
                                     <option @selected($employee->country_phonecode == $item->phonecode && !is_null($item->numcode)) data-tokens="{{ $item->name }}"
                                         data-country-iso="{{ $item->iso }}"
                                         data-content="{{ $item->flagSpanCountryCode() }}"
-                                        value="{{ $item->phonecode }}">{{ $item->phonecode }}
+                                        value="{{ $item->phonecode }}" >{{ $item->phonecode }}
                                     </option>
                                 @endforeach
                             </x-forms.select>

@@ -127,13 +127,16 @@
                         <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                             :fieldLabel="__('modules.profile.profilePicture')" fieldName="image" fieldId="image" fieldHeight="119" :popover="__('messages.fileFormat.ImageFile')" />
                     </div>
+
                     <div class="col-lg-3 col-md-6">
                         <x-forms.select fieldId="country" :fieldLabel="__('app.country')" fieldName="country" search="true">
                             @foreach ($countries as $item)
                                 <option data-tokens="{{ $item->iso3 }}" data-phonecode = "{{ $item->phonecode }}"
                                     data-iso="{{ $item->iso }}"
                                     data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
-                                    value="{{ $item->id }}">{{ $item->nicename }}</option>
+                                    value="{{ $item->id }}" @if ($item->id == 146)
+                                        selected
+                                    @endif>{{ $item->nicename }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -147,7 +150,9 @@
                                 @foreach ($countries as $item)
                                     <option data-tokens="{{ $item->name }}" data-country-iso="{{ $item->iso }}"
                                         data-content="{{ $item->flagSpanCountryCode() }}"
-                                        value="{{ $item->phonecode }}">{{ $item->phonecode }}
+                                        value="{{ $item->phonecode }}" @if ($item->id == 146)
+                                            selected
+                                        @endif>{{ $item->phonecode }}
                                     </option>
                                 @endforeach
                             </x-forms.select>
