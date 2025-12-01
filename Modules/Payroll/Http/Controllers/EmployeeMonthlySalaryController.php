@@ -853,13 +853,17 @@ class EmployeeMonthlySalaryController extends AccountBaseController
 
     public function importSalary()
     {
-        $this->pageTitle = __('app.importSalary');
+        $this->pageTitle =  __('app.importExcel') . ' ' . __('app.menu.salary');
 
         if (request()->ajax()) {
             $html = view('payroll::employee-salary.ajax.import', $this->data)->render();
 
             return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
+
+        $this->view = 'payroll::employee-salary.ajax.import';
+
+        return view('payroll::employee-salary.create', $this->data);
     }
 
     public function importStore(Request $request)

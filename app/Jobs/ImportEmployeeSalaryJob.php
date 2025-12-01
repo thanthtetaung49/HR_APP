@@ -77,30 +77,27 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $loan = $this->isColumnExists('loan') ? $this->getColumnValue('loan') : 0;
                     $ssb = $this->isColumnExists('ssb') ? $this->getColumnValue('ssb') : 0;
 
-                    $allowance = Allowance::firstOrNew(['user_id' => $user->id]);
-                    $detection = Detection::firstOrNew(['user_id' => $user->id]);
+                    Allowance::updateOrCreate(
+                        ['user_id' => $user->id],
+                        [
+                            'basic_salary' => $basic_salary,
+                            'technical_allowance' => $technical_allowance,
+                            'living_cost_allowance' => $living_cost_allowance,
+                            'special_allowance' => $special_allowance
+                        ]
+                    );
 
-                    if (!$allowance->exists) {
-                        $allowance->basic_salary = $basic_salary;
-                    }
 
-                    $allowance->fill([
-                        'technical_allowance' => $technical_allowance,
-                        'living_cost_allowance' => $living_cost_allowance,
-                        'special_allowance' => $special_allowance,
-                    ]);
-
-                    $detection->fill([
-                        'other_detection' => $other_detection,
-                        'credit_sales' => $credit_sales,
-                        'deposit' => $deposit,
-                        'loan' => $loan,
-                        'ssb' => $ssb
-                    ]);
-
-                    $allowance->save();
-                    $detection->save();
-
+                    Detection::updateOrCreate(
+                        ['user_id' => $user->id],
+                        [
+                            'other_detection' => $other_detection,
+                            'credit_sales' => $credit_sales,
+                            'deposit' => $deposit,
+                            'loan' => $loan,
+                            'ssb' => $ssb
+                        ]
+                    );
 
                     DB::commit();
                 } catch (InvalidFormatException $e) {
