@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\ManPowerReport;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -19,14 +20,16 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
     public $position;
     public $budgetYear;
     public $quarter;
+    public $companyDateFormat;
 
-    public function __construct($location, $team, $position, $budgetYear, $quarter)
+    public function __construct($location, $team, $position, $budgetYear, $quarter, $companyDateFormat)
     {
         $this->location = $location;
         $this->team = $team;
         $this->position = $position;
         $this->budgetYear = $budgetYear;
         $this->quarter = $quarter;
+        $this->companyDateFormat = $companyDateFormat;
     }
 
     /**
@@ -60,7 +63,7 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             return $role->name === 'hr-manager';
         });
 
-         $model = ManPowerReport::select(
+        $model = ManPowerReport::select(
             'man_power_reports.*',
             'locations.id as location_id',
             'locations.location_name as location',
@@ -71,10 +74,8 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
                 'COUNT(DISTINCT CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(employee_details.created_at) = man_power_reports.budget_year
-             OR employee_details.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
+        AND (YEAR(employee_details.joining_date) <= man_power_reports.budget_year
+             OR employee_details.joining_date IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -85,10 +86,8 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             DB::raw('SUM(CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+        AND (YEAR(allowances.created_at) <= man_power_reports.budget_year
              OR allowances.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -99,10 +98,8 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             DB::raw('SUM(CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+        AND (YEAR(allowances.created_at) <= man_power_reports.budget_year
              OR allowances.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -113,10 +110,8 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             DB::raw('SUM(CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+        AND (YEAR(allowances.created_at) <= man_power_reports.budget_year
              OR allowances.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -136,17 +131,17 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
                     // Filter by specific quarter months
                     [$start, $end] = $quarterMonths[$quarter];
                     $join->where(function ($q) use ($start, $end) {
-                        $q->whereRaw("MONTH(employee_details.created_at) BETWEEN ? AND ?", [$start, $end])
-                            ->orWhereNull('employee_details.created_at');
+                        $q->whereRaw("MONTH(employee_details.joining_date) BETWEEN ? AND ?", [$start, $end])
+                            ->orWhereNull('employee_details.joining_date');
                     });
                 }
                 $join->where(function ($q) use ($cumulativeRanges) {
                     $q->whereRaw("(
-            (man_power_reports.quarter = 1 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
-            (man_power_reports.quarter = 2 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
-            (man_power_reports.quarter = 3 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
-            (man_power_reports.quarter = 4 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
-            employee_details.created_at IS NULL
+            (man_power_reports.quarter = 1 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
+            (man_power_reports.quarter = 2 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
+            (man_power_reports.quarter = 3 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
+            (man_power_reports.quarter = 4 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
+            employee_details.joining_date IS NULL
         )");
                 });
             })
@@ -168,8 +163,6 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
                 'man_power_reports.man_power_basic_salary',
                 'man_power_reports.quarter',
                 'man_power_reports.position_id',
-                'man_power_reports.created_at',
-                'man_power_reports.updated_at',
             ]);
 
         if ($this->team != 'all' && $this->team != null) {
@@ -186,6 +179,16 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
 
         if ($this->budgetYear != 'all' && $this->budgetYear != null) {
             $model->where('man_power_reports.budget_year', request()->budgetYear);
+        }
+
+        if (request('startDate') != '' && request()->startDate != null) {
+            $startDate = Carbon::createFromFormat($this->companyDateFormat, request()->startDate)->toDateString();
+            $model->whereRaw('Date(employee_details.joining_date) >= ?', [$startDate]);
+        }
+
+        if (request()->endDate != '' && request()->endDate != null) {
+            $endDate = Carbon::createFromFormat($this->companyDateFormat, request()->endDate)->toDateString();
+            $model->whereRaw('Date(employee_details.joining_date) <= ?', [$endDate]);
         }
 
         return $model->get();
@@ -267,7 +270,4 @@ class ManPowerReportExport implements FromCollection, ShouldAutoSize, WithStyles
             $row['remark_to'] ?? '',
         ];
     }
-
-
-
 }

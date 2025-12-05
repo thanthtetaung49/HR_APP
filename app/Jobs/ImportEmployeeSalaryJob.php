@@ -51,9 +51,12 @@ class ImportEmployeeSalaryJob implements ShouldQueue
     public function handle()
     {
         if (
-            $this->isColumnExists('email') && $this->isColumnExists('basic_salary') &&
-            $this->isColumnExists('technical_allowance') && $this->isColumnExists('living_cost_allowance') &&
-            $this->isColumnExists('special_allowance') && $this->isColumnExists('other_detection')
+            $this->isColumnExists('email') &&
+            $this->isColumnExists('basic_salary') &&
+            $this->isColumnExists('technical_allowance') &&
+            $this->isColumnExists('living_cost_allowance') &&
+            $this->isColumnExists('special_allowance') &&
+            $this->isColumnExists('other_detection')
         ) {
 
             // user that have employee role

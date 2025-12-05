@@ -108,12 +108,12 @@ class ManPowerReportDataTable extends BaseDataTable
             ->editColumn('approved_date', function ($manPower) {
                 return $manPower->approved_date ? $manPower->approved_date : '---';
             })
-            ->editColumn('created_at', function ($manPower) {
-                return $manPower->created_at->format('Y-m-d');
-            })
-            ->editColumn('updated_at', function ($manPower) {
-                return $manPower->updated_at->format('Y-m-d');
-            })
+            // ->editColumn('joining_date', function ($manPower) {
+            //     return $manPower->joining_date->format('Y-m-d');
+            // })
+            // ->editColumn('updated_at', function ($manPower) {
+            //     return $manPower->updated_at->format('Y-m-d');
+            // })
             ->editColumn('vacancy_percent', function ($manPower) {
                 $count =  ($manPower->count_employee > 0) ? $manPower->count_employee : 0;
 
@@ -223,10 +223,8 @@ class ManPowerReportDataTable extends BaseDataTable
                 'COUNT(DISTINCT CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(employee_details.created_at) = man_power_reports.budget_year
-             OR employee_details.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
+        AND (YEAR(employee_details.joining_date) <= man_power_reports.budget_year
+             OR employee_details.joining_date IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -237,10 +235,8 @@ class ManPowerReportDataTable extends BaseDataTable
             DB::raw('SUM(CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+        AND (YEAR(allowances.created_at) <= man_power_reports.budget_year
              OR allowances.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -251,10 +247,8 @@ class ManPowerReportDataTable extends BaseDataTable
             DB::raw('SUM(CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+        AND (YEAR(allowances.created_at) <= man_power_reports.budget_year
              OR allowances.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -265,10 +259,8 @@ class ManPowerReportDataTable extends BaseDataTable
             DB::raw('SUM(CASE
         WHEN u.status = "active"
         AND employee_details.notice_period_start_date IS NULL
-        AND (YEAR(allowances.created_at) = man_power_reports.budget_year
+        AND (YEAR(allowances.created_at) <= man_power_reports.budget_year
              OR allowances.created_at IS NULL)
-        AND (YEAR(u.created_at) = man_power_reports.budget_year
-             OR u.created_at IS NULL)
         AND (
             employee_details.designation_id = man_power_reports.position_id
             OR u.designation_id = man_power_reports.position_id
@@ -288,17 +280,17 @@ class ManPowerReportDataTable extends BaseDataTable
                     // Filter by specific quarter months
                     [$start, $end] = $quarterMonths[$quarter];
                     $join->where(function ($q) use ($start, $end) {
-                        $q->whereRaw("MONTH(employee_details.created_at) BETWEEN ? AND ?", [$start, $end])
-                            ->orWhereNull('employee_details.created_at');
+                        $q->whereRaw("MONTH(employee_details.joining_date) BETWEEN ? AND ?", [$start, $end])
+                            ->orWhereNull('employee_details.joining_date');
                     });
                 }
                 $join->where(function ($q) use ($cumulativeRanges) {
                     $q->whereRaw("(
-            (man_power_reports.quarter = 1 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
-            (man_power_reports.quarter = 2 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
-            (man_power_reports.quarter = 3 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
-            (man_power_reports.quarter = 4 AND MONTH(employee_details.created_at) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
-            employee_details.created_at IS NULL
+            (man_power_reports.quarter = 1 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[1][0]} AND {$cumulativeRanges[1][1]}) OR
+            (man_power_reports.quarter = 2 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[2][0]} AND {$cumulativeRanges[2][1]}) OR
+            (man_power_reports.quarter = 3 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[3][0]} AND {$cumulativeRanges[3][1]}) OR
+            (man_power_reports.quarter = 4 AND MONTH(employee_details.joining_date) BETWEEN {$cumulativeRanges[4][0]} AND {$cumulativeRanges[4][1]}) OR
+            employee_details.joining_date IS NULL
         )");
                 });
             })
@@ -320,8 +312,6 @@ class ManPowerReportDataTable extends BaseDataTable
                 'man_power_reports.man_power_basic_salary',
                 'man_power_reports.quarter',
                 'man_power_reports.position_id',
-                'man_power_reports.created_at',
-                'man_power_reports.updated_at',
             ]);
 
         if (request()->teamId != 'all' && request()->teamId != null) {
@@ -343,13 +333,13 @@ class ManPowerReportDataTable extends BaseDataTable
         if (request('startDate') != '' && request()->startDate != null) {
             $startDate = Carbon::createFromFormat($this->company->date_format, request()->startDate)->toDateString();
 
-            $model->whereRaw('Date(man_power_reports.created_at) >= ?', [$startDate]);
+            $model->whereRaw('Date(employee_details.joining_date) >= ?', [$startDate]);
         }
 
         if (request()->endDate != '' && request()->endDate != null) {
             $endDate = Carbon::createFromFormat($this->company->date_format, request()->endDate)->toDateString();
 
-            $model->whereRaw('Date(man_power_reports.created_at) <= ?', [$endDate]);
+            $model->whereRaw('Date(employee_details.joining_date) <= ?', [$endDate]);
         }
 
         return $model;

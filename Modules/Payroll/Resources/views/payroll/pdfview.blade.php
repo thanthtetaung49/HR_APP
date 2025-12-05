@@ -254,7 +254,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.actualBasicSalary') for {{ $month }}</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($basicSalaryPerMonth, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($basicSalaryInMonth, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -328,16 +328,6 @@
                             </td>
                         </tr>
 
-                        {{-- <tr>
-                            <td>@lang('payroll::modules.payroll.totalNonWorkingDaySalary')</td>
-                            <td align="right" class="text-uppercase">
-                                {{ currency_format($totalNonWorkingDaySalary, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
-                                {!! htmlentities(
-                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
-                                ) !!}
-                            </td>
-                        </tr> --}}
-
                     </tbody>
                 </table>
                 <!-- Table for Details -->
@@ -396,7 +386,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.creditSales')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($monthlyOtherDetection?->credit_sales, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($creditSales, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -406,7 +396,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.deposit')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($monthlyOtherDetection?->deposit, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($deposit, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -416,7 +406,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.loan')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($monthlyOtherDetection?->loan, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($loan, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -426,7 +416,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.ssb')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($monthlyOtherDetection?->ssb, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($ssb, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}
@@ -436,7 +426,7 @@
                         <tr>
                             <td>@lang('payroll::modules.payroll.otherDetection')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($monthlyOtherDetection?->other_detection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($otherDetection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}

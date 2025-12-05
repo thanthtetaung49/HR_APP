@@ -106,6 +106,7 @@ class ImportAttendanceJob implements ShouldQueue
                     }
 
                     if ($clockInCount < $attendanceSettings->clockin_in_day) {
+
                         // Check maximum attendance in a day
                         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clock_in_time)->format('Y-m-d') . ' ' . $officeStartTime->format('H:i:s'), $this->company->timezone);
 

@@ -328,7 +328,8 @@ class ManPowerReportController extends AccountBaseController
         abort_403(!canDataTableExport());
 
         $date = now()->format('Y-m-d');
+        $companyDateFormat = $this->company->date_format;
 
-        return Excel::download(new ManPowerReportExport($location, $team, $position, $budgetYear, $quarter), 'Man_Power_Report_' . $date . '.xlsx');
+        return Excel::download(new ManPowerReportExport($location, $team, $position, $budgetYear, $quarter, $companyDateFormat), 'Man_Power_Report_' . $date . '.xlsx');
     }
 }

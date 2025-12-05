@@ -123,7 +123,7 @@
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.actualBasicSalary') for {{ $month }} </td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($basicSalaryPerMonth, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($basicSalaryInMonth, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
@@ -176,55 +176,6 @@
                                         </td>
                                     </tr>
 
-
-                                    {{-- <tr>
-                                        <td>@lang('payroll::modules.payroll.totalNonWorkingDaySalary')</td>
-                                        <td class="text-right text-uppercase">
-                                            {{ currency_format($totalNonWorkingDaySalary, $currency->currency ? $currency->currency->id : company()->currency->id) }}
-                                        </td>
-                                    </tr> --}}
-
-                                    {{-- @foreach ($earnings as $key => $item)
-                                        @if ($key == 'Time Logs')
-                                            <tr>
-                                                <td>{{ ($key) }}
-                                                    @if (array_key_exists('Total Hours', $earnings))
-                                                        ( @lang('payroll::modules.payroll.totalHours') {{$earnings['Total Hours']}} )
-                                                    @endif</td>
-                                                <td class="text-right">{{ currency_format($item, ($currency->currency ? $currency->currency->id : company()->currency->id ))  }}</td>
-                                            </tr>
-                                        @elseif($key != 'Total Hours')
-                                        <tr>
-                                            <td>{{ ($key) }}</td>
-                                            <td class="text-right">{{ currency_format($item, ($currency->currency ? $currency->currency->id : company()->currency->id ))  }}</td>
-                                        </tr>
-                                        @endif
-                                    @endforeach
-
-                                    @forelse ($earningsExtra as $key=>$item)
-                                        <tr>
-                                            <td>{{ ($key) }}</td>
-                                            <td class="text-right">{{ currency_format($item, ($currency->currency ? $currency->currency->id : company()->currency->id ))  }}</td>
-                                        </tr>
-                                    @endforeach
-
-
-                                    <tr>
-                                        <td>@lang('payroll::modules.payroll.fixedAllowance')</td>
-                                        <td class="text-right text-uppercase">
-                                            @php
-                                                $fixedAllow = ($salarySlip->fixed_allowance > 0) ? $salarySlip->fixed_allowance : $fixedAllowance;
-                                            @endphp
-                                            {{ currency_format($fixedAllow, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
-                                    </tr>
-
-                                    @forelse ($earningsAdditional as $key=>$item)
-                                        <tr>
-                                            <td>{{ ($key) }}</td>
-                                            <td class="text-right">{{ currency_format($item, ($currency->currency ? $currency->currency->id : company()->currency->id ))  }}</td>
-                                        </tr>
-                                    @endforeach --}}
-
                                 </x-table>
                             </div>
                         </div>
@@ -262,38 +213,34 @@
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.breakTimeLateDetection')</td>
                                         <td class="text-right text-uppercase">
-                                            @if ($breakTimeLateCount < 1)
-                                                {{ currency_format(0, $currency->currency ? $currency->currency->id : company()->currency->id) }}
-                                            @else
-                                                {{ currency_format($breakTimeLateDetection, $currency->currency ? $currency->currency->id : company()->currency->id) }}
-                                            @endif
+                                            {{ currency_format($breakTimeLateDetection, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.creditSales')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($monthlyOtherDetection?->credit_sales, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($creditSales, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.deposit')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($monthlyOtherDetection?->deposit, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($deposit, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.loan')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($monthlyOtherDetection?->loan, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($loan, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.ssb')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($monthlyOtherDetection?->ssb, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($ssb, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 
@@ -301,22 +248,9 @@
                                     <tr>
                                         <td>@lang('payroll::modules.payroll.otherDetection')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($monthlyOtherDetection?->other_detection, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($otherDetection, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
-
-                                    {{-- @foreach ($deductions as $key => $item)
-                                        <tr>
-                                            <td>{{ ($key) }}</td>
-                                            <td class="text-right">{{ currency_format($item, ($currency->currency ? $currency->currency->id : company()->currency->id ) ) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    @foreach ($deductionsExtra as $key => $item)
-                                        <tr>
-                                            <td>{{ ($key) }}</td>
-                                            <td class="text-right">{{ currency_format($item, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
-                                        </tr>
-                                    @endforeach --}}
 
                                 </x-table>
                             </div>
@@ -340,31 +274,6 @@
                             </h5>
                         </div>
 
-
-                        {{-- <div class="col-md-12 mt-3">
-                            <div class="table-responsive">
-                                <x-table class="table-bordered" headType="thead-light">
-                                    <x-slot name="thead">
-                                        <th>@lang('payroll::modules.payroll.reimbursement')</th>
-                                        <th class="text-right">@lang('app.amount')</th>
-                                    </x-slot>
-
-                                    <tr>
-                                        <td>@lang('payroll::modules.payroll.expenseClaims')</td>
-                                        <td class="text-right text-uppercase">
-                                            {{ currency_format($salarySlip->expense_claims, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>@lang('app.total')
-                                                @lang('payroll::modules.payroll.reimbursement')</strong></td>
-                                        <td class="text-right">
-                                            <strong>{{ currency_format($salarySlip->expense_claims, ($currency->currency ? $currency->currency->id : company()->currency->id )) }}</strong>
-                                        </td>
-                                    </tr>
-                                </x-table>
-                            </div>
-                        </div> --}}
-
                         <div class="col-md-12 p-20 mt-3">
                             <h3 class="text-center heading-h3">
                                 <span class="text-uppercase mr-3">@lang('payroll::modules.payroll.netSalary'):</span>
@@ -380,45 +289,3 @@
         </div>
     </div>
 </div>
-{{-- <script>
-    $('body').on('click', '.delete-payroll', function () {
-        Swal.fire({
-            title: "@lang('messages.sweetAlertTitle')",
-            text: "@lang('messages.recoverRecord')",
-            icon: 'warning',
-            showCancelButton: true,
-            focusConfirm: false,
-            confirmButtonText: "@lang('messages.confirmDelete')",
-            cancelButtonText: "@lang('app.cancel')",
-            customClass: {
-                confirmButton: 'btn btn-primary mr-3',
-                cancelButton: 'btn btn-secondary'
-            },
-            showClass: {
-                popup: 'swal2-noanimation',
-                backdrop: 'swal2-noanimation'
-            },
-            buttonsStyling: false
-        }).then((result) => {
-            if (result.isConfirmed) {
-                var url = "{{ route('payroll.destroy', $salarySlip->id) }}";
-
-                var token = "{{ csrf_token() }}";
-
-                $.easyAjax({
-                    type: 'POST',
-                    url: url,
-                    data: {
-                        '_token': token,
-                        '_method': 'DELETE'
-                    },
-                    success: function (response) {
-                        if (response.status == "success") {
-                            window.location.href = response.redirectUrl;
-                        }
-                    }
-                });
-            }
-        });
-    });
-</script> --}}

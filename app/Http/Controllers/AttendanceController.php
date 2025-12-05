@@ -831,16 +831,27 @@ class AttendanceController extends AccountBaseController
 
         $attendances = Attendance::userAttendanceByDate($startDate, $endDate, $userId); // Getting Attendance Data
         $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
+
+        // dd($holidays->toArray());
+
         $userId = $request->userId;
 
-        // $totalWorkingDays = $startDate->daysInMonth;
+        // dd($totalWorkingDays);
 
         $totalWorkingDays = $totalWorkingDays - count($holidays);
+
+        // dd([
+        //     'totalWorkingDays' => $totalWorkingDays,
+        //     'holiday' => count($holidays)
+        // ]);
+
         $daysPresent = Attendance::countDaysPresentByUser($startDate, $endDate, $userId);
         $daysLate = Attendance::countDaysLateByUser($startDate, $endDate, $userId);
         $halfDays = Attendance::countHalfDaysByUser($startDate, $endDate, $userId);
         $daysAbsent = (($totalWorkingDays - $daysPresent) < 0) ? '0' : ($totalWorkingDays - $daysPresent);
         $holidayCount = Count($holidays);
+
+        // dd($holidayCount, $holidays->toArray());
 
         // Getting Leaves Data
         $leavesDates = Leave::where('user_id', $userId)
@@ -849,6 +860,7 @@ class AttendanceController extends AccountBaseController
             ->where('status', 'approved')
             ->select('leave_date', 'reason', 'duration')
             ->get()->keyBy('date')->toArray();
+
 
         $holidayData = $holidays->keyBy('holiday_date');
         $holidayArray = $holidayData->toArray();
@@ -936,6 +948,8 @@ class AttendanceController extends AccountBaseController
                 $dateWiseData[$startDate->toDateString()]['leave'] = $leavesDates[$startDate->toDateString()];
             }
         }
+
+        // dd($dateWiseData);
 
         // Getting View data
         $view = view('attendances.ajax.user_attendance', ['dateWiseData' => $dateWiseData, 'global' => $this->company])->render();
