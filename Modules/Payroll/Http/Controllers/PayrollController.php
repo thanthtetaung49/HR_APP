@@ -554,9 +554,10 @@ class PayrollController extends AccountBaseController
                 }
 
                 $fixedBasicSalary = $monthlySalary?->basic_salary;
-                $basicSalaryInMonth = $fixedBasicSalary / $daysInMonth;
+                $perDaySalary = $fixedBasicSalary / $daysInMonth;
+                $perDaySalary = $payrollCycleData->cycle == 'biweekly' ? $perDaySalary * 14 : $perDaySalary;
 
-                $perDaySalary = $payrollCycleData->cycle == 'biweekly' ? $basicSalaryInMonth * 14 : $basicSalaryInMonth;
+                $basicSalaryInMonth = $perDaySalary * $daysInMonth;
 
                 // joining date
                 if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
@@ -580,7 +581,6 @@ class PayrollController extends AccountBaseController
                 }
 
                 $payableSalary = $perDaySalary * $payDays;
-
                 $offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
                 $gazattedAllowance = $gazattedPresentCount * 3000;
                 $eveningShiftAllowance = $eveningShiftPresentCout * 500;
