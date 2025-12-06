@@ -257,17 +257,17 @@
                 <div class="p-20 row">
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="bank_name" :fieldLabel="__('modules.bankInformation.bankName')" fieldName="bank_name" :fieldValue="$employee->bank_name"
-                            fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankName')">
+                            fieldRequired="false" :fieldPlaceholder="__('modules.bankInformation.bankName')">
                         </x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text fieldId="bank_account_name" :fieldLabel="__('modules.bankInformation.bankAccountName')" fieldName="bank_account_name"
-                            :fieldValue="$employee->bank_account_name" fieldRequired="true" :fieldPlaceholder="__('modules.bankInformation.bankAccountName')">
+                            :fieldValue="$employee->bank_account_name" fieldRequired="false" :fieldPlaceholder="__('modules.bankInformation.bankAccountName')">
                         </x-forms.text>
                     </div>
                     <div class="col-lg-3 col-md-6">
                         <x-forms.text type="number" fieldId="bank_account_number" :fieldLabel="__('modules.bankInformation.bankAccountNumber')"
-                            :fieldValue="$employee->bank_account_number" fieldName="bank_account_number" fieldRequired="true"
+                            :fieldValue="$employee->bank_account_number" fieldName="bank_account_number" fieldRequired="false"
                             :fieldPlaceholder="__('modules.bankInformation.bankAccountNumber')">
                         </x-forms.text>
                     </div>

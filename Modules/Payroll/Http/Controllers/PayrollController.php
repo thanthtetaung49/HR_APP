@@ -30,6 +30,7 @@ use Modules\Payroll\Entities\OvertimeRequest;
 use App\Http\Controllers\AccountBaseController;
 use App\Models\EmployeeShift;
 use Carbon\CarbonPeriod;
+use Illuminate\Support\Facades\Log;
 use Modules\Payroll\DataTables\PayrollDataTable;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
@@ -463,7 +464,7 @@ class PayrollController extends AccountBaseController
                 ->where('duration', 'half day') // half day
                 ->count();
 
-            $halfDayLate = $halfDay->where('half_day_late', 'yes');
+            $halfDayLate = $halfDay->where('half_day_late', 'yes')->where('half_day_type', 'second_half');
 
             // half day late , second half calculation
             $halfDayLateCount = $halfDayLate->count();
@@ -471,48 +472,65 @@ class PayrollController extends AccountBaseController
             $totalLeaveWithoutPay = 0;
             $attendanceSetting = AttendanceSetting::first();
             $attLateBeforeFifteenMinutes = 0;
-            $attLateAfterFifteenMinutes = 0;
+            $attLateAfterFifteenMinutes = $attendanceLateInMonth->where('late', 'yes')->count();
             $attBreakTime = $breakTimeLateMonth->count();
 
             // half day late | second half calculation
             if ($halfDayLateCount != 0) {
                 $attLateAfterFifteenMinutes += $halfDayLateCount;
-            } else {
-                $attLateAfterFifteenMinutes = 0;
             }
 
             foreach ($attendanceLateInMonth as $key => $attendanceLate) {
                 $clock_in_time = $attendanceLate->clock_in_time;
+                $carbonDate = Carbon::parse($clock_in_time)->startOfDay();
                 $employeeShift = EmployeeShiftSchedule::with('shift')
                     ->where('user_id', $user->id)
                     ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
                     ->first();
 
-                $attendanceSettings = $this->attendanceShift($attendanceSetting);
+                $showClockIn = AttendanceSetting::first();
+                $attendanceSettings = $this->attendanceShiftLate($showClockIn, $user->id, $carbonDate, $clock_in_time);
 
                 if (isset($employeeShift)) {
                     $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
+
                 } else {
                     $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
                 }
 
                 $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
-                $lateTime = $officeStartTime->clone()->addMinutes(15);
+                $lateTime = $officeStartTime->copy()->addMinutes(15);
 
                 if ($clock_in_time->greaterThan($officeStartTime) && $clock_in_time->lessThan($lateTime)) {
                     $attLateBeforeFifteenMinutes += 1;
+                    Log::info('attLateBefore', [
+                        'attLateBefore' => $attLateBeforeFifteenMinutes,
+                        'clock_in_time' => $clock_in_time,
+                        'late_time' => $lateTime,
+                        'officeStartTime' => $officeStartTime
+                    ]);
                 }
 
-                if ($clock_in_time->greaterThan($lateTime)) {
-                    $attLateAfterFifteenMinutes += 1;
-                }
+                // if ($clock_in_time->greaterThan($lateTime)) {
+                //     $attLateAfterFifteenMinutes += 1;
+                //     Log::info('attLateAfter', [
+                //         'attLateAfter' => $attLateAfterFifteenMinutes,
+                //         'clock_in_time' => $clock_in_time,
+                //         'late_time' => $lateTime,
+                //         'officeStartTime' => $officeStartTime
+                //     ]);
+                // }
             }
+
+            Log::info('attLateAfterFifteenMinutes', [
+                 'attLateAfterFifteenMinutes' => $attLateAfterFifteenMinutes
+            ]);
 
             $holidayData = $this->getHolidayByDates($HolidayStartDate->toDateString(), $HolidayEndDate->toDateString(), $userId)
                 ->pluck('holiday_date')
                 ->values(); // Getting Holiday Data
 
-            $eveningShiftPresentCout = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+            $eveningShiftPresentCount = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
             $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData);
 
             // offDay and Holiday Amount Calculation
@@ -568,8 +586,15 @@ class PayrollController extends AccountBaseController
                 // exist date
                 if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
                     $daysDifference = $startDate->diffInDays($exitDate) + 1;
+
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
-                    // dd($daysDifference, $perDaySalary);
+
+                    // dd([
+                    //     'payDay' => $payDays,
+                    //     'daysDifference' => $daysDifference,
+                    //     'basicSalaryInMonth' => $basicSalaryInMonth,
+                    //     'perDaySalary' => $perDaySalary
+                    // ]);
                 }
 
                 foreach ($additionalSalaries as $additionalSalary) {
@@ -583,7 +608,7 @@ class PayrollController extends AccountBaseController
                 $payableSalary = $perDaySalary * $payDays;
                 $offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
                 $gazattedAllowance = $gazattedPresentCount * 3000;
-                $eveningShiftAllowance = $eveningShiftPresentCout * 500;
+                $eveningShiftAllowance = $eveningShiftPresentCount * 500;
 
                 $totalLeaveWithoutPay = floor(($attLateBeforeFifteenMinutes / 3) + ($attBreakTime / 3)) + ($attLateAfterFifteenMinutes) + $leaveWithoutPayInMonth;
 
@@ -603,17 +628,6 @@ class PayrollController extends AccountBaseController
 
                 // detection calculation
                 $totalDetection = ($totalLeaveWithoutPaySalary) + $monthlyOtherDetection?->other_detection + $monthlyOtherDetection?->credit_sales + $monthlyOtherDetection?->deposit + $monthlyOtherDetection?->loan + $monthlyOtherDetection?->ssb + $absentDetection;
-
-                // dd([
-                //     'totalLeaveWithoutPay' => $totalLeaveWithoutPaySalary,
-                //     'otherDetection' => $monthlyOtherDetection?->other_detection,
-                //     'creditSales' => $monthlyOtherDetection?->credit_sales,
-                //     'deposit' => $monthlyOtherDetection?->deposit,
-                //     'loan' => $monthlyOtherDetection?->loan,
-                //     'ssb' => $monthlyOtherDetection?->ssb,
-                //     'absentDetection' => $absentDetection,
-                //     'totalDetection' => $totalDetection
-                // ]);
 
                 $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $gazattedAllowance + $eveningShiftAllowance;
 
@@ -668,7 +682,9 @@ class PayrollController extends AccountBaseController
                     SalarySlip::create($data);
                 }
             }
+            // dd('stop');
         }
+
 
         return Reply::dataOnly(['status' => 'success']);
     }
@@ -1338,7 +1354,7 @@ class PayrollController extends AccountBaseController
     public function holiday($startDate, $endDate, $userId, $holidayData)
     {
         $attendanceSetting = AttendanceSetting::first();
-        $attendanceSettings = $this->attendanceShift($attendanceSetting);
+        $attendanceSettings = $this->attendanceShift($attendanceSetting, $userId,);
 
         $attendance = Attendance::select(
             DB::raw('DISTINCT DATE(attendances.clock_in_time) as date'),
@@ -1403,14 +1419,17 @@ class PayrollController extends AccountBaseController
     {
         $totalPresent = Attendance::select(
             DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
+            // DB::raw('DISTINCT DATE(attendances.clock_in_time) as date')
         )
             ->whereIn('employee_shift_id', [4, 5, 6, 7]) // 4, 5, 6 and 7 are evening  shift
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->toDateString())
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->toDateString())
             ->where('half_day', 'no')
             ->where('user_id', $userId)
-            ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+            // ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
             ->get();
+
+        // dd($totalPresent->toArray());
 
         if ($totalPresent->isNotEmpty()) {
             $result = $totalPresent[0]->presentCount;
@@ -1649,5 +1668,46 @@ class PayrollController extends AccountBaseController
         }
 
         return $attendanceSettings;
+    }
+
+    public function attendanceShiftLate($defaultAttendanceSettings = null, $userId = null, $date = null, $clockInTime = null)
+    {
+        $checkPreviousDayShift = EmployeeShiftSchedule::without('shift')->where('user_id', $userId)
+            ->where('date', $date->copy()->subDay()->toDateString())
+            ->first();
+
+        $checkTodayShift = EmployeeShiftSchedule::without('shift')->where('user_id', $userId)
+            ->where('date', $date->copy()->toDateString())
+            ->first();
+
+        $backDayFromDefault = Carbon::parse($date->copy()->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_start_time);
+
+        $backDayToDefault = Carbon::parse($date->copy()->subDay()->format('Y-m-d') . ' ' . $defaultAttendanceSettings->office_end_time);
+
+        if ($backDayFromDefault->gt($backDayToDefault)) {
+            $backDayToDefault->addDay();
+        }
+
+        $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', $clockInTime, 'UTC');
+
+
+        // $nowTime = Carbon::createFromFormat('Y-m-d H:i:s', $date->copy()->toDateString() . ' ' . $clockInTime, 'UTC');
+
+        if ($checkPreviousDayShift && $nowTime->betweenIncluded($checkPreviousDayShift->shift_start_time, $checkPreviousDayShift->shift_end_time)) {
+            $attendanceSettings = $checkPreviousDayShift;
+        } else if ($nowTime->betweenIncluded($backDayFromDefault, $backDayToDefault)) {
+            $attendanceSettings = $defaultAttendanceSettings;
+        } else if (
+            $checkTodayShift &&
+            ($nowTime->betweenIncluded($checkTodayShift->shift_start_time, $checkTodayShift->shift_end_time) || $nowTime->gt($checkTodayShift->shift_end_time))
+        ) {
+            $attendanceSettings = $checkTodayShift;
+        } else if ($checkTodayShift && $checkTodayShift->shift->shift_type == 'flexible') {
+            $attendanceSettings = $checkTodayShift;
+        } else {
+            $attendanceSettings = $defaultAttendanceSettings;
+        }
+
+        return $attendanceSettings->shift;
     }
 }
