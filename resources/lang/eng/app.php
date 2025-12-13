@@ -1,6 +1,8 @@
 <?php
 
 return array(
+    'date' => 'Date',
+    'shiftId' => 'Shift ID',
     'dealWatcher' => 'Deal Watcher',
     'showContact' => 'Contact Details',
     'signBy' => 'Sign By',
@@ -152,6 +154,7 @@ return array(
         'December' => 'December',
     ),
     'menu' => array(
+        'shifts' => 'Shifts',
         'bankReport' => 'Bank Report',
         'noticePeriodEndDate' => 'Notice Period End Date',
         'criteriaReport' => 'Criteria Report',
@@ -1026,6 +1029,7 @@ return array(
     'backToLead' => 'Back to Leads',
     'backToDeal' => 'Back to Deals',
     'backToProject' => 'Back to Projects',
+    'backToEmployeeShift' => 'Back to Employee Shifts',
     'unsyncedUsers' => 'Unsynced Users',
     'location' => 'Location',
     'crop' => 'Crop',

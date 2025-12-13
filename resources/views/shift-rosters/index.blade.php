@@ -140,6 +140,11 @@
                         @lang('app.exportExcel')
                     </x-forms.button-secondary>
                 @endif
+
+                <x-forms.link-secondary :link="route('shifts.import')" class="mr-3 openRightModal float-left d-none d-lg-block"
+                    icon="file-upload">
+                    @lang('app.importExcel')
+                </x-forms.link-secondary>
             </div>
 
             <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">

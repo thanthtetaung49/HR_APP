@@ -53,7 +53,6 @@ class DashboardController extends AccountBaseController
         $this->isCheckScript();
 
         if (in_array('employee', user_roles())) {
-
             $this->viewOverviewDashboard = user()->permission('view_overview_dashboard');
             $this->viewProjectDashboard = user()->permission('view_project_dashboard');
             $this->viewClientDashboard = user()->permission('view_client_dashboard');

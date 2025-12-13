@@ -22,9 +22,13 @@ use App\Models\EmployeeShiftSchedule;
 use App\Models\EmailNotificationSetting;
 use App\Models\EmployeeShiftChangeRequest;
 use App\Http\Requests\EmployeeShift\StoreBulkShift;
+use App\Imports\EmployeeShiftsImport;
+use App\Jobs\ImportEmployeeShiftsJob;
+use App\Traits\ImportExcel;
 
 class EmployeeShiftScheduleController extends AccountBaseController
 {
+    use ImportExcel;
 
     public function __construct()
     {
@@ -735,5 +739,41 @@ class EmployeeShiftScheduleController extends AccountBaseController
                 EmployeeShiftSchedule::where('id', $shift->id)->update(['file' => $fileName]);
             }
         }
+    }
+
+    public function importSalary()
+    {
+        $this->pageTitle =  __('app.importExcel') . ' ' . __('app.menu.shifts');
+
+        if (request()->ajax()) {
+            $html = view('shift-rosters.ajax.import', $this->data)->render();
+
+            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        }
+
+
+        $this->view = 'shift-rosters.ajax.import';
+
+        return view('shift-rosters.create', $this->data);
+    }
+
+	public function importStore(Request $request)
+    {
+        $rvalue = $this->importFileProcess($request, EmployeeShiftsImport::class);
+
+        if ($rvalue == 'abort') {
+            return Reply::error(__('messages.abortAction'));
+        }
+
+        $view = view('shift-rosters.ajax.import_progress', $this->data)->render();
+
+        return Reply::successWithData(__('messages.importUploadSuccess'), ['view' => $view]);
+    }
+
+	public function importProcess(Request $request)
+    {
+        $batch = $this->importSalaryJobProcess($request, EmployeeShiftsImport::class, ImportEmployeeShiftsJob::class);
+
+        return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
     }
 }

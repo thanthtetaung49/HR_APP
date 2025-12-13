@@ -34,7 +34,8 @@ class EmployeeShiftChangeRequestController extends AccountBaseController
 
         if (!request()->ajax()) {
             $this->employees = User::allEmployees(null, true, 'all');
-            $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')->get();
+            // $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')->get();
+            $this->employeeShifts = EmployeeShift::get();
         }
 
         return $dataTable->render('shift-change.index', $this->data);
@@ -45,8 +46,11 @@ class EmployeeShiftChangeRequestController extends AccountBaseController
         $shiftId = $request->shift_id;
         $this->day = Carbon::createFromFormat($this->company->date_format, $request->date)->dayOfWeek;
         $this->shift = EmployeeShiftSchedule::with('requestChange', 'requestChange.shift')->findOrFail($id);
-        $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')
-            ->where('id', '!=', $shiftId )
+        // $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')
+        //     ->where('id', '!=', $shiftId )
+        //     ->where('office_open_days', 'like', '%"'.$this->day.'"%')
+        //     ->get();
+        $this->employeeShifts = EmployeeShift::where('id', '!=', $shiftId )
             ->where('office_open_days', 'like', '%"'.$this->day.'"%')
             ->get();
 

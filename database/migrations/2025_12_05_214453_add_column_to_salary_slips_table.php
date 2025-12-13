@@ -21,6 +21,14 @@ return new class extends Migration
             $table->integer('after_late_detection')->default(0)->after('leave_without_pay_detection');
             $table->integer('break_time_late_detection')->default(0)->after('after_late_detection');
             $table->integer('total_leave_without_pay_salary')->default(0)->after('break_time_late_detection');
+             $table->integer('technical_allowance')->default(0)->after('total_leave_without_pay_salary');
+            $table->integer('living_cost_allowance')->default(0)->after('technical_allowance');
+            $table->integer('special_allowance')->default(0)->after('living_cost_allowance');
+            $table->integer('other_detection')->default(0)->after('special_allowance');
+            $table->integer('credit_sales')->default(0)->after('other_detection');
+            $table->integer('deposit')->default(0)->after('credit_sales');
+            $table->integer('loan')->default(0)->after('deposit');
+            $table->integer('ssb')->default(0)->after('loan');
         });
     }
 
@@ -39,7 +47,14 @@ return new class extends Migration
                 'leave_without_pay_detection',
                 'after_late_detection',
                 'break_time_late_detection',
-                'total_leave_without_pay_salary'
+                'technical_allowance',
+                'living_cost_allowance',
+                'special_allowance',
+                'other_detection',
+                'credit_sales',
+                'deposit',
+                'loan',
+                'ssb'
             ]);
         });
     }

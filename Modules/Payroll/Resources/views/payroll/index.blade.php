@@ -103,9 +103,10 @@
                             </div>
                             <div class="col-3 mb-2 firstRow">
                                 <x-forms.checkbox fieldId="selectAllEmployee" :popover="__('payroll::messages.selectAllEmployeeMsg')" :fieldLabel="__('payroll::modules.payroll.selectAllEmployee')"
-                                    fieldName="selectAllEmployee"/>
+                                    fieldName="selectAllEmployee" />
                             </div>
-                            <div class="col-md-4 mb-4">
+
+                            {{-- <div class="col-md-4 mb-4">
                                 <label class="f-14 text-dark-grey mb-12 my-3"
                                     for="{{ $field->name . '_' . $field->id }}">{{ $field->label }}</label>
                                 <select class="form-control select-picker" name="{{ $field->name }}"
@@ -118,20 +119,38 @@
                                         </option>
                                     @endforeach
                                 </select>
-                            </div>
-
-                            {{-- <div class="col-md-4 mb-4">
-                                <x-forms.label class="my-3 " fieldId="category_id"
-                                    :fieldLabel="__('app.department')" >
-                                </x-forms.label>
-                                    <select class="form-control select-picker" name="department"
-                                        id="employee_department" data-live-search="true">
-                                        <option value="">--</option>
-                                        @foreach ($teams as $team)
-                                            <option value="{{ $team->id }}">{{ $team->team_name }}</option>
-                                        @endforeach
-                                    </select>
                             </div> --}}
+
+                            @php
+                                $roles = $user->roles;
+
+                                $isAdmin = $roles->contains(function ($role) {
+                                    return $role->name === 'admin';
+                                });
+                            @endphp
+
+                            <div class="col-md-4 mb-4">
+                                <x-forms.label class="mt-3" fieldId="rank_id" :fieldLabel="__('app.menu.rank')" fieldName="rank">
+                                </x-forms.label>
+                                <x-forms.input-group>
+                                    <select class="form-control select-picker" name="rank_id" id="rank_id"
+                                        data-live-search="true" multiple>
+                                        <option value="all">@lang('app.all')</option>
+                                        <option value="1">Rank 1</option>
+                                        <option value="2">Rank 2</option>
+                                        <option value="3">Rank 3</option>
+                                        <option value="4">Rank 4</option>
+                                        <option value="5">Rank 5</option>
+                                        @if ($isAdmin)
+                                            <option value="6">Rank 6</option>
+                                            <option value="7">Rank 7</option>
+                                            <option value="8">Rank 8</option>
+                                            <option value="9">Rank 9</option>
+                                            <option value="10">Rank 10</option>
+                                        @endif
+                                    </select>
+                                </x-forms.input-group>
+                            </div>
 
                             <div class="col-md-4">
                                 <x-forms.label class="my-3" fieldId="selectEmployee" :popover="__('payroll::messages.payrollEmployees')" :fieldLabel="__('modules.employees.title')">
@@ -206,8 +225,8 @@
             // }
         });
 
-        $("#{{ $field->name . '_' . $field->id }}").change(function() {
-            var fieldId = $(this).val();
+        $("#rank_id").change(function() {
+            var rankId = $(this).val();
             var cycle = $('#payrollCycle').val();
 
             $.ajax({
@@ -215,7 +234,7 @@
                 url: "{{ route('payroll.get-employee') }}",
                 data: {
                     cycleId: cycle,
-                    fieldId: fieldId,
+                    rankId: rankId,
                     _token: "{{ csrf_token() }}"
                 },
                 success: function(response) {
@@ -254,7 +273,7 @@
 
         $('#selectEmployee').selectpicker();
 
-        $("#selectAllEmployee").change(function () {
+        $("#selectAllEmployee").change(function() {
             let selectedValues = $(this).prop('checked');
             if (selectedValues) {
                 $("#selectEmployee").find("option").prop("selected", true);
@@ -401,7 +420,7 @@
             var year = $('#year').val();
             var cycle = $('#payrollCycle').val();
             // var department = $('#employee_department').val();
-            const rank_id = $(`#{{ $field->name . '_' . $field->id }}`).val();
+            const rank_id = $(`#rank_id`).val();
             var employee_id = $('#selectEmployee').val();
 
             var token = "{{ csrf_token() }}";

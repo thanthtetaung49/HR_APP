@@ -142,9 +142,9 @@ class PayrollController extends AccountBaseController
 
         $this->basicSalary = $this->salarySlip->basic_salary;
         $this->basicSalaryInMonth = $this->salarySlip->monthly_salary;
-        $this->technicalAllowance = $this->salarySlip->user->userAllowances?->technical_allowance;
-        $this->livingCostAllowance = $this->salarySlip->user->userAllowances?->living_cost_allowance;
-        $this->specialAllowance = $this->salarySlip->user->userAllowances?->special_allowance;
+        $this->technicalAllowance = $this->salarySlip->technical_allowance;
+        $this->livingCostAllowance = $this->salarySlip->living_cost_allowance;
+        $this->specialAllowance = $this->salarySlip->special_allowance;
         $this->overtimeAmount =  $this->salarySlip->overtime_amount;
         $this->offDayHolidaySalary =  $this->salarySlip->off_day_holiday_salary;
         $this->gazattedAllowance =  $this->salarySlip->gazatted_allowance;
@@ -155,18 +155,14 @@ class PayrollController extends AccountBaseController
         $this->afterLateDetection = $this->salarySlip->after_late_detection;
         $this->breakTimeLateDetection = $this->salarySlip->break_time_late_detection;
 
-        // dd($this->afterLateDetection);
-
         $this->totalAllowance =  $this->salarySlip->gross_salary;
         $this->totalDetection = $this->salarySlip->total_deductions;
 
-        $monthlyOtherDetection = Detection::where('user_id', $this->salarySlip->user_id)->first();
-
-        $this->creditSales = $monthlyOtherDetection?->credit_sales;
-        $this->deposit = $monthlyOtherDetection?->deposit;
-        $this->loan = $monthlyOtherDetection?->loan;
-        $this->ssb = $monthlyOtherDetection?->ssb;
-        $this->otherDetection = $monthlyOtherDetection?->other_detection;
+        $this->creditSales = $this->salarySlip->credit_sales;
+        $this->deposit = $this->salarySlip->deposit;
+        $this->loan = $this->salarySlip->loan;
+        $this->ssb = $this->salarySlip->ssb;
+        $this->otherDetection = $this->salarySlip->other_detection;
 
         $this->netSalary = $this->totalAllowance - $this->totalDetection;
 
@@ -493,7 +489,6 @@ class PayrollController extends AccountBaseController
 
                 if (isset($employeeShift)) {
                     $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
-
                 } else {
                     $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
                 }
@@ -523,7 +518,7 @@ class PayrollController extends AccountBaseController
             }
 
             Log::info('attLateAfterFifteenMinutes', [
-                 'attLateAfterFifteenMinutes' => $attLateAfterFifteenMinutes
+                'attLateAfterFifteenMinutes' => $attLateAfterFifteenMinutes
             ]);
 
             $holidayData = $this->getHolidayByDates($HolidayStartDate->toDateString(), $HolidayEndDate->toDateString(), $userId)
@@ -537,9 +532,13 @@ class PayrollController extends AccountBaseController
             $offDaysAmount = $this->offDay($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
             $holidaysAmount = $this->holiday($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
 
+            // dd($offDaysAmount, $holidaysAmount);
+
             if ($endDate->greaterThan($joiningDate)) {
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
-                $monthlySalary = Allowance::where('user_id', $userId)->first();
+                $allowance = Allowance::where('user_id', $userId)->first();
+
+                // dd($allowance);
 
                 $additionalSalaries = Allowance::select([
                     'additional_basic_salaries.type',
@@ -555,11 +554,7 @@ class PayrollController extends AccountBaseController
                     ->whereDate('date', '>=', $startDate)
                     ->whereDate('date', '<=', $endDate)->sum('amount');
 
-                $monthlyOtherDetection = Detection::where('user_id', $userId)->first();
-
-                $technicalAllowance = $monthlySalary?->technical_allowance;
-                $livingCostAllowance = $monthlySalary?->living_cost_allowance;
-                $specialAllowance = $monthlySalary?->special_allowance;
+                $detuction = Detection::where('user_id', $userId)->first();
 
                 if ($payrollCycleData->cycle == 'monthly') {
                     $daysInMonth = $daysInMonth;
@@ -571,23 +566,50 @@ class PayrollController extends AccountBaseController
                     $daysInMonth = 30;
                 }
 
-                $fixedBasicSalary = $monthlySalary?->basic_salary;
+                $fixedBasicSalary = $allowance?->basic_salary;
+                $technicalAllowance = $allowance?->technical_allowance;
+                $livingCostAllowance = $allowance?->living_cost_allowance;
+                $specialAllowance = $allowance?->special_allowance;
+
+                // dd($technicalAllowance);
+
                 $perDaySalary = $fixedBasicSalary / $daysInMonth;
-                $perDaySalary = $payrollCycleData->cycle == 'biweekly' ? $perDaySalary * 14 : $perDaySalary;
+                // $perDaySalary = $payrollCycleData->cycle == 'biweekly' ? $perDaySalary * 14 : $perDaySalary;
+
+                $perDayTechAllowance = $technicalAllowance / $daysInMonth;
+                $perDayLivingCostAllowance = $livingCostAllowance / $daysInMonth;
+                $perDaySpecialAllowance = $specialAllowance / $daysInMonth;
+
+                // dd($perDayTechAllowance);
+
+                if ($payrollCycleData->cycle == 'biweekly') {
+                    $perDaySalary = $perDaySalary * 14;
+                    $perDayTechAllowance = $perDayTechAllowance * 14;
+                    $perDayLivingCostAllowance = $perDayLivingCostAllowance * 14;
+                    $perDaySpecialAllowance = $perDaySpecialAllowance * 14;
+                }
 
                 $basicSalaryInMonth = $perDaySalary * $daysInMonth;
+                $technicalAllowance = $perDayTechAllowance * $daysInMonth;
+                $livingCostAllowance = $perDayLivingCostAllowance * $daysInMonth;
+                $specialAllowance = $perDaySpecialAllowance * $daysInMonth;
 
                 // joining date
                 if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
                     $daysDifference = $joiningDate->diffInDays($endDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
+                    $technicalAllowance = $daysDifference * $perDayTechAllowance;
+                    $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
+                    $specialAllowance = $daysDifference * $perDaySpecialAllowance;
                 }
 
                 // exist date
                 if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
                     $daysDifference = $startDate->diffInDays($exitDate) + 1;
-
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
+                    $technicalAllowance = $daysDifference * $perDayTechAllowance;
+                    $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
+                    $specialAllowance = $daysDifference * $perDaySpecialAllowance;
 
                     // dd([
                     //     'payDay' => $payDays,
@@ -626,8 +648,14 @@ class PayrollController extends AccountBaseController
                 $absentDetection = $absentInMonth * $perDaySalary * 2;
                 $totalLeaveWithoutPaySalary = $totalLeaveWithoutPay * $perDaySalary;
 
+                $otherDetection = $detuction?->other_detection;
+                $creditSales = $detuction?->credit_sales;
+                $deposit = $detuction?->deposit;
+                $loan = $detuction?->loan;
+                $ssb = $detuction?->ssb;
+
                 // detection calculation
-                $totalDetection = ($totalLeaveWithoutPaySalary) + $monthlyOtherDetection?->other_detection + $monthlyOtherDetection?->credit_sales + $monthlyOtherDetection?->deposit + $monthlyOtherDetection?->loan + $monthlyOtherDetection?->ssb + $absentDetection;
+                $totalDetection = ($totalLeaveWithoutPaySalary) + $otherDetection + $creditSales + $deposit + $loan + $ssb + $absentDetection;
 
                 $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $gazattedAllowance + $eveningShiftAllowance;
 
@@ -664,7 +692,15 @@ class PayrollController extends AccountBaseController
                     'leave_without_pay_detection' => $leaveWithoutPayDetection,
                     'after_late_detection' => $afterLateDetection,
                     'break_time_late_detection' => $breakTimeLateDetection,
-                    'total_leave_without_pay_salary' => $totalLeaveWithoutPaySalary
+                    'total_leave_without_pay_salary' => $totalLeaveWithoutPaySalary,
+                    'technical_allowance' => $technicalAllowance,
+                    'living_cost_allowance' => $livingCostAllowance,
+                    'special_allowance' => $specialAllowance,
+                    'other_detection' => $otherDetection,
+                    'credit_sales' => $creditSales,
+                    'deposit' => $deposit,
+                    'loan' => $loan,
+                    'ssb' => $ssb
                 ];
 
                 $userSlip = SalarySlip::where('user_id', $userId)
@@ -695,11 +731,11 @@ class PayrollController extends AccountBaseController
         $totalEarning = 0;
 
         if ($joiningDate->greaterThan($financialyearStart)) {
-            $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId);
-            $currentSalary = $initialSalary = $monthlySalary['initialSalary'];
+            $allowance = EmployeeMonthlySalary::employeeNetSalary($userId);
+            $currentSalary = $initialSalary = $allowance['initialSalary'];
         } else {
-            $monthlySalary = EmployeeMonthlySalary::employeeNetSalary($userId, $financialyearStart);
-            $currentSalary = $initialSalary = $monthlySalary['netSalary'];
+            $allowance = EmployeeMonthlySalary::employeeNetSalary($userId, $financialyearStart);
+            $currentSalary = $initialSalary = $allowance['netSalary'];
         }
 
         $increments = EmployeeMonthlySalary::employeeIncrements($userId);
@@ -899,9 +935,9 @@ class PayrollController extends AccountBaseController
 
         $this->basicSalary = $this->salarySlip->basic_salary;
         $this->basicSalaryInMonth = $this->salarySlip->monthly_salary;
-        $this->technicalAllowance = $this->salarySlip->user->userAllowances?->technical_allowance;
-        $this->livingCostAllowance = $this->salarySlip->user->userAllowances?->living_cost_allowance;
-        $this->specialAllowance = $this->salarySlip->user->userAllowances?->special_allowance;
+        $this->technicalAllowance = $this->salarySlip->technical_allowance;
+        $this->livingCostAllowance = $this->salarySlip->living_cost_allowance;
+        $this->specialAllowance = $this->salarySlip->special_allowance;
         $this->overtimeAmount =  $this->salarySlip->overtime_amount;
         $this->offDayHolidaySalary =  $this->salarySlip->off_day_holiday_salary;
         $this->gazattedAllowance =  $this->salarySlip->gazatted_allowance;
@@ -915,13 +951,13 @@ class PayrollController extends AccountBaseController
         $this->totalAllowance =  $this->salarySlip->gross_salary;
         $this->totalDetection = $this->salarySlip->total_deductions;
 
-        $monthlyOtherDetection = Detection::where('user_id', $this->salarySlip->user_id)->first();
+        // $detuction = Detection::where('user_id', $this->salarySlip->user_id)->first();
 
-        $this->creditSales = $monthlyOtherDetection?->credit_sales;
-        $this->deposit = $monthlyOtherDetection?->deposit;
-        $this->loan = $monthlyOtherDetection?->loan;
-        $this->ssb = $monthlyOtherDetection?->ssb;
-        $this->otherDetection = $monthlyOtherDetection?->other_detection;
+        $this->creditSales = $this->salarySlip->credit_sales;
+        $this->deposit = $this->salarySlip->deposit;
+        $this->loan = $this->salarySlip->loan;
+        $this->ssb = $this->salarySlip->ssb;
+        $this->otherDetection = $this->salarySlip->other_detection;
 
         $this->netSalary = $this->totalAllowance - $this->totalDetection;
 
@@ -1374,9 +1410,11 @@ class PayrollController extends AccountBaseController
             })
             ->where('attendances.employee_shift_id', '!=', 1) // employee_shift_id 1 must be offDay
             ->where('attendances.employee_shift_id', $attendanceSettings->id)
-            ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+            ->whereIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
             ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
             ->get();
+
+        // dd($attendance->toArray());
 
         $holidaysAmount = 0;
 
@@ -1387,6 +1425,8 @@ class PayrollController extends AccountBaseController
             $hours = ($total_hours <= 8) ? $total_hours : 8;
             $holidaysAmount += $overtime_hourly_rate * $hours * 2;
         }
+
+        // dd($holidaysAmount);
 
         return $holidaysAmount;
     }
@@ -1468,10 +1508,13 @@ class PayrollController extends AccountBaseController
     {
         $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id');
         $payrollCycle = $request->cycleId;
-        $fieldId = $request->fieldId;
+        $rankId = $request->rankId;
 
-        if ($fieldId != "all" && $fieldId != '') {
-            $users = $users->where('employee_details.rank', $fieldId);
+        if ($rankId != "all" && $rankId != '') {
+            $designations = Designation::whereIn('rank_id', $request->rankId);
+            $designationsId = $designations->pluck('id')->toArray();
+            // $users = $users->where('employee_details.rank', $rankId);
+            $users = $users->whereIn('users.designation_id', $designationsId);
         }
 
         if ($payrollCycle) {
