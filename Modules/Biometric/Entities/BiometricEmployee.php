@@ -12,8 +12,11 @@ use App\Models\EmployeeDetails;
 use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\Log;
 use App\Models\EmployeeShiftSchedule;
+use AWS\CRT\Log as CRTLog;
+use Gitonomy\Git\Log as GitLog;
+use GPBMetadata\Google\Api\Log as ApiLog;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Opcodes\LogViewer\Logs\Log as LogsLog;
 
 class BiometricEmployee extends BaseModel
 {
@@ -309,17 +312,40 @@ class BiometricEmployee extends BaseModel
         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clockIn)->format('Y-m-d') . ' ' . $officeStartTime->format('H:i:s'), $user->company->timezone);
         $clockInCarbon = Carbon::createFromFormat('Y-m-d H:i:s', $clockIn, $user->company->timezone);
 
-        $lateTime = $officeStartTime->addMinutes(15);
+        Log::info("officeStartTime", [
+            'officeStartTime' => $officeStartTime,
+            'clockInCarbon' => $clockInCarbon
+        ]);
+
+        $lateTime = $officeStartTime->copy()->addMinutes(15);
 
         $late = 'no';
+        $lateBetween = 'no';
         $employee_shift_id = $employeeShiftId;
         $location_id = $user->employeeDetail->company_address_id;
 
-
-        if ($clockInCarbon->greaterThan($lateTime)) {
+        if ($clockInCarbon->between($officeStartTime, $lateTime)) {
+            $lateBetween = 'yes';
+            Log::info("att late", [
+                'clockInCarbon' => $clockInCarbon,
+                'officeStartTime' => $officeStartTime,
+                'lateTime' => $lateTime
+            ]);
+        } elseif ($clockInCarbon->greaterThan($lateTime)) {
             $late = 'yes';
+            Log::info("att late", [
+                'clockInCarbon' => $clockInCarbon,
+                'officeStartTime' => $officeStartTime,
+                'lateTime' => $lateTime
+            ]);
         } else {
             $late = 'no';
+            $lateBetween = 'no';
+            Log::info("att late", [
+                'clockInCarbon' => $clockInCarbon,
+                'officeStartTime' => $officeStartTime,
+                'lateTime' => $lateTime
+            ]);
         }
 
         // dd($clockInCarbon, $lateTime, $late);
@@ -352,7 +378,8 @@ class BiometricEmployee extends BaseModel
                     'clock_in_type' => 'biometric',
                     'work_from_type' => 'office',
                     'clock_in_ip' => request()->ip(),
-                    'late' => $late, // first record
+                    'late' => $late, // first record,
+                    'late_between' => $lateBetween,
                     'employee_shift_id' => $employee_shift_id,
                     'location_id' => $location_id,
                     'shift_start_time' => $shift_start_time,
@@ -361,38 +388,53 @@ class BiometricEmployee extends BaseModel
 
                 $firstAttendance = Attendance::where('user_id', $user->id)
                     ->whereDate('clock_in_time', $carbonDate)
-                    ->first();
+                    ->first(); // first record
 
-                $breakIn  = $lastAttendanceBeforeClockOut->clock_in_time ?? null;
-                $breakOut = isset($firstAttendance)
+                $breakIn  = $lastAttendanceBeforeClockOut->clock_in_time ?? null; // second record
+
+                $breakTimeStartTime = isset($firstAttendance)
                     ? Carbon::parse($firstAttendance->clock_out_time)->addMinutes(45)
                     : null;
 
+                $breakTimeEndTime = isset($firstAttendance)
+                    ? Carbon::parse($firstAttendance->clock_out_time)->addMinutes(60)
+                    : null;
+
                 Log::info("breakIn", ["breakIn" => $breakIn]);
-                Log::info("breakOut", ["breakOut" => $breakOut]);
+                Log::info("breakTimeStartTime", ["breakTimeStartTime" => $breakTimeStartTime]);
+                Log::info("breakTimeEndTime", ["breakTimeEndTime" => $breakTimeEndTime]);
 
                 $halfdayMark = Carbon::parse($halfday_mark_time);
 
-                $break_time_late = 'no';
+                $breakTimeLate = 'no';
+                $breakTimeLateBetween = 'no';
 
-                if ($breakIn && $breakOut) {
+                if ($breakIn && $breakTimeEndTime) {
 
+                    $breakTimeLateBetween = $breakIn->between($breakTimeStartTime, $breakTimeEndTime);
                     $breakInBeforeHalfday = $breakIn->lt($halfdayMark);
-                    $clockInAfterBreakOut = $breakIn->gt($breakOut);
+                    $clockInAfterBreakOut = $breakIn->gt($breakTimeEndTime);
 
-                    if ($breakInBeforeHalfday && $clockInAfterBreakOut) {
-                        $break_time_late = 'yes';
+                    if ($breakTimeLateBetween) {
+                        $breakTimeLateBetween = 'yes'; // between break time
+                        Log::info("breakTimeLateBetween set to yes");
+                    } elseif ($breakInBeforeHalfday && $clockInAfterBreakOut) {
+                        $breakTimeLate = 'yes'; // after break and before halfday
+                        Log::info("breakTimeLateAfter set to yes");
                     } elseif (!$breakInBeforeHalfday) {
-                        $break_time_late = 'yes';
+                        $breakTimeLate = 'yes'; // after halfday
+                        $breakTimeLateBetween = 'yes';
+                        Log::info("breakTimeLateAfter and breakTimeLateBetween set to yes");
+                    } else {
+                        $breakTimeLate = 'no';
+                        $breakTimeLateBetween = 'no';
+                        Log::info("breakTimeLate and breakTimeLateBetween set to no");
                     }
 
                     $lastAttendanceBeforeClockOut->update([
-                        'break_time_late' => $break_time_late // update the second record
+                        'break_time_late' => $breakTimeLate, // update the second record
+                        'breaktime_late_between' => $breakTimeLateBetween
                     ]);
-
-                    Log::info("breakInBeforeHalfday", ["breakInBeforeHalfday" => $breakIn->lt($halfdayMark)]);
-                    Log::info("clockInAfterBreakOut", ["clockInAfterBreakOut" => $breakIn->gt($breakOut)]);
-                    Log::info("break_time_late", ["break_time_late" => $break_time_late]);
                 }
             } else {
                 // Clock Out - if last record exists and has no clock_out_time

@@ -19,8 +19,8 @@ return new class extends Migration
             $table->integer('absent')->default(0)->after('evening_shift_allowance');
             $table->integer('leave_without_pay_detection')->default(0)->after('absent');
             $table->integer('after_late_detection')->default(0)->after('leave_without_pay_detection');
-            $table->integer('break_time_late_detection')->default(0)->after('after_late_detection');
-            $table->integer('total_leave_without_pay_salary')->default(0)->after('break_time_late_detection');
+            $table->integer('between_late_detection')->default(0)->after('after_late_detection');
+            $table->integer('total_leave_without_pay_salary')->default(0)->after('between_late_detection');
              $table->integer('technical_allowance')->default(0)->after('total_leave_without_pay_salary');
             $table->integer('living_cost_allowance')->default(0)->after('technical_allowance');
             $table->integer('special_allowance')->default(0)->after('living_cost_allowance');
@@ -45,8 +45,9 @@ return new class extends Migration
                 'evening_shift_allowance',
                 'absent',
                 'leave_without_pay_detection',
+                'total_leave_without_pay_salary',
                 'after_late_detection',
-                'break_time_late_detection',
+                'between_late_detection',
                 'technical_allowance',
                 'living_cost_allowance',
                 'special_allowance',

@@ -211,9 +211,9 @@
                                     </tr>
 
                                     <tr>
-                                        <td>@lang('payroll::modules.payroll.breakTimeLateDetection')</td>
+                                        <td>@lang('payroll::modules.payroll.betweenLateDetection')</td>
                                         <td class="text-right text-uppercase">
-                                            {{ currency_format($breakTimeLateDetection, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                            {{ currency_format($betweenLateDetection, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 

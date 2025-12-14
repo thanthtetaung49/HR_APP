@@ -374,9 +374,9 @@
                             </td>
                         </tr>
                         <tr>
-                            <td>@lang('payroll::modules.payroll.breakTimeLateDetection')</td>
+                            <td>@lang('payroll::modules.payroll.betweenLateDetection')</td>
                             <td align="right" class="text-uppercase">
-                                {{ currency_format($breakTimeLateDetection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {{ currency_format($betweenLateDetection, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}

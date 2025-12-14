@@ -152,9 +152,13 @@ trait ImportExcel
                 if (!empty($user) && $checkEmailDate) {
 
                     $clockIn = Carbon::parse($data['clock_in_time']);
-                    $clockOut = Carbon::parse($data['clock_out_time'])
-                        ->clone()
+                    $breakTimeStartTime = Carbon::parse($data['clock_out_time'])
+                        ->copy()
                         ->addMinutes(45);
+
+                    $breakTimeEndTime = Carbon::parse($data['clock_out_time'])
+                        ->copy()
+                        ->addMinutes(60);
 
                     $employeeShift = EmployeeShiftSchedule::with('shift')
                         ->where('user_id', $user->id)
@@ -166,26 +170,29 @@ trait ImportExcel
                     $attendanceSettings = $this->attendanceShiftData($showClockIn);
 
                     if (isset($employeeShift)) {
-                        $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
+                        $halfDayMarkTime = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
                     } else {
-                        $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
+                        $halfDayMarkTime = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
                     }
 
-
-
-                    $halfday_mark_time = Carbon::parse($halfday_mark_time);
+                    $halfDayMarkTime = Carbon::parse($halfDayMarkTime);
 
                     $break_time_late = "no";
+                    $breaktime_late_between = "no";
 
-                    if ($clockIn->lt($halfday_mark_time) && $clockIn->gt($clockOut)) {
+                    if ($clockIn->lt($halfDayMarkTime) && $clockIn->gt($breakTimeEndTime)) {
                         $break_time_late = 'yes';
-                    } elseif ($clockIn->lt($halfday_mark_time)) {
-                        $break_time_late = 'no';
+                    } elseif ($clockIn->between($breakTimeStartTime, $breakTimeEndTime)) {
+                        $breaktime_late_between = 'yes';
+                    } elseif (!$clockIn->lt($halfDayMarkTime)) {
+                        $break_time_late = 'yes';
+                        $breaktime_late_between = 'yes';
                     } else {
-                        $break_time_late = 'yes';
+                        $break_time_late = 'no';
+                        $breaktime_late_between = 'no';
                     }
 
-                    $jobs[] = (new $importJobClass($row, $columns, company(), $break_time_late));
+                    $jobs[] = (new $importJobClass($row, $columns, company(), $break_time_late, $breaktime_late_between));
                 }
             }
         }

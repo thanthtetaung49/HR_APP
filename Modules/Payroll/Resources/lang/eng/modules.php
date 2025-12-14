@@ -63,7 +63,7 @@ return array(
         'otherDetection' => 'Other Deduction',
         'beforeLateDetection' => 'Before Late Deduction',
         'afterLateDetection' => 'Late (After 15 mins)',
-        'breakTimeLateDetection' => 'Late (Between 15 mins)',
+        'betweenLateDetection' => 'Late (Between 15 mins)',
         'creditSales' => 'Credit Sales',
         'deposit' => 'Deposit',
         'loan' => 'Loan',
