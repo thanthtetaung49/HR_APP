@@ -473,14 +473,6 @@ class PayrollController extends AccountBaseController
             $attLateBetween = $attendanceLateInMonth->where('late_between', 'yes')->count();
             $attBreakTimeLateBetween = $breakTimeLateMonth->where('breaktime_late_between', 'yes')->count();
 
-            Log::info('attLateAfter', [
-                'attLateAfter' => $attLateAfter,
-                'attBreakTimeAfter' => $attBreakTimeAfter,
-                'attLateBetween' => $attLateBetween,
-                'attBreakTimeLateBetween' => $attBreakTimeLateBetween,
-                'halfDayLateCount' => $halfDayLateCount
-            ]);
-
             // half day late | second half calculation
             // if ($halfDayLateCount > 0) {
             //     $attBreakTimeAfter += $halfDayLateCount;
@@ -562,10 +554,10 @@ class PayrollController extends AccountBaseController
                     $daysInMonth = 30;
                 }
 
-                $fixedBasicSalary = $allowance?->basic_salary;
-                $technicalAllowance = $allowance?->technical_allowance;
-                $livingCostAllowance = $allowance?->living_cost_allowance;
-                $specialAllowance = $allowance?->special_allowance;
+                $fixedBasicSalary = $allowance ? $allowance->basic_salary : 0;
+                $technicalAllowance = $allowance ? $allowance->technical_allowance : 0;
+                $livingCostAllowance = $allowance ? $allowance->living_cost_allowance : 0;
+                $specialAllowance = $allowance ? $allowance->special_allowance : 0;
 
                 // dd($technicalAllowance);
 
@@ -575,8 +567,6 @@ class PayrollController extends AccountBaseController
                 $perDayTechAllowance = $technicalAllowance / $daysInMonth;
                 $perDayLivingCostAllowance = $livingCostAllowance / $daysInMonth;
                 $perDaySpecialAllowance = $specialAllowance / $daysInMonth;
-
-                // dd($perDayTechAllowance);
 
                 if ($payrollCycleData->cycle == 'biweekly') {
                     $perDaySalary = $perDaySalary * 14;
@@ -606,13 +596,6 @@ class PayrollController extends AccountBaseController
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
-
-                    // dd([
-                    //     'payDay' => $payDays,
-                    //     'daysDifference' => $daysDifference,
-                    //     'basicSalaryInMonth' => $basicSalaryInMonth,
-                    //     'perDaySalary' => $perDaySalary
-                    // ]);
                 }
 
                 foreach ($additionalSalaries as $additionalSalary) {
@@ -642,14 +625,26 @@ class PayrollController extends AccountBaseController
 
                 $afterLateDetection = ($attLateAfter * $perDaySalary) + ($attBreakTimeAfter * $perDaySalary) + ($halfDayLateCount * $perDaySalary);
 
+                Log::info('attLateAfter', [
+                    'userId' => $userId,
+                    'userName' => $user->name,
+                    'attLateAfter' => $attLateAfter,
+                    'attBreakTimeAfter' => $attBreakTimeAfter,
+                    'attLateBetween' => $attLateBetween,
+                    'attBreakTimeLateBetween' => $attBreakTimeLateBetween,
+                    'halfDayLateCount' => $halfDayLateCount,
+                    'perDaySalary' => $perDaySalary,
+                    'daysInMonth' => $daysInMonth
+                ]);
+
                 $absentDetection = $absentInMonth * $perDaySalary * 2;
                 $totalLeaveWithoutPaySalary = $allLeaveWithoutPayCount * $perDaySalary;
 
-                $otherDetection = $detuction?->other_detection;
-                $creditSales = $detuction?->credit_sales;
-                $deposit = $detuction?->deposit;
-                $loan = $detuction?->loan;
-                $ssb = $detuction?->ssb;
+                $otherDetection = $detuction ? $detuction->other_detection : 0;
+                $creditSales = $detuction ? $detuction->credit_sales : 0;
+                $deposit = $detuction ? $detuction->deposit : 0;
+                $loan = $detuction ? $detuction->loan : 0;
+                $ssb = $detuction ? $detuction->ssb : 0;
 
                 // detection calculation
                 $totalDetection = ($totalLeaveWithoutPaySalary) + $otherDetection + $creditSales + $deposit + $loan + $ssb + $absentDetection;
@@ -1508,10 +1503,10 @@ class PayrollController extends AccountBaseController
         $rankId = $request->rankId;
 
         if ($rankId != "all" && $rankId != '') {
-            $designations = Designation::whereIn('rank_id', $request->rankId);
+            $designations = Designation::where('rank_id', $request->rankId);
             $designationsId = $designations->pluck('id')->toArray();
             // $users = $users->where('employee_details.rank', $rankId);
-            $users = $users->whereIn('users.designation_id', $designationsId);
+            $users = $users->where('users.designation_id', $designationsId);
         }
 
         if ($payrollCycle) {

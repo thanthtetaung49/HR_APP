@@ -134,8 +134,8 @@
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control select-picker" name="rank_id" id="rank_id"
-                                        data-live-search="true" multiple>
-                                        <option value="all">@lang('app.all')</option>
+                                        data-live-search="true" >
+                                        <option value="">---</option>
                                         <option value="1">Rank 1</option>
                                         <option value="2">Rank 2</option>
                                         <option value="3">Rank 3</option>

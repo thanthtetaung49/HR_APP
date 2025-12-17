@@ -15,6 +15,7 @@ class File extends Component
     public $fieldHelp;
     public $fieldRequired;
     public $fieldHeight;
+    public $fieldDisabled;
     public $popover;
     public $allowedFileExtensions;
 
@@ -23,12 +24,13 @@ class File extends Component
      *
      * @return void
      */
-    public function __construct($fieldId, $fieldName, $fieldLabel, $fieldValue = null, $fieldHelp = null, $fieldRequired = false, $fieldHeight = 100, $popover = null, $allowedFileExtensions = null)
+    public function __construct($fieldId, $fieldName, $fieldLabel, $fieldValue = null, $fieldHelp = null, $fieldRequired = false, $fieldHeight = 100, $popover = null, $allowedFileExtensions = null, $fieldDisabled = false)
     {
         $this->fieldLabel = $fieldLabel;
         $this->fieldValue = $fieldValue;
         $this->fieldName = $fieldName;
         $this->fieldId = $fieldId;
+        $this->fieldDisabled = $fieldDisabled;
         $this->fieldHelp = $fieldHelp;
         $this->fieldRequired = $fieldRequired;
         $this->fieldHeight = $fieldHeight;

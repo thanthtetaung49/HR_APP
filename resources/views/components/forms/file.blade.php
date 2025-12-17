@@ -5,7 +5,7 @@
            data-default-file="{{ $fieldValue }}" @if (!is_null($allowedFileExtensions))
            data-allowed-file-extensions="{{ $allowedFileExtensions }}"
            @endif
-           data-height="{{ $fieldHeight }}"/>
+           data-height="{{ $fieldHeight }}" {{ $fieldDisabled ? 'disabled' : '' }}/>
 
     @if ($fieldHelp)
         <small id="{{ $fieldId }}Help" class="form-text text-muted">{{ $fieldHelp }}</small>

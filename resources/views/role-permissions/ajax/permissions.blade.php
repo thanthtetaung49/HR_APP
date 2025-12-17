@@ -20,7 +20,7 @@
                 @endif
 
             </td>
-            @foreach ($moduleData->permissions as $permission)
+            @foreach ($moduleData->permissions->take(4) as $permission)
                 @php
                     $allowedPermissions = json_decode($permission->allowed_permissions);
                     $permissionType = $role->permissionType($permission->id);
@@ -58,8 +58,6 @@
                     @endif
                 </div>
             </td>
-
-
         </tr>
     @endforeach
 </x-table>

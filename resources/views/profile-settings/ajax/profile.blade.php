@@ -6,7 +6,7 @@
             <x-forms.file allowedFileExtensions="png jpg jpeg svg bmp" class="mr-0 mr-lg-2 mr-md-2 cropper"
                           :fieldLabel="__('modules.profile.profilePicture')"
                           :fieldValue="($user->image ? $user->masked_image_url : $user->image_url)" fieldName="image"
-                          fieldId="profile-image" :popover="__('modules.themeSettings.logoSize')">
+                          fieldId="profile-image" :popover="__('modules.themeSettings.logoSize')" :fieldDisabled="true"> >
             </x-forms.file>
         </div>
 
@@ -15,7 +15,7 @@
                    for="usr">@lang('modules.profile.yourName')</label>
             <div class="input-group">
                 <select class="select-picker form-control" name="salutation" id="salutation"
-                        data-live-search="true">
+                        data-live-search="true" disabled>
                     <option value="">--</option>
                     @foreach ($salutations as $salutation)
                         <option value="{{ $salutation->value }}" @selected($user->salutation == $salutation)>{{ $salutation->label() }}</option>
@@ -23,7 +23,7 @@
                 </select>
                 <div class="input-group-append w-70">
                     <input type="text" class="form-control f-14" placeholder="@lang('placeholders.name')"
-                           name="name" id="name" value="{{ $user->name }}">
+                           name="name" id="name" value="{{ $user->name }}" disabled>
                 </div>
             </div>
         </div>
@@ -31,7 +31,7 @@
         <div class="col-lg-4">
             <x-forms.text class="mr-0 mr-lg-2 mr-md-2" :fieldLabel="__('modules.profile.yourEmail')"
                           fieldRequired="true" :fieldPlaceholder="__('placeholders.email')" fieldName="email"
-                          fieldId="email" :fieldValue="$user->email"></x-forms.text>
+                          fieldId="email" :fieldValue="$user->email" :fieldReadOnly="true"></x-forms.text>
         </div>
 
         <div class="col-lg-4">
