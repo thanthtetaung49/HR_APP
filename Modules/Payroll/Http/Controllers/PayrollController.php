@@ -1478,14 +1478,16 @@ class PayrollController extends AccountBaseController
     public function byRank(Request $request)
     {
         $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id');
+
         $payrollCycle = $request->cycleId;
         $rankId = $request->rankId;
 
         if ($rankId != "all" && $rankId != '') {
-            $designations = Designation::where('rank_id', $request->rankId);
+            $designations = Designation::where('rank_id', $request->rankId)->get();
+
             $designationsId = $designations->pluck('id')->toArray();
-            // $users = $users->where('employee_details.rank', $rankId);
-            $users = $users->where('users.designation_id', $designationsId);
+
+            $users = $users->whereIn('users.designation_id', $designationsId);
         }
 
         if ($payrollCycle) {
