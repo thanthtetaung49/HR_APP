@@ -74,6 +74,8 @@ class CustomFieldGroup extends BaseModel
             info($customFieldsDataMerge);
         }
 
+        // dd($customFieldsDataMerge);
+
         return $customFieldsDataMerge;
     }
 
@@ -96,5 +98,4 @@ class CustomFieldGroup extends BaseModel
             },
         );
     }
-
 }

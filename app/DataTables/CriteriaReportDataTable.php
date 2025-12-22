@@ -34,15 +34,13 @@ class CriteriaReportDataTable extends BaseDataTable
                 $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
                 if ($getCustomFieldGroupsWithFields) {
-                    $fields = $getCustomFieldGroupsWithFields->fields;
+                    $fields = $getCustomFieldGroupsWithFields->fields->where('id', 18);
                 }
 
                 if (isset($fields) && count($fields) > 0) {
                     foreach ($fields as $field) {
-                        if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
-                            $options = $field->values;
-                            $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
-                        }
+                        $options = $field->values;
+                        $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
                     }
                 }
 
@@ -66,8 +64,8 @@ class CriteriaReportDataTable extends BaseDataTable
             ->leftJoin('designations', 'designations.id', '=', 'employee_details.designation_id')
             ->leftJoin('locations', 'locations.id', '=', 'teams.location_id')
             ->whereNotNull('employee_details.notice_period_end_date')
-            ->whereNotNull('employee_details.criteria_id')
-            ->whereNotNull('employee_details.sub_criteria_id');
+            ->whereNotNull('employee_details.criteria_id');
+            // ->whereNotNull('employee_details.sub_criteria_id');
 
 
         if (request()->location != 'all' && request()->location != '') {
@@ -75,7 +73,7 @@ class CriteriaReportDataTable extends BaseDataTable
         }
 
         if (request()->department != 'all' && request()->department != '') {
-            $model->where('teams.id',request()->department);
+            $model->where('teams.id', request()->department);
         }
 
         if (request()->designation != 'all' && request()->designation != '') {

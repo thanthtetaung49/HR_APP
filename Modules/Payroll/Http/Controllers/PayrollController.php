@@ -471,6 +471,9 @@ class PayrollController extends AccountBaseController
             $toalLwpCount = $normalLwpCount + ($halfDayLwpCount / 2);
 
             $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
+
+            // dd($halfDayLateCount);
+
             // first rows
             $attLateAfter = $attendanceLateInMonth->where('late', 'yes')->count();
             $attLateBetween = $attendanceLateInMonth->where('late_between', 'yes')->count();
@@ -607,7 +610,8 @@ class PayrollController extends AccountBaseController
                     'attBreakTimeLateBetween' => $attBreakTimeLateBetween,
                     'halfDayLateCount' => $halfDayLateCount,
                     'perDaySalary' => $perDaySalary,
-                    'daysInMonth' => $daysInMonth
+                    'daysInMonth' => $daysInMonth,
+                    'afterLateDetection' => $afterLateDetection
                 ]);
 
                 $absentDetection = $absentInMonth * $perDaySalary * 2;

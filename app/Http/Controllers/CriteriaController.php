@@ -129,7 +129,7 @@ class CriteriaController extends AccountBaseController
         $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
         if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+            $this->fields = $getCustomFieldGroupsWithFields->fields->where('id', 18);
         }
 
         return view('criteria.ajax.edit', $this->data);

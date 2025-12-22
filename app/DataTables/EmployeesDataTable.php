@@ -219,6 +219,26 @@ class EmployeesDataTable extends BaseDataTable
 
         $datatables->addColumn('department_name', fn($row) => $row->department_name ?? '--');
 
+        $datatables->addColumn('rank', fn($row) => $row->rank ? 'Rank ' . $row->rank : '--');
+
+        $datatables->addColumn('criteria', function ($row) {
+            $employee = new EmployeeDetails();
+            $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+            if ($getCustomFieldGroupsWithFields) {
+                $fields = $getCustomFieldGroupsWithFields->fields->where('id', 18);
+            }
+
+            if (isset($fields) && count($fields) > 0) {
+                foreach ($fields as $field) {
+                    $options = $field->values;
+                    $exitReason = $options[$row->exit_reason_id] ?? $row->exit_reason_id;
+                }
+            }
+
+            return $exitReason;
+        });
+
         $datatables->addIndexColumn();
         $datatables->setRowId(fn($row) => 'row-' . $row->id);
         $datatables->removeColumn('roleId');
@@ -241,200 +261,205 @@ class EmployeesDataTable extends BaseDataTable
      */
     public function query(User $model)
     {
-            $request = $this->request();
+        $request = $this->request();
 
-            $userRoles = '';
+        $userRoles = '';
 
-            if ($request->role != 'all' && $request->role != '') {
-                $userRoles = Role::findOrFail($request->role);
-            }
+        if ($request->role != 'all' && $request->role != '') {
+            $userRoles = Role::findOrFail($request->role);
+        }
 
-           $users = User::with([
-                'role',
-                'roles:name,display_name',
-                'roles.roleuser',
-                'employeeDetail' => function ($query) {
-                    $query->select('notice_period_end_date', 'internship_end_date', 'employment_type', 'probation_end_date', 'user_id', 'added_by', 'designation_id', 'employee_id', 'joining_date', 'reporting_to', 'department_id')
-                        ->with('reportingTo:id,name,image');
-                },
-                'session',
-                'employeeDetail.designation:id,name',
-                'employeeDetail.department:id,team_name,location_id',
-            ])
-                ->withoutGlobalScope(ActiveScope::class)
-                ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
-                ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
-                ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
-                ->leftJoin('role_user', 'role_user.user_id', '=', 'users.id')
-                ->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')
-                ->select([
-                    'users.id',
-                    'users.salutation',
-                    'users.name',
-                    'users.email',
-                    'users.created_at',
-                    'roles.name as roleName',
-                    'roles.id as roleId',
-                    'users.image',
-                    'users.gender',
-                    'users.mobile',
-                    'users.country_phonecode',
-                    'users.inactive_date',
-                    'designations.name as designation_name',
-                    'employee_details.added_by',
-                    'employee_details.employee_id',
-                    'employee_details.joining_date',
-                    'teams.team_name as department_name',
-                    DB::raw('CASE
+        $users = User::with([
+            'role',
+            'roles:name,display_name',
+            'roles.roleuser',
+            'employeeDetail' => function ($query) {
+                $query->select('notice_period_end_date', 'internship_end_date', 'employment_type', 'probation_end_date', 'user_id', 'added_by', 'designation_id', 'employee_id', 'joining_date', 'reporting_to', 'department_id')
+                    ->with('reportingTo:id,name,image');
+            },
+            'session',
+            'employeeDetail.designation:id,name',
+            'employeeDetail.department:id,team_name,location_id',
+        ])
+            ->withoutGlobalScope(ActiveScope::class)
+            ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->leftJoin('criterias', 'employee_details.criteria_id', '=', 'criterias.id')
+            ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
+            ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
+            ->leftJoin('role_user', 'role_user.user_id', '=', 'users.id')
+            ->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')
+            ->select([
+                'users.id',
+                'users.salutation',
+                'users.name',
+                'users.email',
+                'users.created_at',
+                'roles.name as roleName',
+                'roles.id as roleId',
+                'users.image',
+                'users.gender',
+                'users.mobile',
+                'users.country_phonecode',
+                'users.inactive_date',
+                'designations.name as designation_name',
+                'designations.rank_id as rank',
+                'employee_details.added_by',
+                'employee_details.employee_id',
+                'employee_details.joining_date',
+                'criterias.exit_reason_id',
+                'teams.team_name as department_name',
+                DB::raw('CASE
                         WHEN users.status = "deactive" THEN "inactive"
                         WHEN users.inactive_date IS NULL THEN "active"
                         WHEN users.inactive_date <= CURDATE() THEN "inactive"
                         ELSE "active"
                         END as status')
-                ])
-                ->groupBy('users.id', 'teams.team_name')
-                ->whereHas('roles', function ($query) {
-                    $query->where('name', 'employee');
+            ])
+            ->groupBy('users.id', 'teams.team_name')
+            ->whereHas('roles', function ($query) {
+                $query->where('name', 'employee');
+            });
+
+        // dd($users->get()->toArray());
+
+        if ($request->status != 'all' && $request->status != '' && $request->EmployeeType == null) {
+            if ($request->status == 'active') {
+                // Check if the inactive_date is today or in the past
+                $expireDate = now()->toDateString();
+                $users = $users->where('users.status', 'active');
+
+                $users = $users->where(function ($query) use ($expireDate) {
+                    $query->orWhereNull('users.inactive_date') // Consider users with null inactive_date
+                        ->orWhere('users.inactive_date', '>', $expireDate); // Or users with inactive_date in the future
                 });
+            } elseif ($request->status == 'deactive') {
+                // Check if the inactive_date is in the past
+                $expireDate = now()->toDateString();
+                $users = $users->where('users.status', 'deactive')
+                    ->orWhere('users.inactive_date', '<=', $expireDate);
+            }
+        }
 
-            if ($request->status != 'all' && $request->status != '' && $request->EmployeeType == null) {
-                if ($request->status == 'active') {
-                    // Check if the inactive_date is today or in the past
-                    $expireDate = now()->toDateString();
-                    $users = $users->where('users.status', 'active');
+        if ($request->EmployeeType === 'ex_employee') {
 
-                    $users = $users->where(function ($query) use ($expireDate) {
-                        $query->orWhereNull('users.inactive_date') // Consider users with null inactive_date
-                            ->orWhere('users.inactive_date', '>', $expireDate); // Or users with inactive_date in the future
-                    });
-                } elseif ($request->status == 'deactive') {
-                    // Check if the inactive_date is in the past
-                    $expireDate = now()->toDateString();
-                    $users = $users->where('users.status', 'deactive')
-                        ->orWhere('users.inactive_date', '<=', $expireDate);
-                }
+            $lastStartDate = null;
+            $lastEndDate = null;
+
+            if ($request->lastStartDate !== null && $request->lastStartDate != 'null' && $request->lastStartDate != '') {
+                $lastStartDate = companyToDateString($request->lastStartDate);
             }
 
-            if ($request->EmployeeType === 'ex_employee') {
-
-                $lastStartDate = null;
-                $lastEndDate = null;
-
-                if ($request->lastStartDate !== null && $request->lastStartDate != 'null' && $request->lastStartDate != '') {
-                    $lastStartDate = companyToDateString($request->lastStartDate);
-                }
-
-                if ($request->lastEndDate !== null && $request->lastEndDate != 'null' && $request->lastEndDate != '') {
-                    $lastEndDate = companyToDateString($request->lastEndDate);
-                }
-
-                $users = $users->whereBetween('employee_details.last_date', [$lastStartDate, $lastEndDate]);
+            if ($request->lastEndDate !== null && $request->lastEndDate != 'null' && $request->lastEndDate != '') {
+                $lastEndDate = companyToDateString($request->lastEndDate);
             }
 
-            if ($request->gender != 'all' && $request->gender != '') {
-                $users = $users->where('users.gender', $request->gender);
+            $users = $users->whereBetween('employee_details.last_date', [$lastStartDate, $lastEndDate]);
+        }
+
+        if ($request->gender != 'all' && $request->gender != '') {
+            $users = $users->where('users.gender', $request->gender);
+        }
+
+        if ($request->employee != 'all' && $request->employee != '') {
+            $users = $users->where('users.id', $request->employee);
+        }
+
+        if ($request->designation != 'all' && $request->designation != '') {
+            $users = $users->where('employee_details.designation_id', $request->designation);
+        }
+
+        if ($request->department != 'all' && $request->department != '') {
+            $users = $users->where('employee_details.department_id', $request->department);
+        }
+
+        if ($request->role != 'all' && $request->role != '' && $userRoles) {
+            if ($userRoles->name == 'admin') {
+                $users = $users->where('roles.id', $request->role);
+            } elseif ($userRoles->name == 'employee') {
+                $users = $users->where(DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1)'), $request->role)
+                    ->having('roleName', '<>', 'admin');
+            } else {
+                $users = $users->where(DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1)'), $request->role);
             }
+        }
 
-            if ($request->employee != 'all' && $request->employee != '') {
-                $users = $users->where('users.id', $request->employee);
+        if ((is_array($request->skill) && $request->skill[0] != 'all') && $request->skill != '' && $request->skill != null && $request->skill != 'null') {
+            $users = $users->join('employee_skills', 'employee_skills.user_id', '=', 'users.id')
+                ->whereIn('employee_skills.skill_id', $request->skill);
+        }
+
+        if ($this->viewEmployeePermission == 'added') {
+            $users = $users->where('employee_details.added_by', user()->id);
+        }
+
+        if ($this->viewEmployeePermission == 'owned') {
+            $users = $users->where('employee_details.user_id', user()->id);
+        }
+
+        if ($this->viewEmployeePermission == 'both') {
+            $users = $users->where(function ($q) {
+                $q->where('employee_details.user_id', user()->id);
+                $q->orWhere('employee_details.added_by', user()->id);
+            });
+        }
+
+        if ($request->startDate != '' && $request->endDate != '') {
+            $startDate = companyToDateString($request->startDate);
+            $endDate = companyToDateString($request->endDate);
+
+            $users = $users->whereRaw('Date(employee_details.joining_date) >= ?', [$startDate])->whereRaw('Date(employee_details.joining_date) <= ?', [$endDate]);
+        }
+
+        if ($request->searchText != '') {
+            $users = $users->where(function ($query) {
+                $query->where('users.name', 'like', '%' . request('searchText') . '%')
+                    ->orWhere('users.email', 'like', '%' . request('searchText') . '%')
+                    ->orWhere('employee_details.employee_id', 'like', '%' . request('searchText') . '%');
+            });
+        }
+
+        if ($request->employmentType != 'all' && $request->employmentType != '') {
+
+            if ($request->employmentType == 'probation') {
+                $today = now()->toDateString();
+                $users = $users->where('employee_details.probation_end_date', '>', $today);
             }
-
-            if ($request->designation != 'all' && $request->designation != '') {
-                $users = $users->where('employee_details.designation_id', $request->designation);
+            if ($request->employmentType == 'internship') {
+                $today = now()->toDateString();
+                $users = $users->where('employee_details.employment_type', $request->employmentType)
+                    ->orWhere('employee_details.internship_end_date', '>', $today);
             }
-
-            if ($request->department != 'all' && $request->department != '') {
-                $users = $users->where('employee_details.department_id', $request->department);
+            if ($request->employmentType == 'notice_period') {
+                $today = now()->toDateString();
+                $users = $users->where('employee_details.notice_period_end_date', '>', $today);
             }
-
-            if ($request->role != 'all' && $request->role != '' && $userRoles) {
-                if ($userRoles->name == 'admin') {
-                    $users = $users->where('roles.id', $request->role);
-                } elseif ($userRoles->name == 'employee') {
-                    $users = $users->where(DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1)'), $request->role)
-                        ->having('roleName', '<>', 'admin');
-                } else {
-                    $users = $users->where(DB::raw('(select user_roles.role_id from role_user as user_roles where user_roles.user_id = users.id ORDER BY user_roles.role_id DESC limit 1)'), $request->role);
-                }
+            if ($request->employmentType == 'new_hires') {
+                $thirtyDaysAgo = now()->subDays(30)->toDateString();
+                $today = now()->toDateString();
+                $users = $users->whereBetween('employee_details.joining_date', [$thirtyDaysAgo, $today]);
             }
-
-            if ((is_array($request->skill) && $request->skill[0] != 'all') && $request->skill != '' && $request->skill != null && $request->skill != 'null') {
-                $users = $users->join('employee_skills', 'employee_skills.user_id', '=', 'users.id')
-                    ->whereIn('employee_skills.skill_id', $request->skill);
+            if ($request->employmentType == 'long_standing') {
+                $twoYearsAgo = now()->subYears(2)->toDateString();
+                $users = $users->where('employee_details.joining_date', '<=', $twoYearsAgo);
             }
+        }
 
-            if ($this->viewEmployeePermission == 'added') {
-                $users = $users->where('employee_details.added_by', user()->id);
-            }
+        $location_id = $request->location;
+        $rank = $request->rank;
 
-            if ($this->viewEmployeePermission == 'owned') {
-                $users = $users->where('employee_details.user_id', user()->id);
-            }
+        if ($location_id != 'all' && $location_id != '') {
+            $users = $users->whereHas('employeeDetails.department', function ($query) use ($location_id) {
+                $query->where('location_id', $location_id);
+            });
+        }
 
-            if ($this->viewEmployeePermission == 'both') {
-                $users = $users->where(function ($q) {
-                    $q->where('employee_details.user_id', user()->id);
-                    $q->orWhere('employee_details.added_by', user()->id);
-                });
-            }
+        if ($rank != 'all' && $rank != '') {
+            $users = $users->whereHas('employeeDetails', function ($query) use ($rank) {
+                $query->where('rank', $rank);
+            });
+        }
 
-            if ($request->startDate != '' && $request->endDate != '') {
-                $startDate = companyToDateString($request->startDate);
-                $endDate = companyToDateString($request->endDate);
-
-                $users = $users->whereRaw('Date(employee_details.joining_date) >= ?', [$startDate])->whereRaw('Date(employee_details.joining_date) <= ?', [$endDate]);
-            }
-
-            if ($request->searchText != '') {
-                $users = $users->where(function ($query) {
-                    $query->where('users.name', 'like', '%' . request('searchText') . '%')
-                        ->orWhere('users.email', 'like', '%' . request('searchText') . '%')
-                        ->orWhere('employee_details.employee_id', 'like', '%' . request('searchText') . '%');
-                });
-            }
-
-            if ($request->employmentType != 'all' && $request->employmentType != '') {
-
-                if ($request->employmentType == 'probation') {
-                    $today = now()->toDateString();
-                    $users = $users->where('employee_details.probation_end_date', '>', $today);
-                }
-                if ($request->employmentType == 'internship') {
-                    $today = now()->toDateString();
-                    $users = $users->where('employee_details.employment_type', $request->employmentType)
-                        ->orWhere('employee_details.internship_end_date', '>', $today);
-                }
-                if ($request->employmentType == 'notice_period') {
-                    $today = now()->toDateString();
-                    $users = $users->where('employee_details.notice_period_end_date', '>', $today);
-                }
-                if ($request->employmentType == 'new_hires') {
-                    $thirtyDaysAgo = now()->subDays(30)->toDateString();
-                    $today = now()->toDateString();
-                    $users = $users->whereBetween('employee_details.joining_date', [$thirtyDaysAgo, $today]);
-                }
-                if ($request->employmentType == 'long_standing') {
-                    $twoYearsAgo = now()->subYears(2)->toDateString();
-                    $users = $users->where('employee_details.joining_date', '<=', $twoYearsAgo);
-                }
-            }
-
-            $location_id = $request->location;
-            $rank = $request->rank;
-
-            if ($location_id != 'all' && $location_id != '') {
-                $users = $users->whereHas('employeeDetails.department', function ($query) use ($location_id) {
-                    $query->where('location_id', $location_id);
-                });
-            }
-
-            if ($rank != 'all' && $rank != '') {
-                $users = $users->whereHas('employeeDetails', function ($query) use ($rank) {
-                    $query->where('rank', $rank);
-                });
-            }
-
-            return $users->groupBy('users.id');
+        return $users->groupBy('users.id');
     }
 
     /**
@@ -490,8 +515,16 @@ class EmployeesDataTable extends BaseDataTable
             __('modules.employees.department') => ['data' => 'department_name', 'name' => 'department_name', 'visible' => false, 'title' => __('modules.employees.department')],
             __('modules.employees.reportingTo') => ['data' => 'reporting_to', 'name' => 'reporting_to', 'title' => __('modules.employees.reportingTo')],
             __('modules.employees.joiningDate') => ['data' => 'joining_date', 'name' => 'joining_date', 'visible' => false, 'title' => __('modules.employees.joiningDate')],
-            __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')]
+            __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')],
+            __('app.menu.rank') => ['data' => 'rank', 'name' => 'rank', 'title' => __('app.menu.rank')],
         ];
+
+        $customFieldGroup = CustomFieldGroup::customFieldsDataMerge(new EmployeeDetails());
+        $exitReason = [
+            __('app.menu.exitsReason') => ['data' => 'criteria', 'name' => 'criteria', 'title' =>  __('app.menu.exitsReason')]
+        ];
+
+        $combineColumn = array_merge($customFieldGroup, $exitReason);
 
         $action = [
             Column::computed('action', __('app.action'))
@@ -502,6 +535,6 @@ class EmployeesDataTable extends BaseDataTable
                 ->addClass('text-right pr-20')
         ];
 
-        return array_merge($data, CustomFieldGroup::customFieldsDataMerge(new EmployeeDetails()), $action);
+        return array_merge($data, $combineColumn, $action);
     }
 }

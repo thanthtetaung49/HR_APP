@@ -24,10 +24,6 @@
             </x-cards.data-row>
 
         @elseif($field->type == 'select')
-            {{-- @dump($field->values[$model->custom_fields_data['field_' . $field->id]])
-            @dump($model->custom_fields_data['field_' . $field->id]) --}}
-            {{-- @dump($field->values) --}}
-            {{-- @dump($model->custom_fields_data) --}}
             <x-cards.data-row :label="$field->label"
                               :value="(!is_null($model->custom_fields_data['field_' . $field->id]) && $model->custom_fields_data['field_' . $field->id] != '' ? $field->values[$model->custom_fields_data['field_' . $field->id]] : '--')">
             </x-cards.data-row>
@@ -49,6 +45,5 @@
             :value="$fileValue">
             </x-cards.data-row>
         @endif
-        {{-- @dd($model->custom_fields_data) --}}
     @endforeach
 @endif

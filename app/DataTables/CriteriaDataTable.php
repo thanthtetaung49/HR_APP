@@ -37,15 +37,13 @@ class CriteriaDataTable extends BaseDataTable
                 $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
                 if ($getCustomFieldGroupsWithFields) {
-                    $fields = $getCustomFieldGroupsWithFields->fields;
+                    $fields = $getCustomFieldGroupsWithFields->fields->where('id', 18);
                 }
 
                 if (isset($fields) && count($fields) > 0) {
                     foreach ($fields as $field) {
-                        if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
-                            $options = $field->values;
-                            $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
-                        }
+                        $options = $field->values;
+                        $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
                     }
                 }
 
@@ -145,7 +143,7 @@ class CriteriaDataTable extends BaseDataTable
      */
     public function query(Criteria $model): QueryBuilder
     {
-       $model = $model->select(
+        $model = $model->select(
             'criterias.id',
             'criterias.exit_reason_id',
             'sub_criterias.sub_criteria',

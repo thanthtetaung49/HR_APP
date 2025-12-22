@@ -118,6 +118,7 @@ trait CustomFieldsTrait
             $id = end($idarray);
 
             $fieldType = CustomField::findOrFail($id)->type;
+            // dd($fieldType);
             $company = $company_id ? Company::findOrFail($company_id) : company();
 
             $value = ($fieldType == 'date') ? Carbon::createFromFormat($company->date_format, $value)->format('Y-m-d') : $value;

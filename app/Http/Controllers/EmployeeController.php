@@ -153,7 +153,7 @@ class EmployeeController extends AccountBaseController
         $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
         if ($getCustomFieldGroupsWithFields) {
-            $this->fields = $getCustomFieldGroupsWithFields->fields;
+            $this->fields = $getCustomFieldGroupsWithFields->fields->where('id', '<>', 12);
         }
 
         $this->view = 'employees.ajax.create';
@@ -496,7 +496,7 @@ class EmployeeController extends AccountBaseController
             $getCustomFieldGroupsWithFields = $this->employeeDetail->getCustomFieldGroupsWithFields();
 
             if ($getCustomFieldGroupsWithFields) {
-                $this->fields = $getCustomFieldGroupsWithFields->fields;
+                $this->fields = $getCustomFieldGroupsWithFields->fields->where('id', '<>', 12);
             }
         }
 
@@ -520,6 +520,7 @@ class EmployeeController extends AccountBaseController
      */
     public function update(UpdateRequest $request, $id)
     {
+        // dd($request->all());
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
         $user->name = $request->name;
         $user->email = $request->email;
@@ -730,6 +731,10 @@ class EmployeeController extends AccountBaseController
                 $this->taskChart = $this->taskChartData($id);
                 $this->ticketChart = $this->ticketChartData($id);
 
+                $criteriaId = $this->employee->employeeDetail->criteria_id;
+                $criteria = Criteria::where('id', $criteriaId)->first();
+                $exitReasonId = $criteria?->exit_reason_id;
+
                 if (!is_null($this->employee->employeeDetail)) {
                     $this->employeeDetail = $this->employee->employeeDetail->withCustomFields();
 
@@ -740,15 +745,14 @@ class EmployeeController extends AccountBaseController
                     }
                 }
 
-                // dd($this->employee->employeeDetail->custom_fields_data);
-
                 foreach ($this->fields as $field) {
-                    if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
-                        $exitReasonId = $this->employee->employeeDetail->custom_fields_data['field_' . $field->id];
-                    }
+                    $options = $field->values;
+                    $this->exitReason = $options[$exitReasonId] ?? $exitReasonId;
                 }
 
-                $this->cause = Cause::where('exit_reason_id', $exitReasonId)->first();
+                $designationId = $this->employee->employeeDetail->designation_id;
+                $designations = Designation::where('id',  $designationId)->first();
+                $this->rank = $designations->rank_id ? "Rank" . $designations->rank_id : '';
 
                 $taskBoardColumn = TaskboardColumn::completeColumn();
 
@@ -1238,7 +1242,7 @@ class EmployeeController extends AccountBaseController
         $employee->slack_username = $request->slack_username;
         $employee->department_id = $request->department;
         $employee->designation_id = $request->designation;
-        $employee->rank = $request->custom_fields_data["rank-1_12"];
+        // $employee->rank = $request->custom_fields_data["rank-1_12"];
         $employee->company_address_id = $request->company_address;
         $employee->reporting_to = $request->reporting_to;
         $employee->about_me = $request->about_me;
@@ -1304,7 +1308,7 @@ class EmployeeController extends AccountBaseController
 
             $subCriteriaIds = $criteria->sub_criteria_ids;
 
-            $subCriterias =  SubCriteria::whereIn('id',$subCriteriaIds)->get();
+            $subCriterias =  SubCriteria::whereIn('id', $subCriteriaIds)->get();
         }
 
         return response()->json([

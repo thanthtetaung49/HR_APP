@@ -64,7 +64,7 @@
                 <div class="d-flex">
                     <x-forms.radio fieldId="login-yes" :fieldLabel="__('app.enable')"
                                    fieldName="email_notifications" fieldValue="1" checked="true"
-                                   :checked="($user->email_notifications == 1) ? 'checked' : ''">
+                                   :checked="($user->email_notifications == 1) ? 'checked' : ''" >
                     </x-forms.radio>
                     <x-forms.radio fieldId="login-no" :fieldLabel="__('app.disable')" fieldValue="0"
                                    fieldName="email_notifications"

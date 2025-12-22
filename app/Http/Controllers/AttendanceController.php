@@ -528,6 +528,8 @@ class AttendanceController extends AccountBaseController
             $officeEndTime = AttendanceSetting::first()->shift->office_end_time;
         }
 
+        // dd($halfDayStartTime);
+
         $halfDayStartDate = Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $halfDayStartTime, $this->company->timezone);
         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $officeStartTime, $this->company->timezone);
         $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $officeEndTime, $this->company->timezone);

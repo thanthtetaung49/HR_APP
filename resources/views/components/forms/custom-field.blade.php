@@ -152,15 +152,13 @@
                             $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
 
                             if ($getCustomFieldGroupsWithFields) {
-                                $fields = $getCustomFieldGroupsWithFields->fields;
+                                $fields = $getCustomFieldGroupsWithFields->fields->where('id', 18);
                             }
 
                             if (isset($fields) && count($fields) > 0) {
                                 foreach ($fields as $field) {
-                                    if ($field->type == 'select' && $field->name == 'exit-reasons-1') {
-                                        $options = $field->values;
-                                        $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
-                                    }
+                                    $options = $field->values;
+                                    $exitReason = $options[$criteria->exit_reason_id] ?? $criteria->exit_reason_id;
                                 }
                             }
                         @endphp
@@ -181,7 +179,7 @@
             <x-forms.label class="my-3" fieldId="sub_criteria_id" :fieldLabel="__('app.menu.subCriteria')" fieldName="sub_criteria_id">
             </x-forms.label>
             <x-forms.input-group>
-                <select class="form-control select-picker mt" name="sub_criteria_id" id="sub_criteria_id"
+                <select class="form-control select-picker " name="sub_criteria_id" id="sub_criteria_id"
                     data-live-search="true">
                     <option value="">--</option>
                     @if ($subCriterias)

@@ -254,27 +254,14 @@ $viewAppreciationPermission = user()->permission('view_appreciation');
                                 <x-cards.data-row :label="__('modules.employees.lastDate')"
                                 :value="(!is_null($employee->employeeDetail) && !is_null($employee->employeeDetail->last_date)) ? $employee->employeeDetail->last_date->translatedFormat(company()->date_format) : '--'" />
 
+                                <x-cards.data-row :label=" __('app.menu.rank')"
+                                :value="$rank" />
 
                                 {{-- Custom fields data --}}
                                 <x-forms.custom-field-show :fields="$fields" :model="$employee->employeeDetail"></x-forms.custom-field-show>
 
-                                {{-- @if ($cause)
-                                    <x-cards.data-row :label="__('app.menu.criteria')"
-                                        :value="(!is_null($cause->criteria) ? $cause->criteria->criteria : '--')" />
-
-                                        <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                                            <p class="mb-0 text-lightest f-14 w-30">{{ __('app.menu.responsiblePerson') }}</p>
-                                            <p class="mb-0 text-white f-14 w-70 text-wrap">
-                                                <span class="bg-danger p-2">{{ (!is_null($cause->criteria) ? $cause->criteria->responsible_person : '--') }}</span>
-                                            </p>
-                                        </div>
-
-                                        <div class="col-12 px-0 pb-3 d-lg-flex d-md-flex d-block">
-                                            <p class="mb-0 text-lightest f-14 w-30">{{ __('app.menu.actionTaken') }}</p>
-                                            <p class="mb-0 text-danger f-14 w-70 text-wrap">{{ (!is_null($cause->criteria) ? $cause->action_taken : '--') }}</p>
-                                        </div>
-                                @endif --}}
-
+                                <x-cards.data-row :label=" __('app.menu.exitsReason')"
+                                :value="$exitReason" />
                             @endif
 
                         </x-cards.data>
