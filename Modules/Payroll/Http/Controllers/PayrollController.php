@@ -334,6 +334,7 @@ class PayrollController extends AccountBaseController
             } else {
                 $users = $users->whereIn('users.id', $request->employee_id);
             }
+
             $users = $users->get();
         } else if ($request->rank_id) {
             $users = User::with('employeeDetail')
@@ -345,7 +346,8 @@ class PayrollController extends AccountBaseController
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
                 ->where('employee_details.rank', $request->rank_id)->get();
         } else {
-            $users = User::with('employeeDetail')->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
+            $users = User::with('employeeDetail')
+                ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->join('role_user', 'role_user.user_id', '=', 'users.id')
                 ->join('roles', 'roles.id', '=', 'role_user.role_id')
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
@@ -434,6 +436,9 @@ class PayrollController extends AccountBaseController
                 })
                 ->get();
 
+            // dd($breakTimeLateMonth->where('break_time_late', 'yes')->toArray());
+            // dd($breakTimeLateMonth->where('breaktime_late_between', 'yes')->toArray());
+
             $leave = Leave::with([
                 'type' => function ($query) {
                     return $query->select('paid', 'type_name');
@@ -464,50 +469,23 @@ class PayrollController extends AccountBaseController
 
 
             $toalLwpCount = $normalLwpCount + ($halfDayLwpCount / 2);
-            // $totalLeaveWithoutPay = 0;
 
             $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
+            // first rows
             $attLateAfter = $attendanceLateInMonth->where('late', 'yes')->count();
-            $attBreakTimeAfter = $breakTimeLateMonth->where('break_time_late', 'yes')->count();
-
             $attLateBetween = $attendanceLateInMonth->where('late_between', 'yes')->count();
+
+            // second rows
+            $attBreakTimeAfter = $breakTimeLateMonth->where('break_time_late', 'yes')->count();
             $attBreakTimeLateBetween = $breakTimeLateMonth->where('breaktime_late_between', 'yes')->count();
 
-            // half day late | second half calculation
-            // if ($halfDayLateCount > 0) {
-            //     $attBreakTimeAfter += $halfDayLateCount;
-            // }
-
-            // foreach ($attendanceLateInMonth as $attendanceLate) {
-            //     $clock_in_time = $attendanceLate->clock_in_time;
-            //     $carbonDate = Carbon::parse($clock_in_time)->startOfDay();
-            //     $employeeShift = EmployeeShiftSchedule::with('shift')
-            //         ->where('user_id', $user->id)
-            //         ->whereDate('date', Carbon::createFromFormat('Y-m-d H:i:s', $clock_in_time)->format('Y-m-d'))
-            //         ->first();
-
-            //     $showClockIn = AttendanceSetting::first();
-            //     $attendanceSettings = $this->attendanceShiftLate($showClockIn, $user->id, $carbonDate, $clock_in_time);
-
-            //     if (isset($employeeShift)) {
-            //         $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
-            //     } else {
-            //         $startTimestamp = Carbon::parse($clock_in_time, $this->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
-            //     }
-
-            //     $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $this->company->timezone);
-            //     $lateTime = $officeStartTime->copy()->addMinutes(15);
-
-            //     // if ($clock_in_time->greaterThan($officeStartTime) && $clock_in_time->lessThan($lateTime)) {
-            //     //     $attLateBetween += 1;
-            //     //     Log::info('attLateBefore', [
-            //     //         'attLateBefore' => $attLateBetween,
-            //     //         'clock_in_time' => $clock_in_time,
-            //     //         'late_time' => $lateTime,
-            //     //         'officeStartTime' => $officeStartTime
-            //     //     ]);
-            //     // }
-            // }
+            Log::info("Late Count", [
+                "halfDayLateCount" => $halfDayLateCount,
+                "attLateAfter" => $attLateAfter,
+                "attBreakTimeAfter" => $attBreakTimeAfter,
+                "attLateBetween" => $attLateBetween,
+                "attBreakTimeLateBetween" => $attBreakTimeLateBetween
+            ]);
 
             $holidayData = $this->getHolidayByDates($HolidayStartDate->toDateString(), $HolidayEndDate->toDateString(), $userId)
                 ->pluck('holiday_date')
@@ -520,13 +498,9 @@ class PayrollController extends AccountBaseController
             $offDaysAmount = $this->offDay($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
             $holidaysAmount = $this->holiday($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
 
-            // dd($offDaysAmount, $holidaysAmount);
-
             if ($endDate->greaterThan($joiningDate)) {
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
                 $allowance = Allowance::where('user_id', $userId)->first();
-
-                // dd($allowance);
 
                 $additionalSalaries = Allowance::select([
                     'additional_basic_salaries.type',
@@ -559,10 +533,7 @@ class PayrollController extends AccountBaseController
                 $livingCostAllowance = $allowance ? $allowance->living_cost_allowance : 0;
                 $specialAllowance = $allowance ? $allowance->special_allowance : 0;
 
-                // dd($technicalAllowance);
-
                 $perDaySalary = $fixedBasicSalary / $daysInMonth;
-                // $perDaySalary = $payrollCycleData->cycle == 'biweekly' ? $perDaySalary * 14 : $perDaySalary;
 
                 $perDayTechAllowance = $technicalAllowance / $daysInMonth;
                 $perDayLivingCostAllowance = $livingCostAllowance / $daysInMonth;
@@ -608,22 +579,24 @@ class PayrollController extends AccountBaseController
 
                 // $payableSalary = $perDaySalary * $payDays;
                 $offDayHolidaySalary = $offDaysAmount + $holidaysAmount;
+
+                Log::info('offDayHolidaySalary', [
+                    "offDayHolidaySalary" => $offDayHolidaySalary,
+                    "offDaysAmount" => $offDaysAmount,
+                    "holidaysAmount" => $holidaysAmount
+                ]);
+
                 $gazattedAllowance = $gazattedPresentCount * 3000;
                 $eveningShiftAllowance = $eveningShiftPresentCount * 500;
 
-                $allLeaveWithoutPayCount = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3)) + ($attLateAfter) + ($attBreakTimeAfter) + $halfDayLateCount + $toalLwpCount;
+                $totalBetweenLateCount = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3));
+                $totalAfterLateCount = floor($attLateAfter + $attBreakTimeAfter);
+
+                $allLeaveWithoutPayCount = $totalBetweenLateCount + $totalAfterLateCount + $halfDayLateCount + $toalLwpCount;
 
                 $leaveWithoutPayDetection = ($toalLwpCount * $perDaySalary);
-
-                $totalBetweenLateCount = ($attLateBetween + $attBreakTimeLateBetween) / 3;
-
-                $betweenLateDetection = 0;
-
-                for ($i = 0; $i < $totalBetweenLateCount; $i++) {
-                    $betweenLateDetection = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3)) * $perDaySalary;
-                }
-
-                $afterLateDetection = ($attLateAfter * $perDaySalary) + ($attBreakTimeAfter * $perDaySalary) + ($halfDayLateCount * $perDaySalary);
+                $betweenLateDetection = ($totalBetweenLateCount * $perDaySalary);
+                $afterLateDetection = ($totalAfterLateCount * $perDaySalary) + ($halfDayLateCount * $perDaySalary);
 
                 Log::info('attLateAfter', [
                     'userId' => $userId,
@@ -1365,6 +1338,8 @@ class PayrollController extends AccountBaseController
             ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
             ->groupBy('date', 'attendances.employee_shift_id', 'employee_details.overtime_hourly_rate')
             ->get();
+
+        // dd($attendance->toArray());
 
         $offDaysAmount = 0;
 

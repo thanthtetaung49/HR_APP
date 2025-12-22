@@ -23,7 +23,7 @@
                 </select>
                 <div class="input-group-append w-70">
                     <input type="text" class="form-control f-14" placeholder="@lang('placeholders.name')"
-                           name="name" id="name" value="{{ $user->name }}" disabled>
+                           name="name" id="name" value="{{ $user->name }}" readonly>
                 </div>
             </div>
         </div>

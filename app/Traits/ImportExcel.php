@@ -184,9 +184,8 @@ trait ImportExcel
                         $break_time_late = 'yes';
                     } elseif ($clockIn->between($breakTimeStartTime, $breakTimeEndTime)) {
                         $breaktime_late_between = 'yes';
-                    } elseif (!$clockIn->lt($halfDayMarkTime)) {
+                    } elseif ($clockIn->gt($halfDayMarkTime)) {
                         $break_time_late = 'yes';
-                        $breaktime_late_between = 'yes';
                     } else {
                         $break_time_late = 'no';
                         $breaktime_late_between = 'no';

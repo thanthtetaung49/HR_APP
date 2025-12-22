@@ -412,7 +412,7 @@ class BiometricEmployee extends BaseModel
                 if ($breakIn && $breakTimeEndTime) {
 
                     $breakTimeLateBetween = $breakIn->between($breakTimeStartTime, $breakTimeEndTime);
-                    $breakInBeforeHalfday = $breakIn->lt($halfdayMark);
+                    $breakInBeforeHalfday = $breakIn->gt($halfdayMark);
                     $clockInAfterBreakOut = $breakIn->gt($breakTimeEndTime);
 
                     if ($breakTimeLateBetween) {
@@ -421,10 +421,9 @@ class BiometricEmployee extends BaseModel
                     } elseif ($breakInBeforeHalfday && $clockInAfterBreakOut) {
                         $breakTimeLate = 'yes'; // after break and before halfday
                         Log::info("breakTimeLateAfter set to yes");
-                    } elseif (!$breakInBeforeHalfday) {
+                    } elseif ($breakInBeforeHalfday) {
                         $breakTimeLate = 'yes'; // after halfday
-                        $breakTimeLateBetween = 'yes';
-                        Log::info("breakTimeLateAfter and breakTimeLateBetween set to yes");
+                        Log::info("breakTimeLateAfter set to yes");
                     } else {
                         $breakTimeLate = 'no';
                         $breakTimeLateBetween = 'no';
