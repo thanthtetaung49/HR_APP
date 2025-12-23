@@ -37,6 +37,7 @@
                     <x-cards.data-row :label="__('app.name')" :value="$department->team_name" html="true" />
                     <x-cards.data-row :label="__('app.parentId') . ' ' . __('app.name')" :value="$parent ? $parent->team_name : '-'" html="true" />
                     <x-cards.data-row :label="__('app.departmentGroup') . ' ' . __('app.name')" :value="$parent ? $parent->department_type : '-'" html="true" />
+                    <x-cards.data-row :label=" __('modules.department.designation') . ' ' . __('app.name')" :value="$designations ? $designations : '-'" html="true" />
                 </div>
             </div>
         </div>

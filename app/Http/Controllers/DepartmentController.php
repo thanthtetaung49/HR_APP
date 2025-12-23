@@ -94,7 +94,11 @@ class DepartmentController extends AccountBaseController
     {
         $this->department = Team::findOrFail($id);
         $this->parent = Team::where('id', $this->department->parent_id)->first();
+        $designationIds = json_decode($this->department->designation_ids);
+        $designations = Designation::whereIn('id', $designationIds)->get();
+        $designationName = $designations->pluck('name')->toArray();
 
+        $this->designations = join(', ', $designationName);
 
         $this->view = 'departments.ajax.show';
 
