@@ -104,7 +104,7 @@ class CustomField extends BaseModel
                     );
                 })->first();
 
-                if (!$finalData->value) {
+                if (!$finalData || empty($finalData->value)) {
                     return '--';
                 }
 
