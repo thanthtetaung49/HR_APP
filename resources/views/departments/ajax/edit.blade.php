@@ -10,13 +10,14 @@
             <div class="add-client bg-white rounded">
                 <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
                     @lang('app.menu.editDepartment')</h4>
+
                 <div class="row p-20">
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.text fieldId="team_name" :fieldLabel="__('app.name')" fieldName="team_name" fieldRequired="true"
                             fieldValue="{{ $department->team_name }}">
                         </x-forms.text>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.label class="my-3 mt-2" fieldId="parent_label" :fieldLabel="__('app.parentId')"
                             fieldName="parent_label">
                         </x-forms.label>
@@ -33,7 +34,7 @@
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.label class="my-3" fieldId="location_id" :fieldLabel="__('app.location')" fieldName="location">
                         </x-forms.label>
                         <x-forms.input-group>
@@ -52,7 +53,7 @@
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-3">
+                    <div class="col-md-4">
                         <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.designation')"
                             fieldName="designation_label">
                         </x-forms.label>
@@ -72,7 +73,7 @@
                         </x-forms.input-group>
                     </div>
 
-                    <div class="col-md-3 pb-3">
+                    <div class="col-md-4 pb-3">
                         <x-forms.label class="my-3" fieldId="designation_label" :fieldLabel="__('app.departmentGroup')"
                             fieldName="department type">
                         </x-forms.label>
@@ -80,24 +81,25 @@
                             <select class="form-control select-picker mt" name="department_type" id="department_type"
                                 data-live-search="true">
                                 <option value="">--</option>
-                                <option value="operation" @if ($department->department_type === 'operation') selected @endif>Operation</option>
-                                <option value="supporting" @if ($department->department_type === 'supporting') selected @endif>Supporting</option>
+                                <option value="operation" @if ($department->department_type === 'operation') selected @endif>Operation
+                                </option>
+                                <option value="supporting" @if ($department->department_type === 'supporting') selected @endif>Supporting
+                                </option>
                             </select>
                         </x-forms.input-group>
                     </div>
                 </div>
+
+
+                <x-form-actions>
+                    <x-forms.button-primary id="save-department-form" class="mr-3" icon="check">@lang('app.save')
+                    </x-forms.button-primary>
+                    <x-forms.button-cancel :link="route('departments.index')" class="border-0">@lang('app.cancel')
+                    </x-forms.button-cancel>
+                </x-form-actions>
             </div>
-
-            <x-form-actions>
-                <x-forms.button-primary id="save-department-form" class="mr-3" icon="check">@lang('app.save')
-                </x-forms.button-primary>
-                <x-forms.button-cancel :link="route('departments.index')" class="border-0">@lang('app.cancel')
-                </x-forms.button-cancel>
-            </x-form-actions>
+        </x-form>
     </div>
-    </x-form>
-
-</div>
 </div>
 
 <script>

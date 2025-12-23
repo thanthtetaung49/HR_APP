@@ -13,7 +13,7 @@
                 @csrf
                 <div class="add-client bg-white rounded">
                     <h4 class="mb-0 p-20 f-21 font-weight-normal  border-bottom-grey">
-                        @lang('modules.subCriteria.addTitle')</h4>
+                        @lang('app.menu.editSubCriteria')</h4>
                     <div class="row p-20">
                         <div class="col-md-4">
                             <x-forms.text fieldId="sub_criteria" :fieldLabel="__('app.menu.subCriteria')" fieldName="sub_criteria"

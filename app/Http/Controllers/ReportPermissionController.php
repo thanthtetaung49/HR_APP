@@ -45,7 +45,7 @@ class ReportPermissionController extends AccountBaseController
      */
     public function create()
     {
-        $this->data['pageTitle'] = 'Add Report Permission';
+        $this->data['pageTitle'] = __('app.menu.reportPermission');
         $this->locations = Location::get();
         $this->users = User::with('roles')->select('name', 'id')
             ->whereHas('roles', function ($query) {
@@ -90,7 +90,7 @@ class ReportPermissionController extends AccountBaseController
     public function show(string $id)
     {
         $this->report = ReportPermission::findOrFail($id);
-        $this->data['pageTitle'] = 'Show Report Permission';
+        $this->data['pageTitle'] = __('app.menu.reportPermission');
         $this->view = 'report-permission.ajax.show';
 
         if (request()->ajax()) {
@@ -106,7 +106,7 @@ class ReportPermissionController extends AccountBaseController
     public function edit(string $id)
     {
         $this->report = ReportPermission::findOrFail($id);
-        $this->data['pageTitle'] = 'Edit Report Permission';
+        $this->data['pageTitle'] = __('app.menu.reportPermission');
         $this->locations = Location::get();
         $this->departments = Team::where('location_id', $this->report->location_id)->get();
         $this->designations = Designation::whereIn('id', json_decode($this->report->team->designation_ids))->get();

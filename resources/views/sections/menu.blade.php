@@ -152,7 +152,6 @@
                     <x-sub-menu-item :link="route('criteria-reports.index')" :text="__('app.menu.criteriaReport')" />
                     <x-sub-menu-item :link="route('turn-over-reports.index')" :text="__('app.menu.turnOverReport')" />
                     <x-sub-menu-item :link="route('bank-reports.index')" :text="__('app.menu.bankReport')" />
-                    <x-sub-menu-item :link="route('report-permission.index')" :text="__('app.menu.reportPermission')" />
                 @endcan
 
                 @can('viewAny', App\Models\ManPowerReport::class)

@@ -10,6 +10,7 @@ use App\Models\Role;
 use App\Models\User;
 use App\Models\CustomField;
 use App\Models\CustomFieldGroup;
+use GPBMetadata\Google\Api\Log;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Illuminate\Support\Facades\DB;
@@ -236,6 +237,10 @@ class EmployeesDataTable extends BaseDataTable
                 }
             }
 
+            if (!$exitReason) {
+                return '--';
+            }
+
             return $exitReason;
         });
 
@@ -445,7 +450,7 @@ class EmployeesDataTable extends BaseDataTable
         }
 
         $location_id = $request->location;
-        $rank = $request->rank;
+        $rankId = $request->rankId;
 
         if ($location_id != 'all' && $location_id != '') {
             $users = $users->whereHas('employeeDetails.department', function ($query) use ($location_id) {
@@ -453,11 +458,11 @@ class EmployeesDataTable extends BaseDataTable
             });
         }
 
-        if ($rank != 'all' && $rank != '') {
-            $users = $users->whereHas('employeeDetails', function ($query) use ($rank) {
-                $query->where('rank', $rank);
-            });
+        if ($rankId != 'all' && $rankId != '') {
+            $users = $users->where('designations.rank_id', $rankId);
         }
+
+        // dd($rankId);
 
         return $users->groupBy('users.id');
     }

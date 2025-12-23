@@ -43,7 +43,7 @@ class SubCriteriaController extends AccountBaseController
      */
     public function create()
     {
-        $this->data['pageTitle'] = 'Add Sub Criteria';
+        $this->data['pageTitle'] =__('app.menu.subCriteria');
 
         return view('sub-criteria.create', $this->data);
     }
@@ -76,7 +76,7 @@ class SubCriteriaController extends AccountBaseController
     public function show(string $id)
     {
         $this->subCriteria = SubCriteria::findOrFail($id);
-        $this->data['pageTitle'] = 'Show Sub Criteria';
+        $this->data['pageTitle'] = __('app.menu.subCriteria');
         $this->view = 'sub-criteria.ajax.show';
 
         if (request()->ajax()) {
@@ -92,7 +92,7 @@ class SubCriteriaController extends AccountBaseController
     public function edit(string $id)
     {
         $this->subCriteria = SubCriteria::findOrFail($id);
-        $this->data['pageTitle'] = 'Edit Sub Criteria';
+        $this->data['pageTitle'] = __('app.menu.subCriteria');
 
         return view('sub-criteria.ajax.edit', $this->data);
     }

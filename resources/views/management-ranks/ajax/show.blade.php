@@ -25,7 +25,12 @@
                 </div>
                 <div class="card-body">
                     <x-cards.data-row :label="__('app.menu.managementRanks')" :value="$managementRank->name" html="true" />
-                    <x-cards.data-row :label="__('app.menu.rank')" :value="$managementRank->rank" html="true" />
+                        @php
+                            $rank = json_decode($managementRank->rank);
+                            $rank = array_map(fn ($r) => "Rank " . $r, $rank);
+                            $rank = join(", ", $rank);
+                        @endphp
+                        <x-cards.data-row :label="__('app.menu.rank')" :value="$rank" html="true" />
                 </div>
             </div>
         </div>

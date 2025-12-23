@@ -66,7 +66,7 @@ class ManPowerReportController extends AccountBaseController
     {
         $this->authorize('viewAny', ReportPermission::class);
 
-        $this->data['pageTitle'] = 'Add Man Power';
+        $this->data['pageTitle'] = __('app.menu.manPowerReport');
 
         $roles = auth()->user()->roles;
 
@@ -159,7 +159,7 @@ class ManPowerReportController extends AccountBaseController
         $this->authorize('viewAny', ReportPermission::class);
 
         $this->reports = ManPowerReport::findOrFail($id);
-        $this->data['pageTitle'] = 'Show Man Power';
+        $this->data['pageTitle'] = __('app.menu.manPowerReport');
 
         $roles = auth()->user()->roles;
 
@@ -199,7 +199,7 @@ class ManPowerReportController extends AccountBaseController
         $this->authorize('viewAny', ReportPermission::class);
 
         $this->reports = ManPowerReport::findOrFail($id);
-        $this->data['pageTitle'] = 'Edit Man Power';
+        $this->data['pageTitle'] = __('app.menu.manPowerReport');
         $roles = auth()->user()->roles;
 
         $isAdmin = $roles->contains(function ($role) {

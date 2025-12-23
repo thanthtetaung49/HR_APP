@@ -86,20 +86,6 @@
 
         <!-- MORE FILTERS START -->
         <x-filters.more-filter-box>
-            {{-- <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('app.department')</label>
-                <div class="select-filter mb-4">
-                    <div class="select-others">
-                        <select class="form-control select-picker" name="department" data-container="body" id="department">
-                            <option value="all">@lang('app.all')</option>
-                            @foreach ($departments as $department)
-                                <option value="{{ $department->id }}">{{ $department->team_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-            </div> --}}
-
             <div class="more-filter-items">
                 <label class="f-14 text-dark-grey mb-12 " for="usr">@lang('modules.employees.role')</label>
                 <div class="select-filter mb-4">
@@ -160,17 +146,32 @@
             </div>
 
             <div class="more-filter-items">
-                <label class="f-14 text-dark-grey mb-12 " for="{{ $field->name . '_' . $field->id }}">{{ $field->label }}</label>
+                <x-forms.label class="f-14 text-dark-grey mb-12" fieldId="rank_id" :fieldLabel="__('app.menu.rank')" fieldName="rank">
+                </x-forms.label>
                 <div class="select-filter mb-4">
                     <div class="select-others">
-                        <select class="form-control select-picker" name="{{ $field->name }}" id="{{ $field->name . '_' . $field->id }}"
+                        <select class="form-control select-picker" name="rank_id" id="rank_id" data-live-search="true">
+                        <option value="all">@lang('app.all')</option>
+                        <option value="1">Rank 1</option>
+                        <option value="2">Rank 2</option>
+                        <option value="3">Rank 3</option>
+                        <option value="4">Rank 4</option>
+                        <option value="5">Rank 5</option>
+                        <option value="6">Rank 6</option>
+                        <option value="7">Rank 7</option>
+                        <option value="8">Rank 8</option>
+                        <option value="9">Rank 9</option>
+                        <option value="10">Rank 10</option>
+                    </select>
+
+                        {{-- <select class="form-control select-picker" name="{{ $field->name }}" id="rank_id"
                             data-container="body">
                             <option value="all">@lang('app.all')</option>
 
                             @foreach ($field->values as $value)
                                  <option value="{{explode(" ", $value)[1] - 1}}">{{ $value }}</option>
                             @endforeach
-                        </select>
+                        </select> --}}
                     </div>
                 </div>
             </div>
@@ -269,8 +270,8 @@
             const department = $('#employee-department').val();
             const employmentType = $('#employmentType').val();
             const searchText = $('#search-text-field').val();
-            const rank = $(`#{{ $field->name . '_' . $field->id }}`).val();
-            // console.log(rank);
+            const rankId = $('#rank_id').val();
+            // console.log(rankId);
 
             data['status'] = status;
             data['employee'] = employee;
@@ -282,10 +283,11 @@
             data['department'] = department;
             data['employmentType'] = employmentType;
             data['searchText'] = searchText;
-            data['rank'] = rank;
+            data['rankId'] = rankId;
 
             /* If any of these following filters are applied, then dashboard conditions will not work  */
-            if (status == "all" || employee == "all" || role == "all" || location == "all" || designation == "all" || department == "all" ||
+            if (status == "all" || employee == "all" || role == "all" || location == "all" || designation ==
+                "all" || department == "all" ||
                 designation == "all" || searchText == "" || rank == "") {
                 data['startDate'] = startDate;
                 data['endDate'] = endDate;
@@ -343,7 +345,8 @@
                     });
 
                     $("#employee-department").html(html);
-                    $("#employee-department").selectpicker('refresh'); // refresh the bootstrap select ui
+                    $("#employee-department").selectpicker(
+                    'refresh'); // refresh the bootstrap select ui
                 }
 
             });
@@ -390,34 +393,35 @@
             showTable();
         });
 
-        $(`#employee, #status, #role, #gender, #skill, #designation, #locationSearch, #department, #employmentType, #{{ $field->name . '_' . $field->id }}`).on(
-            'change keyup',
-            function() {
-                if ($('#status').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#employee').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#role').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#gender').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#skill').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#designation').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#locationSearch').val() != 'all') {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#department').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($('#employmentType').val() != "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else if ($(`#{{ $field->name . '_' . $field->id }}`).val() =! "all") {
-                    $('#reset-filters').removeClass('d-none');
-                } else {
-                    $('#reset-filters').addClass('d-none');
-                }
-                showTable();
-            });
+        $(`#employee, #status, #role, #gender, #skill, #designation, #locationSearch, #department, #employmentType, #rank_id`)
+            .on(
+                'change keyup',
+                function() {
+                    if ($('#status').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#employee').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#role').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#gender').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#skill').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#designation').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#locationSearch').val() != 'all') {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#department').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($('#employmentType').val() != "all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else if ($(`#rank_id`).val() = !"all") {
+                        $('#reset-filters').removeClass('d-none');
+                    } else {
+                        $('#reset-filters').addClass('d-none');
+                    }
+                    showTable();
+                });
 
         $('#search-text-field').on('keyup', function() {
             if ($('#search-text-field').val() != "") {

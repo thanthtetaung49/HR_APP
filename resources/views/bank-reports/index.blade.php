@@ -100,27 +100,25 @@
 @section('content')
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
-        <div>
-            <h4>Bank Report For <span id="monthName"></span></h3>
-        </div>
+        <h4 class="bg-white p-3 rounded">Bank Report For <span id="monthName"></span></h3>
 
-        <div class="d-grid d-lg-flex d-md-flex action-bar mt-2">
-            <div id="table-actions" class="flex-grow-1 align-items-center">
-                @if (canDataTableExport())
-                    <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
-                        @lang('app.exportExcel')
-                    </x-forms.button-secondary>
-                @endif
+            <div class="d-grid d-lg-flex d-md-flex action-bar mt-3">
+                <div id="table-actions" class="flex-grow-1 align-items-center">
+                    @if (canDataTableExport())
+                        <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                            @lang('app.exportExcel')
+                        </x-forms.button-secondary>
+                    @endif
+                </div>
             </div>
-        </div>
 
-        <!-- leave table Box Start -->
-        <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive">
+            <!-- leave table Box Start -->
+            <div class="d-flex flex-column w-tables rounded mt-3 bg-white table-responsive">
 
-            {!! $dataTable->table(['class' => 'table table-hover border-0 w-100']) !!}
+                {!! $dataTable->table(['class' => 'table table-hover border-0 w-100']) !!}
 
-        </div>
-        <!-- leave table End -->
+            </div>
+            <!-- leave table End -->
 
     </div>
     <!-- CONTENT WRAPPER END -->

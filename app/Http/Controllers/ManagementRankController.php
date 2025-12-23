@@ -39,8 +39,7 @@ class ManagementRankController extends AccountBaseController
      */
     public function create()
     {
-        $this->data['pageTitle'] = 'Add Management Rank';
-
+        $this->data['pageTitle'] = __('modules.managementRank.title');
         return view('management-ranks.create', $this->data);
     }
 
@@ -70,7 +69,7 @@ class ManagementRankController extends AccountBaseController
     public function show(string $id)
     {
         $this->managementRank = ManagementRank::findOrFail($id);
-        $this->data['pageTitle'] = 'Show Management Rank';
+        $this->data['pageTitle'] = __('modules.managementRank.title');
         $this->view = 'management-ranks.ajax.show';
 
         if (request()->ajax()) {
@@ -86,7 +85,7 @@ class ManagementRankController extends AccountBaseController
     public function edit(string $id)
     {
         $this->managementRank = ManagementRank::findOrFail($id);
-        $this->data['pageTitle'] = 'Edit Management Rank';
+        $this->data['pageTitle'] = __('modules.managementRank.title');
 
         return view('management-ranks.ajax.edit', $this->data);
     }

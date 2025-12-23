@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Traits\HasCompany;
+use GPBMetadata\Google\Api\Log;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Log as FacadesLog;
 
 /**
  * App\Models\CustomField
@@ -102,7 +104,7 @@ class CustomField extends BaseModel
                     );
                 })->first();
 
-                if (!$finalData) {
+                if (!$finalData->value) {
                     return '--';
                 }
 
