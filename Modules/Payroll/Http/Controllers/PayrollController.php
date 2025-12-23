@@ -401,11 +401,12 @@ class PayrollController extends AccountBaseController
                         ->fromSub($subQuery, 'ranked')
                         ->where('row_num', 1);
                 })
-                ->where(function ($query) {
-                    $query->where('half_day', '!=', 'yes') # 1st half day = no, null
-                        ->orWhere('half_day', 'yes') # 2nd half day = yes
-                        ->where('half_day_type', 'first_half'); # if half day = yes only take first_half as half_day_type
-                })
+                ->where('half_day', 'no')
+                // ->where(function ($query) {
+                //     $query->where('half_day', 'no') # 1st half day = no, null
+                //         ->orWhere('half_day', 'yes') # 2nd half day = yes
+                //         ->where('half_day_type', 'first_half'); # if half day = yes only take first_half as half_day_type
+                // })
                 ->get();
 
             $halfDay = Attendance::select(
@@ -424,7 +425,8 @@ class PayrollController extends AccountBaseController
                 DB::raw("DATE(clock_in_time) as presentDate"),
                 "break_time_late",
                 "breaktime_late_between",
-                "clock_in_time"
+                "clock_in_time",
+                "half_day"
             )
                 ->where('user_id', $userId)
                 ->whereDate('clock_in_time', '>=', $startDate)
@@ -434,10 +436,8 @@ class PayrollController extends AccountBaseController
                         ->fromSub($subQuery, 'ranked')
                         ->where('row_num', 2);
                 })
+                ->where('half_day', 'no')
                 ->get();
-
-            // dd($breakTimeLateMonth->where('break_time_late', 'yes')->toArray());
-            // dd($breakTimeLateMonth->where('breaktime_late_between', 'yes')->toArray());
 
             $leave = Leave::with([
                 'type' => function ($query) {
@@ -471,8 +471,6 @@ class PayrollController extends AccountBaseController
             $toalLwpCount = $normalLwpCount + ($halfDayLwpCount / 2);
 
             $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
-
-            // dd($halfDayLateCount);
 
             // first rows
             $attLateAfter = $attendanceLateInMonth->where('late', 'yes')->count();
