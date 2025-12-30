@@ -444,43 +444,42 @@ class PayrollController extends AccountBaseController
                     return $query->select('paid', 'type_name');
                 }
             ])->where('user_id', $userId)
-                ->where('paid', 0) // paid leave
+                ->where('paid', 0) // unpaid leave
                 ->where('status', 'approved')
-                ->where('duration', '!=', 'half day')
                 ->whereDate('leave_date', '>=', $startDate)
                 ->whereDate('leave_date', '<=', $endDate);
 
-            $absentInMonth = $leave
-                ->where('leave_type_id', 7) // absent in month
+            $absentInMonth = (clone $leave)
+                ->where('leave_type_id', 7) // absent
                 ->count();
 
             // normal lwp
-            $normalLwpCount = $leave
+            $normalLwpCount = (clone $leave)
                 ->where('leave_type_id', 6) // leave without pay
-                ->where('status', 'approved')
-                ->where('duration', '!=', 'half day')
+                ->where('duration', '<>', 'half day') // full day
                 ->count();
 
             // half day lwp
-            $halfDayLwpCount = $leave->where('user_id', $userId)
+            $halfDayLwpCount = (clone $leave)
                 ->where('leave_type_id', 6) // leave without pay
                 ->where('duration', 'half day') // half day
                 ->count();
-
 
             $toalLwpCount = $normalLwpCount + ($halfDayLwpCount / 2);
 
             $halfDayLateCount = $halfDay->where('half_day_late', 'yes')->count();
 
             // first rows
-            $attLateAfter = $attendanceLateInMonth->where('late', 'yes')->count();
-            $attLateBetween = $attendanceLateInMonth->where('late_between', 'yes')->count();
+            $attLateAfter = (clone $attendanceLateInMonth)->where('late', 'yes')->count();
+            $attLateBetween = (clone $attendanceLateInMonth)->where('late_between', 'yes')->count();
 
             // second rows
-            $attBreakTimeAfter = $breakTimeLateMonth->where('break_time_late', 'yes')->count();
-            $attBreakTimeLateBetween = $breakTimeLateMonth->where('breaktime_late_between', 'yes')->count();
+            $attBreakTimeAfter = (clone $breakTimeLateMonth)->where('break_time_late', 'yes')->count();
+            $attBreakTimeLateBetween = (clone $breakTimeLateMonth)->where('breaktime_late_between', 'yes')->count();
 
             Log::info("Late Count", [
+                // "attendanceLateInMonth" => $attendanceLateInMonth->where('late', 'yes')->toArray(),
+                // "breakTimeLateMonth" => $breakTimeLateMonth->where('break_time_late', 'yes')->toArray(),
                 "halfDayLateCount" => $halfDayLateCount,
                 "attLateAfter" => $attLateAfter,
                 "attBreakTimeAfter" => $attBreakTimeAfter,

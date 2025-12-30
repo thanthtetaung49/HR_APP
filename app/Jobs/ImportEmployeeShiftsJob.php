@@ -2,17 +2,11 @@
 
 namespace App\Jobs;
 
-use App\Models\Allowance;
 use Exception;
 use App\Models\User;
-use App\Models\Leave;
-use App\Models\Attendance;
 use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
-use Illuminate\Support\Carbon;
 use App\Traits\ExcelImportable;
-use App\Models\AttendanceSetting;
-use App\Models\Detection;
 use App\Models\EmployeeShift;
 use Illuminate\Support\Facades\DB;
 use App\Models\EmployeeShiftSchedule;
@@ -84,15 +78,22 @@ class ImportEmployeeShiftsJob implements ShouldQueue
                         'shift_end_time' => $shift->office_end_time
                     ]);
 
-                    EmployeeShiftSchedule::firstOrCreate([
-                        'user_id' => $userId,
-                        'date' => $date,
-                        'employee_shift_id' => $employeeShiftId,
-                        'added_by' => auth()->user()->id,
-                        'last_updated_by' => auth()->user()->id,
-                        'shift_start_time' => $date . ' ' . $shift->office_start_time,
-                        'shift_end_time' =>  $date . ' ' . $shift->office_end_time
-                    ]);
+
+                    EmployeeShiftSchedule::updateOrCreate(
+                        [
+                            'user_id' => $userId,
+                            'date' => $date,
+                        ],
+                        [
+                            'user_id' => $userId,
+                            'date' => $date,
+                            'employee_shift_id' => $employeeShiftId,
+                            'added_by' => auth()->user()->id,
+                            'last_updated_by' => auth()->user()->id,
+                            'shift_start_time' => $date . ' ' . $shift->office_start_time,
+                            'shift_end_time' =>  $date . ' ' . $shift->office_end_time
+                        ]
+                    );
 
                     Log::info('success');
 

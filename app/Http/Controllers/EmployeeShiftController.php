@@ -4,12 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Helper\Reply;
 use App\Http\Requests\EmployeeShift\StoreEmployeeShift;
-use App\Models\AttendanceSetting;
-use App\Models\Company;
 use App\Models\EmployeeShift;
 use App\Models\Holiday;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
 
 class EmployeeShiftController extends AccountBaseController
 {
