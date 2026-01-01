@@ -73,30 +73,36 @@ class Holiday extends BaseModel
             ->where('date', '>=', $startDate)
             ->where('date', '<=', $endDate);
 
+        // dd($startDate, $endDate);
+
         if (is_null($userId)) {
             return $holiday->get();
         }
 
         $user = User::find($userId);
 
+        // dd($user->employeeDetail->designation_id);
+
         if ($user) {
             $holiday = $holiday->where(function ($query) use ($user) {
                 $query->where(function ($subquery) use ($user) {
                     $subquery->where(function ($q) use ($user) {
-                        $q->where('department_id_json', 'like', '%"' . $user->employeeDetail->department_id . '"%')
+                        $q->where('department_id_json', 'like', '%' . $user->employeeDetail->department_id . '%')
                             ->orWhereNull('department_id_json');
                     });
                     $subquery->where(function ($q) use ($user) {
-                        $q->where('designation_id_json', 'like', '%"' . $user->employeeDetail->designation_id . '"%')
+                        $q->where('designation_id_json', 'like', '%' . $user->employeeDetail->designation_id . '%')
                             ->orWhereNull('designation_id_json');
                     });
                     $subquery->where(function ($q) use ($user) {
-                        $q->where('employment_type_json', 'like', '%"' . $user->employeeDetail->employment_type . '"%')
+                        $q->where('employment_type_json', 'like', '%' . $user->employeeDetail->employment_type  . '%')
                             ->orWhereNull('employment_type_json');
                     });
                 });
             });
         }
+
+        // dd($holiday->get()->toArray());
 
         return $holiday->get();
     }

@@ -23,7 +23,16 @@
             <td width="50%">
                 {{ $attendance->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
 
-                @if ($attendance->late == 'yes')
+                @php
+                    $lateStatus =
+                        ($attendance->half_day == 'no' && $attendance->late == 'yes' && $attendance->row_num == 1) ||
+                        ($attendance->half_day == 'no' &&
+                            $attendance->break_time_late == 'yes' &&
+                            $attendance->row_num == 2) ||
+                        ($attendance->half_day == 'yes' && $attendance->half_day_late == 'yes');
+                @endphp
+
+                @if ($lateStatus)
                     <span class="text-dark-grey"><i class="fa fa-exclamation-triangle ml-2"></i>
                         @lang('modules.attendance.late')</span>
                 @endif
@@ -67,6 +76,35 @@
     </x-table>
     </td>
     <td>
+        {{-- @php
+            $startClockInTime = null;
+            $endClockOutTime = null;
+            $totalMinutes = 0;
+
+            foreach ($dateData['attendance'] as $attendance) {
+                if (!$attendance->clock_in_time || !$attendance->clock_out_time) {
+                    continue;
+                }
+
+                $in = \Carbon\Carbon::parse($attendance->clock_in_time);
+                $out = \Carbon\Carbon::parse($attendance->clock_out_time);
+
+                if ($out->lessThanOrEqualTo($in)) {
+                    continue;
+                }
+
+                if (!$in->isSameDay($out)) {
+                    continue;
+                }
+
+                $totalMinutes += $in->diffInMinutes($out);
+            }
+
+            $hours = intdiv($totalMinutes, 60);
+            $minutes = $totalMinutes % 60;
+
+            $hoursDiff = $hours . ' ' . __('app.hrs') . ' ' . $minutes . ' ' . __('app.mins');
+        @endphp --}}
         {{ $attendance->totalTime($attendance->clock_in_time, $attendance->clock_in_time, $attendance->user_id) }}
     </td>
     <td class="text-right pb-2 pr-20">
@@ -110,7 +148,16 @@
         <td width="50%">
             {{ $attendance->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
 
-            @if ($attendance->late == 'yes')
+            @php
+                $lateStatus =
+                    ($attendance->half_day == 'no' && $attendance->late == 'yes' && $attendance->row_num == 1) ||
+                    ($attendance->half_day == 'no' &&
+                        $attendance->break_time_late == 'yes' &&
+                        $attendance->row_num == 2) ||
+                    ($attendance->half_day == 'yes' && $attendance->half_day_late == 'yes');
+            @endphp
+
+            @if ($lateStatus)
                 <span class="text-dark-grey"><i class="fa fa-exclamation-triangle ml-2"></i>
                     @lang('modules.attendance.late')</span>
             @endif
@@ -141,7 +188,9 @@
 @endforeach
 </x-table>
 </td>
-<td>{{ $attendance->totalTime($attendance->clock_in_time, $attendance->clock_in_time, $attendance->user_id) }}</td>
+<td>
+    {{ $attendance->totalTime($attendance->clock_in_time, $attendance->clock_in_time, $attendance->user_id) }}
+</td>
 <td class="text-right pb-2 pr-20">
     <x-forms.button-secondary icon="search" class="view-attendance" data-attendance-id="{{ $attendance->aId }}">
         @lang('app.details')

@@ -58,7 +58,7 @@
                     <div class="punch-info">
                         <div class="punch-hours f-13">
                             {{-- <span>{{ $totalTime }}</span> --}}
-                            <span>{{ $hoursDiff }} h</span>
+                            <span>{{ $totalTime }}</span>
                         </div>
                     </div>
                     <div class="border rounded p-3 bg-light">
@@ -123,8 +123,8 @@
 
                                         @php
                                             $showLateIcon =
-                                                ($item->late == 'yes' && $loop->first) ||
-                                                ($item->break_time_late == 'yes' && $loop->iteration == 2) ||
+                                                ($item->half_day == 'no' && $item->late == 'yes' && $item->row_num == 1) ||
+                                                ($item->half_day == 'no' && $item->break_time_late == 'yes' && $item->row_num == 2) ||
                                                 ($item->half_day == 'yes' && $item->half_day_late == 'yes');
                                         @endphp
 

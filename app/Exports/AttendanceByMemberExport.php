@@ -57,13 +57,17 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
         $endDate = $this->enddate;
         $userId = $this->userId;
 
-        $attendances = Attendance::
-        leftJoin('company_addresses', 'company_addresses.id', '=', 'attendances.location_id')
+        $attendances = Attendance::leftJoin('company_addresses', 'company_addresses.id', '=', 'attendances.location_id')
             ->where('attendances.user_id', '=', $userId)
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->format('Y-m-d'))
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->format('Y-m-d'))
+            // ->where('half_day', 'yes')
+            // ->where('half_day_late', 'yes')
             ->orderBy('attendances.clock_in_time', 'asc')
-            ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.half_day', 'company_addresses.location', 'attendances.auto_clock_out', 'attendances.half_day_type')->get();
+            ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.break_time_late', 'attendances.half_day', 'attendances.half_day_late', 'company_addresses.location', 'attendances.auto_clock_out', 'attendances.half_day_type', DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(attendances.clock_in_time) ORDER BY attendances.clock_in_time ASC) as row_num'))
+            ->get();
+
+        // dd($attendances->toArray());
 
         $leavesDates = Leave::where('user_id', $userId)
             ->where('leave_date', '>=', $startDate)
@@ -116,8 +120,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                 }
 
                 $attendances->push($att);
-            }
-            else if ($date->lessThan(now())) {
+            } else if ($date->lessThan(now())) {
                 // Else date present in attendance then check for holiday and leave
                 // Check employee leaves
                 foreach ($leavesDates as $leave) {
@@ -126,7 +129,6 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                         $att->status = 'Leave';
                         $attendances->push($att);
                     }
-
                 }
 
                 // Check holidays
@@ -136,14 +138,11 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                         $att->status = 'Holiday';
                         $att->occassion = $holiday->occassion;
                         $attendances->push($att);
-                    }
-                    else if ($date->format('Y-m-d') == $holiday->holiday_date && $attendances->whereBetween('date', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])->count()) {
+                    } else if ($date->format('Y-m-d') == $holiday->holiday_date && $attendances->whereBetween('date', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])->count()) {
                         // Here just modify the collection property not creating new
                         $this->checkHolidays($attendances, $date, $holiday->occassion);
                     }
-
                 }
-
             }
         }
 
@@ -159,7 +158,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
             $diff_time = ($to && $from) ? $to->diffInMinutes($from) : 0;
             $location = $attendance->location;
 
-            if($clock_out != 0 && $attendance->auto_clock_out == 1) {
+            if ($clock_out != 0 && $attendance->auto_clock_out == 1) {
                 $clock_out .= ' ' . __('Modules.attendance.autoClockOut');
             }
 
@@ -169,36 +168,33 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
 
                 if ($attendance->status == 'Absent') {
                     $status = __('app.absent');
-                }
-                else if ($attendance->status == 'Leave') {
+                } else if ($attendance->status == 'Leave') {
                     $status = __('app.onLeave');
-                }
-                else if ($attendance->status == 'Holiday') {
+                } else if ($attendance->status == 'Holiday') {
                     $status = __('app.holiday', ['name' => $attendance->occassion]);
                 }
-
-            }
-            else if ($attendance->late == 'yes' && $attendance->half_day == 'yes') {
+            } else if ($attendance->half_day_late == 'yes' && $attendance->half_day == 'yes') {
                 $halfDayType = '';
 
                 if ($attendance->half_day_type == 'first_half') {
-                    $halfDayType = '('. __('modules.leaves.1stHalf') .')';
+                    $halfDayType = '(' . __('modules.leaves.1stHalf') . ')';
                 } elseif ($attendance->half_day_type == 'second_half') {
-                    $halfDayType = '('. __('modules.leaves.2ndHalf') .')';
+                    $halfDayType = '(' . __('modules.leaves.2ndHalf') . ')';
                 }
 
                 $status =  __('app.halfday') . $halfDayType . __('app.lateHalfday');
-            }
-            else if ($attendance->late == 'yes') {
+            } else if (
+                ($attendance->half_day == 'no' && $attendance->late == 'yes' && $attendance->row_num == 1) ||
+                ($attendance->half_day == 'no' && $attendance->break_time_late == 'yes' && $attendance->row_num == 2)
+            ) {
                 $status = __('app.presentlate');
-            }
-            else if ($attendance->half_day == 'yes') {
+            } else if ($attendance->half_day == 'yes') {
                 $halfDayType = '';
 
                 if ($attendance->half_day_type == 'first_half') {
-                    $halfDayType = '('. __('modules.leaves.1stHalf') .')';
+                    $halfDayType = '(' . __('modules.leaves.1stHalf') . ')';
                 } elseif ($attendance->half_day_type == 'second_half') {
-                    $halfDayType = '('. __('modules.leaves.2ndHalf') .')';
+                    $halfDayType = '(' . __('modules.leaves.2ndHalf') . ')';
                 }
 
                 $status = __('app.halfday') . $halfDayType;
@@ -208,8 +204,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                 if ($employee_temp && $employee_temp[1] == $date) {
                     $employeedata[$employee_temp[0] - 1]['comments']['clock_in'] .= 'Clock In : ' . $clock_in . ' Clock Out : ' . $clock_out;
                     $employeedata[$employee_temp[0] - 1]['total_hours'] = $employeedata[$employee_temp[0] - 1]['total_hours'] + $diff_time;
-                }
-                else {
+                } else {
                     $employeedata[$emp_attendance] = [
                         'date' => $date,
                         'location' => $location,
@@ -223,8 +218,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
 
                     $emp_attendance++;
                 }
-            }
-            else {
+            } else {
                 $employeedata[$emp_attendance] = [
                     'date' => $date,
                     'total_hours' => $diff_time,
@@ -245,7 +239,6 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
         self::$sum = $employeedata;
 
         return $employeedata;
-
     }
 
     public function map($employeedata): array
@@ -278,5 +271,4 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
             }
         }
     }
-
 }

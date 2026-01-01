@@ -9,6 +9,7 @@ use Carbon\CarbonInterval;
 use Carbon\CarbonPeriod;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\DB;
+use MacsiDigital\OAuth2\Support\Token\DB as TokenDB;
 
 /**
  * App\Models\Attendance
@@ -251,7 +252,13 @@ class Attendance extends BaseModel
             ->whereBetween('attendances.clock_in_time', [$startDate->copy()->subDay(), $endDate->copy()->addDay()])
             ->where('attendances.user_id', '=', $userId)
             ->orderBy('attendances.clock_in_time', 'desc')
-            ->select('attendances.*', 'users.*', 'attendances.id as aId', 'company_addresses.location')
+            ->select(
+                'attendances.*',
+                DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(attendances.clock_in_time) ORDER BY attendances.clock_in_time ASC) as row_num'),
+                'users.*',
+                'attendances.id as aId',
+                'company_addresses.location'
+            )
             ->get();
 
         // Filter the attendance by date due to the timezone issue
@@ -279,31 +286,84 @@ class Attendance extends BaseModel
 
     public static function countDaysLateByUser($startDate, $endDate, $userId)
     {
-        $totalLate = Attendance::whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate->toDateString(), $endDate->toDateString()])
-            ->where('late', 'yes')
-            ->where('user_id', $userId)
-            ->select(DB::raw('count(DISTINCT DATE(attendances.clock_in_time) ) as lateCount'))
-            ->first();
+        $totalLate = DB::query()->fromSub(
+            Attendance::select(
+                DB::raw('DATE(attendances.clock_in_time) as attendance_date'),
+                DB::raw('attendances.late as late'),
+                DB::raw('attendances.break_time_late as break_time_late'),
+                DB::raw('attendances.half_day_late as half_day_late'),
+                DB::raw('attendances.half_day as half_day'),
+                DB::raw('attendances.half_day_type as half_day_type'),
+                DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(attendances.clock_in_time) ORDER BY clock_in_time ASC) as row_num')
+            )
+                ->where('user_id', $userId)
+                ->whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate->toDateString(), $endDate->toDateString()]),
+            'ranked_attendances'
+        )
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('half_day', 'no')
+                        ->where('row_num', 1)
+                        ->where('late', 'yes');
+                })->orWhere(function ($q) {
+                    $q->where('half_day', 'no')
+                        ->where('row_num', 2)
+                        ->where('break_time_late', 'yes');
+                })
+                    ->orWhere(function ($q) {
+                        $q->where('half_day', 'yes')
+                            ->where('half_day_late', 'yes');
+                    });
+            });
 
-        return $totalLate->lateCount;
+        return $totalLate->count();
     }
 
     public static function countHalfDaysByUser($startDate, $endDate, $userId)
     {
-        $halfDay1 = Attendance::whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate, $endDate])
-            ->where('user_id', $userId)
-            ->where('half_day', 'yes')
-            ->count();
+        // $halfDay1 = Attendance::whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate, $endDate])
+        //     ->where('user_id', $userId)
+        //     ->where('half_day', 'yes')
+        //     ->count();
 
-        $halfDay2 = Leave::where('user_id', $userId)
-            ->where('leave_date', '>=', $startDate)
-            ->where('leave_date', '<=', $endDate)
-            ->where('status', 'approved')
-            ->where('duration', 'half day')
-            ->select('leave_date', 'reason', 'duration')
-            ->count();
+        // $halfDayLeave = Leave::where('user_id', $userId)
+        //     ->where('leave_date', '>=', $startDate)
+        //     ->where('leave_date', '<=', $endDate)
+        //     ->where('status', 'approved')
+        //     ->where('duration', 'half day')
+        //     ->select('leave_date', 'reason', 'duration')
+        //     ->get();
 
-        return $halfDay1 + $halfDay2;
+        // $halfDayLeaveDate = $halfDayLeave->pluck('leave_date')->toArray();
+        // $attHalfDay = Attendance::whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate, $endDate])
+        //     ->where('user_id', $userId)
+        //     ->where('half_day', 'yes')
+        //     ->whereNotIn(DB::raw('DATE(attendances.`clock_in_time`)'), $halfDayLeaveDate)
+        //     ->get();
+
+        $halfDay = Attendance::select(
+            DB::raw('COUNT(attendances.id) as total_half_day'),
+            DB::raw('(select COUNT(leaves.id) from leaves where leaves.user_id = ' . $userId . ' and leaves.leave_date between "' . $startDate . '" and "' . $endDate . '" and leaves.duration = "half day" and leaves.status = "approved") as total_leave_day')
+        )
+            ->leftJoin('leaves', DB::raw('DATE(attendances.clock_in_time)'), 'leaves.leave_date')
+            ->whereBetween(DB::raw('DATE(attendances.`clock_in_time`)'), [$startDate, $endDate])
+            ->where('attendances.user_id', $userId)
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('attendances.half_day', 'yes')
+                        ->whereNotIn(DB::raw('DATE(attendances.`clock_in_time`)'), function ($subQuery) {
+                            $subQuery->select('leave_date')
+                                ->from('leaves')
+                                ->where('leaves.duration', 'half day')
+                                ->where('leaves.status', 'approved');
+                        });
+                });
+            })
+            ->first();
+
+        $totalHalfDay = $halfDay->total_half_day + $halfDay->total_leave_day;
+
+        return $totalHalfDay;
     }
 
     // Get User Clock-ins by date
@@ -358,9 +418,7 @@ class Attendance extends BaseModel
 
             if (!is_null($lastClockOut->clock_out_time)) {
                 $endTime = Carbon::parse($lastClockOut->clock_out_time)->timezone(company()->timezone);
-
-            }
-            elseif (
+            } elseif (
                 ($lastClockOut->clock_in_time->timezone(company()->timezone)->format('Y-m-d') != now()->timezone(company()->timezone)->format('Y-m-d'))
                 && is_null($lastClockOut->clock_out_time)
                 && isset($startTime)
@@ -370,9 +428,7 @@ class Attendance extends BaseModel
                 if ($startTime->gt($endTime)) {
                     $endTime->addDay();
                 }
-
-            }
-            else {
+            } else {
                 $endTime = $defaultEndTime;
             }
 
@@ -390,5 +446,4 @@ class Attendance extends BaseModel
         /** @phpstan-ignore-next-line */
         return CarbonInterval::formatHuman($totalTime);
     }
-
 }

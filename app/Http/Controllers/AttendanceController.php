@@ -390,6 +390,8 @@ class AttendanceController extends AccountBaseController
         $attendanceActivity = clone $this->attendanceActivity;
         $attendanceActivity = $attendanceActivity->reverse()->values();
 
+        // dd($attendanceActivity->toArray());
+
         $settingStartTime = Carbon::createFromFormat('H:i:s', $this->attendanceSettings->office_start_time, $this->company->timezone);
         $defaultEndTime = $settingEndTime = Carbon::createFromFormat('H:i:s', $this->attendanceSettings->office_end_time, $this->company->timezone);
 
@@ -538,13 +540,19 @@ class AttendanceController extends AccountBaseController
         $halfDayLateTime = $halfDayStartDate->addMinutes(15);
 
         $halfDayLateStatus = 'no';
+        $late = ($request->has('late')) ? 'yes' : 'no';
+        $breakTimeLate = ($request->has('breakTime')) ? 'yes' : 'no';
 
-        if ($request->half_day_duration == "first_half" && $clockIn->gt($officeLateTime)) {
+        if ($request->has('halfday') && $request->half_day_duration == "first_half" && $clockIn->gt($officeLateTime)) {
             $halfDayLateStatus = 'yes';
+            $late = 'no';
+            $breakTimeLate = 'no';
         }
 
-        if ($request->half_day_duration == "second_half" && $clockIn->gt($halfDayLateTime)) {
+        if ($request->has('halfday') && $request->half_day_duration == "second_half" && $clockIn->gt($halfDayLateTime)) {
             $halfDayLateStatus = 'yes';
+            $late = 'no';
+            $breakTimeLate = 'no';
         }
 
         if ($request->clock_out_time != '') {
@@ -589,12 +597,11 @@ class AttendanceController extends AccountBaseController
         $attendance->working_from = $request->working_from;
         $attendance->work_from_type = $request->work_from_type;
         $attendance->location_id = $request->location;
-        $attendance->late = ($request->has('late')) ? 'yes' : 'no';
+        $attendance->late = $late;
         $attendance->half_day = ($request->has('halfday')) ? 'yes' : 'no';
         $attendance->half_day_late = $halfDayLateStatus;
         $attendance->half_day_type = ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null;
-        $attendance->break_time_late = ($request->has('breakTime')) ? 'yes' : 'no';
-
+        $attendance->break_time_late = $breakTimeLate;
         $attendance->save();
 
         return Reply::success(__('messages.attendanceSaveSuccess'));
@@ -657,12 +664,19 @@ class AttendanceController extends AccountBaseController
 
         $halfDayLateStatus = 'no';
 
-        if ($request->half_day_duration == "first_half" && $clockIn->gt($officeLateTime)) {
+        $late = ($request->has('late')) ? 'yes' : 'no';
+        $breakTimeLate = ($request->has('breakTime')) ? 'yes' : 'no';
+
+        if ($request->has('halfday') && $request->half_day_duration == "first_half" && $clockIn->gt($officeLateTime)) {
             $halfDayLateStatus = 'yes';
+            $late = 'no';
+            $breakTimeLate = 'no';
         }
 
-        if ($request->half_day_duration == "second_half" && $clockIn->gt($halfDayLateTime)) {
+        if ($request->has('halfday') && $request->half_day_duration == "second_half" && $clockIn->gt($halfDayLateTime)) {
             $halfDayLateStatus = 'yes';
+            $late = 'no';
+            $breakTimeLate = 'no';
         }
 
         if ($request->clock_out_time != '') {
@@ -741,11 +755,11 @@ class AttendanceController extends AccountBaseController
                 'employee_shift_id' => $employeeShiftId,
                 'shift_start_time' => $shiftStartTime,
                 'shift_end_time' => $shiftEndTime,
-                'late' => ($request->has('late')) ? 'yes' : 'no',
+                'late' => $late,
                 'half_day_late' => $halfDayLateStatus,
                 'half_day' => ($request->has('halfday')) ? 'yes' : 'no',
                 'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null,
-                'break_time_late' => ($request->has('breakTime')) ? 'yes' : 'no'
+                'break_time_late' => $breakTimeLate
             ]);
         } else {
             $leave = Leave::where([
@@ -832,10 +846,9 @@ class AttendanceController extends AccountBaseController
         $userId = $request->userId;
 
         $attendances = Attendance::userAttendanceByDate($startDate, $endDate, $userId); // Getting Attendance Data
+
+        // dd($attendances->toArray());
         $holidays = Holiday::getHolidayByDates($startDate, $endDate, $userId); // Getting Holiday Data
-
-        // dd($holidays->toArray());
-
         $userId = $request->userId;
 
         // dd($totalWorkingDays);
@@ -1331,8 +1344,12 @@ class AttendanceController extends AccountBaseController
     {
         abort_403(!canDataTableExport());
 
-        $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
-        $endDate = $startDate->copy()->endOfMonth()->endOfDay();
+        $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->subMonth()->setDay(26)->startOfDay();
+        $endDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->setDay(25);
+
+        // $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
+        // $endDate = $startDate->copy()->endOfMonth()->endOfDay();
+
         $obj = User::findOrFail($id);
         $date = $endDate->lessThan(now()) ? $endDate : now();
 
@@ -1343,8 +1360,11 @@ class AttendanceController extends AccountBaseController
     {
         abort_403(!canDataTableExport());
 
-        $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
-        $endDate = $startDate->copy()->endOfMonth()->endOfDay();
+        $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->subMonth()->setDay(26)->startOfDay();
+        $endDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->setDay(25);
+
+        // $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
+        // $endDate = $startDate->copy()->endOfMonth()->endOfDay();
 
         $date = $endDate->lessThan(now()) ? $endDate : now();
 

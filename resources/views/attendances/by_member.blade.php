@@ -123,7 +123,7 @@ $addAttendancePermission = user()->permission('add_attendance');
             </div>
 
             <div class="col-lg-4 col-xl-2 col-md-6 col-sm-12">
-                <x-cards.widget :title="__('modules.attendance.late')" value="0" icon="calendar" widgetId="daysLate" />
+                <x-cards.widget :title="__('modules.attendance.totalLate')" value="0" icon="calendar" widgetId="daysLate" />
             </div>
 
             <div class="col-lg-4 col-xl-2 col-md-6 col-sm-12">

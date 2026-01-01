@@ -40,10 +40,10 @@
                             <select class="form-control select-picker" name="designation[]" id="employee_designation"
                                 data-live-search="true" multiple data-size="4">
 
-                                @foreach ($designations as $designation)
+                                {{-- @foreach ($designations as $designation)
                                     <option {{ in_array($designation->id, $designationArray) ? 'selected' : '' }} value="{{ $designation->id }}">
                                         {{ $designation->name }}</option>
-                                @endforeach
+                                @endforeach --}}
                             </select>
                         </x-forms.input-group>
                     </div>
@@ -104,6 +104,40 @@
                 return selected + " {{ __('app.membersSelected') }} ";
             }
         });
+
+        $("#employee_department").on('change', function() {
+            const departmentIds = $(this).val();
+            const url = "{{ route('holidays.department_filter') }}";
+            const designationArray = @json($designationArray);
+            console.log(designationArray);
+
+            $.ajax({
+                type: "get",
+                url: url,
+                data: { departmentIds: departmentIds },
+                dataType: "json",
+                success: function (response) {
+                    $("#employee_designation").html('');
+                    let designations = response.designations;
+
+                    designations.forEach(function(designation) {
+                        if (designationArray.includes(designation.id.toString())) {
+                            var selected = 'selected';
+                        } else {
+                            var selected = '';
+                        }
+
+                        let option = `<option value="${designation.id}" ${selected}>${designation.name}</option>`;
+
+                        $("#employee_designation").append(option);
+                    });
+                    $("#employee_designation").selectpicker('refresh');
+                },
+                error: function (xhr, status, error) {
+                    console.error('AJAX Error: ' + status + error);
+                }
+            });
+        }).trigger('change');
 
         $("#employment_type").selectpicker({
             actionsBox: true,

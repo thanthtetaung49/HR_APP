@@ -420,6 +420,7 @@ class PayrollController extends AccountBaseController
                 ->whereDate('clock_in_time', '>=', $startDate)
                 ->whereDate('clock_in_time', '<=', $endDate)
                 ->where('half_day', 'yes');
+                // ->whereNotNull('half_day_type');
 
             $breakTimeLateMonth = Attendance::select(
                 DB::raw("DATE(clock_in_time) as presentDate"),

@@ -1,6 +1,5 @@
 <?php
 
-use App\Exports\TurnOverReportExport;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\GdprController;
 use App\Http\Controllers\DealController;
@@ -523,6 +522,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('holidays/mark-holiday-store', [HolidayController::class, 'markDayHoliday'])->name('holidays.mark_holiday_store');
     Route::get('holidays/table-view', [HolidayController::class, 'tableView'])->name('holidays.table_view');
     Route::post('holidays/apply-quick-action', [HolidayController::class, 'applyQuickAction'])->name('holidays.apply_quick_action');
+    Route::get('holidays/department/filter', [HolidayController::class, 'filterDepartment'])->name('holidays.department_filter');
     Route::resource('holidays', HolidayController::class);
 
     // Lead Files
@@ -822,7 +822,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('employee-shifts/import', [EmployeeShiftScheduleController::class, 'importSalary'])->name('shifts.import');
     Route::post('employee-shifts/import', [EmployeeShiftScheduleController::class, 'importStore'])->name('shifts.import.store');
     Route::post('employee-shifts/import/process', [EmployeeShiftScheduleController::class, 'importProcess'])->name('shifts.import.process');
-    
+
     Route::resource('shifts', EmployeeShiftScheduleController::class);
 
     // Tickets

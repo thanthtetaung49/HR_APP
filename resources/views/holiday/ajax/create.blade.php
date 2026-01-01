@@ -58,9 +58,9 @@
                         <select class="form-control select-picker" name="designation[]"
                             id="employee_designation" data-live-search="true" multiple data-size="5">
 
-                            @foreach ($designations as $designation)
+                            {{-- @foreach ($designations as $designation)
                                 <option value="{{ $designation->id }}">{{ $designation->name }}</option>
-                            @endforeach
+                            @endforeach --}}
                         </select>
                     </x-forms.input-group>
 
@@ -138,6 +138,30 @@
             countSelectedText: function (selected, total) {
                 return selected + " {{ __('app.membersSelected') }} ";
             }
+        });
+
+        $("#employee_department").on('change', function() {
+            const departmentIds = $(this).val();
+            const url = "{{ route('holidays.department_filter') }}";
+
+            $.ajax({
+                type: "get",
+                url: url,
+                data: { departmentIds: departmentIds },
+                dataType: "json",
+                success: function (response) {
+                    $("#employee_designation").html('');
+                    let designations = response.designations;
+                    designations.forEach(function(designation) {
+                        let option = `<option value="${designation.id}">${designation.name}</option>`;
+                        $("#employee_designation").append(option);
+                    });
+                    $("#employee_designation").selectpicker('refresh');
+                },
+                error: function (xhr, status, error) {
+                    console.error('AJAX Error: ' + status + error);
+                }
+            });
         });
 
         $("#employee_designation").selectpicker({
