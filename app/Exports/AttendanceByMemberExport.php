@@ -61,10 +61,8 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
             ->where('attendances.user_id', '=', $userId)
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->format('Y-m-d'))
             ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->format('Y-m-d'))
-            // ->where('half_day', 'yes')
-            // ->where('half_day_late', 'yes')
             ->orderBy('attendances.clock_in_time', 'asc')
-            ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.break_time_late', 'attendances.half_day', 'attendances.half_day_late', 'company_addresses.location', 'attendances.auto_clock_out', 'attendances.half_day_type', DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(attendances.clock_in_time) ORDER BY attendances.clock_in_time ASC) as row_num'))
+            ->select('attendances.clock_in_time as date', 'attendances.clock_in_time', 'attendances.clock_out_time', 'attendances.late', 'attendances.late_between', 'attendances.break_time_late', 'attendances.breaktime_late_between', 'attendances.half_day', 'attendances.half_day_late', 'company_addresses.location', 'attendances.auto_clock_out', 'attendances.half_day_type', DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(attendances.clock_in_time) ORDER BY attendances.clock_in_time ASC) as row_num'))
             ->get();
 
         // dd($attendances->toArray());
@@ -182,12 +180,23 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                     $halfDayType = '(' . __('modules.leaves.2ndHalf') . ')';
                 }
 
-                $status =  __('app.halfday') . $halfDayType . __('app.lateHalfday');
+                $status =  __('app.halfday') . $halfDayType . __('app.lateHalfday') . " - After";
             } else if (
                 ($attendance->half_day == 'no' && $attendance->late == 'yes' && $attendance->row_num == 1) ||
-                ($attendance->half_day == 'no' && $attendance->break_time_late == 'yes' && $attendance->row_num == 2)
+                ($attendance->half_day == 'no' &&
+                    $attendance->break_time_late == 'yes' &&
+                    $attendance->row_num == 2)
             ) {
-                $status = __('app.presentlate');
+                $status = __('app.presentlate') . " - After";
+            } else if (
+                ($attendance->half_day == 'no' &&
+                    $attendance->late_between == 'yes' &&
+                    $attendance->row_num == 1) ||
+                ($attendance->half_day == 'no' &&
+                    $attendance->breaktime_late_between == 'yes' &&
+                    $attendance->row_num == 2)
+            ) {
+                $status = __('app.presentlate') . " - Between";
             } else if ($attendance->half_day == 'yes') {
                 $halfDayType = '';
 

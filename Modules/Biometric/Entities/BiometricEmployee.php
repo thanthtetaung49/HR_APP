@@ -282,24 +282,41 @@ class BiometricEmployee extends BaseModel
         $instance = new self();
         $attendanceSettings = $instance->attendanceShift($showClockIn, $user->id, $carbonDate, $clockIn);
 
+        $officeStartTime = null;
+        $officeEndTime = null;
+        $halfDayMarkTime = null;
+        $employeeShiftId = null;
+
         if (isset($employeeShift)) {
-            $startTimestamp = now($user->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_start_time;
-            $endTimestamp = now($user->company->timezone)->format('Y-m-d') . ' ' . $employeeShift->shift->office_end_time;
-            $employeeShiftId = $employeeShift->employee_shift_id;
-            $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
-
-            // dd('Employee Shift Found', $employeeShift, $startTimestamp, $endTimestamp);
+            $officeStartTime = $employeeShift->shift->office_start_time;
+            $officeEndTime = $employeeShift->shift->office_end_time;
+            $halfDayMarkTime = $employeeShift->shift->halfday_mark_time;
+            $employeeShiftId = $employeeShift->shift->id;
         } else {
-            $startTimestamp = now($user->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_start_time;
-            $endTimestamp = now($user->company->timezone)->format('Y-m-d') . ' ' . $attendanceSettings->office_end_time;
+            $officeStartTime = $attendanceSettings->office_start_time;
+            $officeEndTime = $attendanceSettings->office_end_time;
             $employeeShiftId = $attendanceSettings->id;
-            $halfday_mark_time = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
-
-            // dd('Default Shift Used', $attendanceSettings, $startTimestamp, $endTimestamp);
+            $halfDayMarkTime = $attendanceSettings->halfday_mark_time;
         }
 
-        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $user->company->timezone);
-        $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $endTimestamp, $user->company->timezone);
+        if ($officeStartTime > $officeEndTime) {
+            $officeStartTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeStartTime;
+            $officeEndTime = $clockIn->copy()->addDay()->format('Y-m-d') . ' ' . $officeEndTime;
+
+            if ($officeStartTime > $halfDayMarkTime) {
+                $halfDayMarkTime = $clockIn->copy()->addDay()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+            } else {
+                $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+            }
+        } else {
+            $officeStartTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeStartTime;
+            $officeEndTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeEndTime;
+            $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+        }
+
+        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeStartTime, user()->company->timezone);
+        $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeEndTime, user()->company->timezone);
+        $halfDayMarkTime = Carbon::createFromFormat('Y-m-d H:i:s', $halfDayMarkTime, user()->company->timezone);
 
         if ($attendanceSettings->shift_type == 'strict') {
             $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);
@@ -309,14 +326,6 @@ class BiometricEmployee extends BaseModel
                 ->count();
         }
 
-        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', Carbon::parse($clockIn)->format('Y-m-d') . ' ' . $officeStartTime->format('H:i:s'), $user->company->timezone);
-        $clockInCarbon = Carbon::createFromFormat('Y-m-d H:i:s', $clockIn, $user->company->timezone);
-
-        Log::info("officeStartTime", [
-            'officeStartTime' => $officeStartTime,
-            'clockInCarbon' => $clockInCarbon
-        ]);
-
         $lateTime = $officeStartTime->copy()->addMinutes(15);
 
         $late = 'no';
@@ -324,17 +333,17 @@ class BiometricEmployee extends BaseModel
         $employee_shift_id = $employeeShiftId;
         $location_id = $user->employeeDetail->company_address_id;
 
-        if ($clockInCarbon->between($officeStartTime, $lateTime)) {
+        if ($clockIn->between($officeStartTime, $lateTime)) {
             $lateBetween = 'yes';
             Log::info("att late", [
-                'clockInCarbon' => $clockInCarbon,
+                'clockIn' => $clockIn,
                 'officeStartTime' => $officeStartTime,
                 'lateTime' => $lateTime
             ]);
-        } elseif ($clockInCarbon->greaterThan($lateTime)) {
+        } elseif ($clockIn->greaterThan($lateTime)) {
             $late = 'yes';
             Log::info("att late", [
-                'clockInCarbon' => $clockInCarbon,
+                'clockIn' => $clockIn,
                 'officeStartTime' => $officeStartTime,
                 'lateTime' => $lateTime
             ]);
@@ -342,25 +351,14 @@ class BiometricEmployee extends BaseModel
             $late = 'no';
             $lateBetween = 'no';
             Log::info("att late", [
-                'clockInCarbon' => $clockInCarbon,
+                'clockIn' => $clockIn,
                 'officeStartTime' => $officeStartTime,
                 'lateTime' => $lateTime
             ]);
         }
 
-        // dd($clockInCarbon, $lateTime, $late);
-
-        $shift_start_time = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $user->company->timezone);
-        $clockInOfficeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $startTimestamp, $user->company->timezone);
-        $clockInOfficeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $endTimestamp, $user->company->timezone);
-
-        if ($clockInOfficeStartTime->gt($clockInOfficeEndTime)) {
-            $shift_end_time = $clockIn->addDay()->format('Y-m-d') . ' ' . $officeEndTime->format('H:i:s');
-        } else {
-            $shift_end_time = $clockIn->format('Y-m-d') . ' ' . $officeEndTime->format('H:i:s');
-        }
-
-        $shift_end_time = Carbon::createFromFormat('Y-m-d H:i:s', $shift_end_time, $user->company->timezone);
+        $shift_start_time = $officeStartTime;
+        $shift_end_time = $officeEndTime;
 
         // Get the last attendance record for this user on this day
         $lastAttendance = Attendance::where('user_id', $user->id)
@@ -404,30 +402,21 @@ class BiometricEmployee extends BaseModel
                 Log::info("breakTimeStartTime", ["breakTimeStartTime" => $breakTimeStartTime]);
                 Log::info("breakTimeEndTime", ["breakTimeEndTime" => $breakTimeEndTime]);
 
-                $halfdayMark = Carbon::parse($halfday_mark_time);
+                // $halfDayMarkTime = Carbon::parse($halfDayMarkTime);
 
                 $breakTimeLate = 'no';
                 $breakTimeLateBetween = 'no';
 
                 if ($breakIn && $breakTimeEndTime) {
-
-                    $breakTimeLateBetween = $breakIn->between($breakTimeStartTime, $breakTimeEndTime);
-                    $breakInBeforeHalfday = $breakIn->gt($halfdayMark);
-                    $clockInAfterBreakOut = $breakIn->gt($breakTimeEndTime);
-
-                    if ($breakTimeLateBetween) {
-                        $breakTimeLateBetween = 'yes'; // between break time
-                        Log::info("breakTimeLateBetween set to yes");
-                    } elseif ($breakInBeforeHalfday && $clockInAfterBreakOut) {
-                        $breakTimeLate = 'yes'; // after break and before halfday
-                        Log::info("breakTimeLateAfter set to yes");
-                    } elseif ($breakInBeforeHalfday) {
-                        $breakTimeLate = 'yes'; // after halfday
-                        Log::info("breakTimeLateAfter set to yes");
+                    if ($clockIn->lt($halfDayMarkTime) && $clockIn->gt($breakTimeEndTime)) {
+                        $breakTimeLate = 'yes';
+                    } elseif ($clockIn->between($breakTimeStartTime, $breakTimeEndTime)) {
+                        $breakTimeLateBetween = 'yes';
+                    } elseif ($clockIn->gt($halfDayMarkTime)) {
+                        $breakTimeLate = 'yes';
                     } else {
                         $breakTimeLate = 'no';
                         $breakTimeLateBetween = 'no';
-                        Log::info("breakTimeLate and breakTimeLateBetween set to no");
                     }
 
                     $lastAttendanceBeforeClockOut->update([

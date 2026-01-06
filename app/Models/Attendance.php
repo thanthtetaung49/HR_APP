@@ -249,7 +249,9 @@ class Attendance extends BaseModel
         $attendance = Attendance::without('company')
             ->join('users', 'users.id', '=', 'attendances.user_id')
             ->leftJoin('company_addresses', 'company_addresses.id', '=', 'attendances.location_id')
-            ->whereBetween('attendances.clock_in_time', [$startDate->copy()->subDay(), $endDate->copy()->addDay()])
+            // ->whereBetween('attendances.clock_in_time', [$startDate->copy()->subDay(), $endDate->copy()->addDay()])
+            ->whereDate('attendances.clock_in_time', '>=', $startDate)
+            ->whereDate('attendances.clock_in_time', '<=', $endDate)
             ->where('attendances.user_id', '=', $userId)
             ->orderBy('attendances.clock_in_time', 'desc')
             ->select(
@@ -290,7 +292,9 @@ class Attendance extends BaseModel
             Attendance::select(
                 DB::raw('DATE(attendances.clock_in_time) as attendance_date'),
                 DB::raw('attendances.late as late'),
+                DB::raw('attendances.late_between as late_between'),
                 DB::raw('attendances.break_time_late as break_time_late'),
+                DB::raw('attendances.breaktime_late_between as breaktime_late_between'),
                 DB::raw('attendances.half_day_late as half_day_late'),
                 DB::raw('attendances.half_day as half_day'),
                 DB::raw('attendances.half_day_type as half_day_type'),
@@ -304,11 +308,18 @@ class Attendance extends BaseModel
                 $query->where(function ($q) {
                     $q->where('half_day', 'no')
                         ->where('row_num', 1)
-                        ->where('late', 'yes');
-                })->orWhere(function ($q) {
+                        ->where(function ($q) {
+                            $q->where('late', 'yes')
+                                ->orWhere('late_between', 'yes');
+                        });
+                })
+                ->orWhere(function ($q) {
                     $q->where('half_day', 'no')
                         ->where('row_num', 2)
-                        ->where('break_time_late', 'yes');
+                        ->where(function ($q) {
+                            $q->where('break_time_late', 'yes')
+                                ->orWhere('breaktime_late_between', 'yes');
+                        });
                 })
                     ->orWhere(function ($q) {
                         $q->where('half_day', 'yes')

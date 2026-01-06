@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use App\Models\Team;
 use App\Models\User;
 use App\Helper\Files;
@@ -11,20 +10,24 @@ use App\Models\Company;
 use App\Models\Holiday;
 use App\Models\Location;
 use Carbon\CarbonPeriod;
+use App\Models\Attendance;
 use App\Scopes\ActiveScope;
+use App\Traits\ImportExcel;
 use Illuminate\Http\Request;
 use App\Models\EmployeeShift;
 use App\Events\BulkShiftEvent;
+use Illuminate\Support\Carbon;
 use App\Models\AttendanceSetting;
+use Illuminate\Support\Facades\DB;
 use App\Exports\ShiftScheduleExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\EmployeeShiftsImport;
+use App\Jobs\ImportEmployeeShiftsJob;
 use App\Models\EmployeeShiftSchedule;
 use App\Models\EmailNotificationSetting;
 use App\Models\EmployeeShiftChangeRequest;
+use Illuminate\Support\Carbon as SupportCarbon;
 use App\Http\Requests\EmployeeShift\StoreBulkShift;
-use App\Imports\EmployeeShiftsImport;
-use App\Jobs\ImportEmployeeShiftsJob;
-use App\Traits\ImportExcel;
 
 class EmployeeShiftScheduleController extends AccountBaseController
 {
@@ -440,38 +443,159 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
     public function store(Request $request)
     {
-        EmployeeShiftSchedule::firstOrCreate([
+        $employeeShift = EmployeeShiftSchedule::firstOrCreate([
             'user_id' => $request->user_id,
             'date' => $request->shift_date,
             'employee_shift_id' => $request->employee_shift_id
         ]);
+
+        $this->shiftUpdateInAttendance($employeeShift->id);
 
         return Reply::success(__('messages.employeeShiftAdded'));
     }
 
     public function update(Request $request, $id)
     {
-        $shift = EmployeeShiftSchedule::findOrFail($id);
-        $shift->employee_shift_id = $request->employee_shift_id;
+        $employeeShift = EmployeeShiftSchedule::findOrFail($id);
+        $employeeShift->employee_shift_id = $request->employee_shift_id;
+
+        // dd($employeeShift->toArray());
 
         if (!$request->hasFile('file')) {
-            Files::deleteFile($shift->file, 'employee-shift-file/' . $id);
+            Files::deleteFile($employeeShift->file, 'employee-shift-file/' . $id);
             Files::deleteDirectory('employee-shift-file/' . $id);
-            $shift->file = null;
+            $employeeShift->file = null;
         }
 
         if ($request->hasFile('file')) {
             Files::deleteFile($request->file, 'employee-shift-file/' . $id);
-            $shift->file = Files::uploadLocalOrS3($request->file, 'employee-shift-file/' . $id);
+            $employeeShift->file = Files::uploadLocalOrS3($request->file, 'employee-shift-file/' . $id);
         }
 
-        $shift->save();
+        $employeeShift->save();
+
+        $this->shiftUpdateInAttendance($id);
 
         return Reply::success(__('messages.employeeShiftAdded'));
     }
 
+    private function shiftUpdateInAttendance($id, $status = null)
+    {
+        $employeeShift = EmployeeShiftSchedule::findOrFail($id);
+        $attendanceSetting = AttendanceSetting::first();
+
+        if ($status == 'destroy') {
+            // default shift will work
+            $shiftId = $attendanceSetting->shift->id;
+            $officeStartTime = $attendanceSetting->shift->office_start_time;
+            $officeEndTime = $attendanceSetting->shift->office_end_time;
+            $halfDayMarkTime = $attendanceSetting->shift->halfday_mark_time;
+        } else {
+            $shiftId = $employeeShift->shift->id;
+            $officeStartTime = $employeeShift->shift->office_start_time;
+            $officeEndTime = $employeeShift->shift->office_end_time;
+            $halfDayMarkTime = $employeeShift->shift->halfday_mark_time;
+        }
+
+        $attendance = Attendance::where('user_id', $employeeShift->user_id)
+            ->where(DB::raw('DATE(clock_in_time)'), $employeeShift->date)
+            ->first();
+
+        $late = 'no';
+        $lateBetween = 'no';
+        $breakTimeLate = 'no';
+        $breakTimeLateBetween = 'no';
+
+        if ($attendance) {
+            $clockIn = Carbon::parse($attendance->clock_in_time);
+
+            if ($attendance->clock_out_time) {
+                $clockOut = Carbon::parse($attendance->clock_out_time);
+            }
+
+            if ($officeStartTime > $officeEndTime) {
+                $officeStartTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeStartTime;
+                $officeEndTime = $clockIn->copy()->addDay()->format('Y-m-d') . ' ' . $officeEndTime;
+
+
+                if ($officeStartTime > $halfDayMarkTime) {
+                    $halfDayMarkTime = $clockIn->copy()->addDay()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+                } else {
+                    $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+                }
+            } else {
+                $officeStartTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeStartTime;
+                $officeEndTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeEndTime;
+                $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+            }
+
+            $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeStartTime, user()->company->timezone);
+            $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeEndTime, user()->company->timezone);
+            $halfDayMarkTime = Carbon::createFromFormat('Y-m-d H:i:s', $halfDayMarkTime, user()->company->timezone);
+
+            $lateTime = $officeStartTime->copy()->addMinutes(15);
+
+            $breakTimeStartTime = isset($attendance)
+                ? $clockOut->copy()->addMinutes(45)
+                : null;
+
+            $breakTimeEndTime = isset($attendance)
+                ? $clockOut->copy()->addMinutes(60)
+                : null;
+
+            $subQuery = Attendance::select('clock_in_time', DB::raw('ROW_NUMBER() OVER (PARTITION BY DATE(clock_in_time) ORDER BY clock_in_time ASC) AS row_num'))
+                ->where('user_id', $employeeShift->user_id)
+                ->where(DB::raw('DATE(clock_in_time)'), $employeeShift->date)
+                ->orderBy('clock_in_time');
+
+            $breakIn = DB::table($subQuery, "attendancesSubQuery")
+                ->where('row_num', '=', 2)
+                ->select('*')
+                ->value('clock_in_time');
+
+            $breakIn = Carbon::parse($breakIn);
+
+            // dd($clockIn->greaterThan($lateTime), $clockIn, $lateTime);
+
+            if ($clockIn->between($officeStartTime, $lateTime)) {
+                $lateBetween = 'yes';
+            } elseif ($clockIn->greaterThan($lateTime)) {
+                $late = 'yes';
+            } else {
+                $late = 'no';
+                $lateBetween = 'no';
+            }
+
+            if ($clockIn->lt($halfDayMarkTime) && $clockIn->gt($breakTimeEndTime)) {
+                $breakTimeLate = 'yes';
+            } elseif ($clockIn->between($breakTimeStartTime, $breakTimeEndTime)) {
+                $breakTimeLateBetween = 'yes';
+            } elseif ($clockIn->gt($halfDayMarkTime)) {
+                $breakTimeLate = 'yes';
+            } else {
+                $breakTimeLate = 'no';
+                $breakTimeLateBetween = 'no';
+            }
+        }
+
+        $data = [
+            "employee_shift_id" => $shiftId,
+            "shift_start_time" => $officeStartTime,
+            "shift_end_time" => $officeEndTime,
+            "late" => $late,
+            "late_between" => $lateBetween,
+            'break_time_late' => $breakTimeLate,
+            'breaktime_late_between' => $breakTimeLateBetween
+        ];
+
+        Attendance::where('user_id', $employeeShift->user_id)
+            ->where(DB::raw('DATE(clock_in_time)'), $employeeShift->date)->update($data);
+    }
+
     public function destroy($id)
     {
+        $this->shiftUpdateInAttendance($id, 'destroy');
+
         EmployeeShiftSchedule::destroy($id);
 
         return Reply::success(__('messages.deleteSuccess'));
@@ -757,7 +881,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         return view('shift-rosters.create', $this->data);
     }
 
-	public function importStore(Request $request)
+    public function importStore(Request $request)
     {
         $rvalue = $this->importFileProcess($request, EmployeeShiftsImport::class);
 
@@ -770,7 +894,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         return Reply::successWithData(__('messages.importUploadSuccess'), ['view' => $view]);
     }
 
-	public function importProcess(Request $request)
+    public function importProcess(Request $request)
     {
         $batch = $this->importSalaryJobProcess($request, EmployeeShiftsImport::class, ImportEmployeeShiftsJob::class);
 

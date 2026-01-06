@@ -24,17 +24,30 @@
                 {{ $attendance->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
 
                 @php
-                    $lateStatus =
+                    $lateAfter =
                         ($attendance->half_day == 'no' && $attendance->late == 'yes' && $attendance->row_num == 1) ||
                         ($attendance->half_day == 'no' &&
                             $attendance->break_time_late == 'yes' &&
                             $attendance->row_num == 2) ||
                         ($attendance->half_day == 'yes' && $attendance->half_day_late == 'yes');
+
+                    $lateBetween =
+                        ($attendance->half_day == 'no' &&
+                            $attendance->late_between == 'yes' &&
+                            $attendance->row_num == 1) ||
+                        ($attendance->half_day == 'no' &&
+                            $attendance->breaktime_late_between == 'yes' &&
+                            $attendance->row_num == 2);
                 @endphp
 
-                @if ($lateStatus)
+                @if ($lateAfter)
                     <span class="text-dark-grey"><i class="fa fa-exclamation-triangle ml-2"></i>
-                        @lang('modules.attendance.late')</span>
+                        @lang('modules.attendance.late') (After)</span>
+                @endif
+
+                @if ($lateBetween)
+                    <span class="text-dark-grey"><i class="fa fa-exclamation-triangle ml-2"></i>
+                        @lang('modules.attendance.late') (Between)</span>
                 @endif
 
                 @if ($attendance->half_day == 'yes')
@@ -149,17 +162,30 @@
             {{ $attendance->clock_in_time->timezone(company()->timezone)->translatedFormat(company()->time_format) }}
 
             @php
-                $lateStatus =
+                $lateAfter =
                     ($attendance->half_day == 'no' && $attendance->late == 'yes' && $attendance->row_num == 1) ||
                     ($attendance->half_day == 'no' &&
                         $attendance->break_time_late == 'yes' &&
                         $attendance->row_num == 2) ||
                     ($attendance->half_day == 'yes' && $attendance->half_day_late == 'yes');
+
+                $lateBetween =
+                    ($attendance->half_day == 'no' &&
+                        $attendance->late_between == 'yes' &&
+                        $attendance->row_num == 1) ||
+                    ($attendance->half_day == 'no' &&
+                        $attendance->breaktime_late_between == 'yes' &&
+                        $attendance->row_num == 2);
             @endphp
 
-            @if ($lateStatus)
+            @if ($lateAfter)
                 <span class="text-dark-grey"><i class="fa fa-exclamation-triangle ml-2"></i>
-                    @lang('modules.attendance.late')</span>
+                    @lang('modules.attendance.late') (After)</span>
+            @endif
+
+            @if ($lateBetween)
+                <span class="text-dark-grey"><i class="fa fa-exclamation-triangle ml-2"></i>
+                    @lang('modules.attendance.late') (Between)</span>
             @endif
 
             @if ($attendance->half_day == 'yes')

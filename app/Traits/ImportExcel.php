@@ -9,6 +9,7 @@ use App\Helper\Files;
 use function Psl\Type\nullable;
 use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\EmployeeShiftSchedule;
 use Illuminate\Support\Facades\Artisan;
@@ -134,7 +135,7 @@ trait ImportExcel
 
         Session::put('leads_count', count($excelData));
 
-        foreach ($excelData as $index => $row) {
+        foreach ($excelData as $row) {
             $email = $row[0];
 
             $user = User::where('email', $email)->whereHas('roles', function ($q) {
@@ -142,6 +143,7 @@ trait ImportExcel
             })->first();
 
             $date = Carbon::parse($row[1])->format('Y-m-d');
+
 
             foreach ($finalData as $data) {
                 $finalEmail = $data['email'];
@@ -152,13 +154,8 @@ trait ImportExcel
                 if (!empty($user) && $checkEmailDate) {
 
                     $clockIn = Carbon::parse($data['clock_in_time']);
-                    $breakTimeStartTime = Carbon::parse($data['clock_out_time'])
-                        ->copy()
-                        ->addMinutes(45);
 
-                    $breakTimeEndTime = Carbon::parse($data['clock_out_time'])
-                        ->copy()
-                        ->addMinutes(60);
+                    $carbonDate = $clockIn->clone()->startOfDay();
 
                     $employeeShift = EmployeeShiftSchedule::with('shift')
                         ->where('user_id', $user->id)
@@ -166,16 +163,52 @@ trait ImportExcel
                         ->first();
 
                     $showClockIn = AttendanceSetting::first();
-
-                    $attendanceSettings = $this->attendanceShiftData($showClockIn);
+                    $attendanceSettings = $this->attendanceShift($showClockIn, $user->id, $carbonDate, $clockIn);
+                    // $attendanceSettings = $this->attendanceShiftData($showClockIn);
 
                     if (isset($employeeShift)) {
-                        $halfDayMarkTime = $clockIn->format('Y-m-d') . ' ' . $employeeShift->shift->halfday_mark_time;
+                        $officeStartTime = $employeeShift->shift->office_start_time;
+                        $officeEndTime = $employeeShift->shift->office_end_time;
+                        $halfDayMarkTime = $employeeShift->shift->halfday_mark_time;
                     } else {
-                        $halfDayMarkTime = $clockIn->format('Y-m-d') . ' ' . $attendanceSettings->halfday_mark_time;
+                        $officeStartTime = $attendanceSettings->office_start_time;
+                        $officeEndTime = $attendanceSettings->office_end_time;
+                        $halfDayMarkTime = $attendanceSettings->halfday_mark_time;
                     }
 
-                    $halfDayMarkTime = Carbon::parse($halfDayMarkTime);
+                    if ($officeStartTime > $officeEndTime) {
+                        $officeStartTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeStartTime;
+                        $officeEndTime = $clockIn->copy()->addDay()->format('Y-m-d') . ' ' . $officeEndTime;
+
+                        if ($officeStartTime > $halfDayMarkTime) {
+                            $halfDayMarkTime = $clockIn->copy()->addDay()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+                        } else {
+                            $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+                        }
+                    } else {
+                        $officeStartTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeStartTime;
+                        $officeEndTime = $clockIn->copy()->format('Y-m-d') . ' ' . $officeEndTime;
+                        $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
+                    }
+
+                    $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeStartTime, user()->company->timezone);
+                    $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeEndTime, user()->company->timezone);
+                    $halfDayMarkTime = Carbon::createFromFormat('Y-m-d H:i:s', $halfDayMarkTime, user()->company->timezone);
+
+                    Log::info('data', [
+                        'clockIn' => $clockIn,
+                        'officeStartTime' => $officeStartTime,
+                        'officeEndTime' => $officeEndTime,
+                        'halfDayMarkTime' => $halfDayMarkTime
+                    ]);
+
+                    $breakTimeStartTime = Carbon::parse($data['clock_out_time'])
+                        ->copy()
+                        ->addMinutes(45);
+
+                    $breakTimeEndTime = Carbon::parse($data['clock_out_time'])
+                        ->copy()
+                        ->addMinutes(60);
 
                     $break_time_late = "no";
                     $breaktime_late_between = "no";

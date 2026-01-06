@@ -122,15 +122,32 @@
                                         @endif
 
                                         @php
-                                            $showLateIcon =
-                                                ($item->half_day == 'no' && $item->late == 'yes' && $item->row_num == 1) ||
-                                                ($item->half_day == 'no' && $item->break_time_late == 'yes' && $item->row_num == 2) ||
+                                            $lateAfter =
+                                                ($item->half_day == 'no' &&
+                                                    $item->late == 'yes' &&
+                                                    $item->row_num == 1) ||
+                                                ($item->half_day == 'no' &&
+                                                    $item->break_time_late == 'yes' &&
+                                                    $item->row_num == 2) ||
                                                 ($item->half_day == 'yes' && $item->half_day_late == 'yes');
+
+                                            $lateBetween =
+                                                ($item->half_day == 'no' &&
+                                                    $item->late_between == 'yes' &&
+                                                    $item->row_num == 1) ||
+                                                ($item->half_day == 'no' &&
+                                                    $item->breaktime_late_between == 'yes' &&
+                                                    $item->row_num == 2);
                                         @endphp
 
-                                        @if ($showLateIcon)
+                                        @if ($lateAfter)
                                             <i class="fa fa--triangle ml-2"></i>
-                                            @lang('modules.attendance.exclamationlate')
+                                            @lang('modules.attendance.exclamationlate') (After)
+                                        @endif
+
+                                        @if ($lateBetween)
+                                            <i class="fa fa--triangle ml-2"></i>
+                                            @lang('modules.attendance.exclamationlate') (Between)
                                         @endif
 
                                         @if ($item->half_day === 'yes')
