@@ -546,6 +546,8 @@ class PayrollController extends AccountBaseController
                 // $payableSalary = $perDaySalary * $payDays;
                 $offDayHolidaySalary = $this->offDayHolidayOvertime($startDate, $endDate, $userId, $holidayData);
 
+                // dd($offDayHolidaySalary);
+
                 $gazattedAllowance = $gazattedPresentCount * 3000;
                 $eveningShiftAllowance = $eveningShiftPresentCount * 500;
 
@@ -611,7 +613,7 @@ class PayrollController extends AccountBaseController
                     'pay_days' => $payDays,
                     'added_by' => user()->id,
                     'overtime_amount' => $overtimeAmount,
-                    'off_day_holiday_salary' => $offDayHolidaySalary,
+                    'off_day_holiday_salary' => $offDayHolidaySalary ? $offDayHolidaySalary : 0,
                     'gazatted_allowance' => $gazattedAllowance,
                     'evening_shift_allowance' => $eveningShiftAllowance,
                     'absent' => $absentDetection,

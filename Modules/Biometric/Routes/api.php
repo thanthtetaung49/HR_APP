@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\Biometric\Http\Controllers\ZKTecoController;
-use Modules\Biometric\Http\Controllers\BiometricAttendanceController;
 
 // ZKTeco device routes
 

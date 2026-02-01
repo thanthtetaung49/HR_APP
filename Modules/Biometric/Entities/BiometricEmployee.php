@@ -12,11 +12,7 @@ use App\Models\EmployeeDetails;
 use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\Log;
 use App\Models\EmployeeShiftSchedule;
-use AWS\CRT\Log as CRTLog;
-use Gitonomy\Git\Log as GitLog;
-use GPBMetadata\Google\Api\Log as ApiLog;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Opcodes\LogViewer\Logs\Log as LogsLog;
 
 class BiometricEmployee extends BaseModel
 {
@@ -155,7 +151,6 @@ class BiometricEmployee extends BaseModel
 
     public static function markAttendanceToDeviceAndApplication($rows, $device, $request)
     {
-
         foreach ($rows as $line) {
 
             $parts = explode("\t", $line);
@@ -166,8 +161,6 @@ class BiometricEmployee extends BaseModel
                 $deviceEmployeeId = $parts[0];
                 $timestamp = $parts[1];
                 $status = $parts[2] ?? 0;
-
-                // dd($timestamp); // "2025-11-11 20:28:34"
 
                 // Skip if timestamp is 0 or not in a valid date time format
                 if ($timestamp == 0 || !strtotime($timestamp)) {
@@ -195,7 +188,6 @@ class BiometricEmployee extends BaseModel
                 if ($existingRecord) {
                     continue;
                 }
-
 
                 $biometricEmployee = BiometricEmployee::where('biometric_employee_id', $deviceEmployeeId)->where('company_id', $device->company_id)->first();
 
@@ -243,7 +235,6 @@ class BiometricEmployee extends BaseModel
                     'updated_at' => now(),
                 ];
 
-
                 \DB::table('biometric_device_attendances')->insert($attendances);
 
                 if (!$biometricEmployee) {
@@ -261,8 +252,6 @@ class BiometricEmployee extends BaseModel
                 self::markAttendance($biometricEmployee->user, $timestamp);
             }
         }
-
-        // dd('Attendance marking completed.');
     }
 
 
@@ -271,6 +260,7 @@ class BiometricEmployee extends BaseModel
         $showClockIn = AttendanceSetting::first();
 
         $clockIn = Carbon::createFromFormat('Y-m-d H:i:s', $timestamp, $user->company->timezone);
+
         $appTimezone = $clockIn->copy();
         $carbonDate = $clockIn->copy()->startOfDay();
 
@@ -314,9 +304,10 @@ class BiometricEmployee extends BaseModel
             $halfDayMarkTime = $clockIn->copy()->format('Y-m-d') . ' ' . $halfDayMarkTime;
         }
 
-        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeStartTime, user()->company->timezone);
-        $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeEndTime, user()->company->timezone);
-        $halfDayMarkTime = Carbon::createFromFormat('Y-m-d H:i:s', $halfDayMarkTime, user()->company->timezone);
+
+        $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeStartTime, $user->company->timezone);
+        $officeEndTime = Carbon::createFromFormat('Y-m-d H:i:s', $officeEndTime, $user->company->timezone);
+        $halfDayMarkTime = Carbon::createFromFormat('Y-m-d H:i:s', $halfDayMarkTime, $user->company->timezone);
 
         if ($attendanceSettings->shift_type == 'strict') {
             $clockInCount = Attendance::getTotalUserClockInWithTime($officeStartTime, $officeEndTime, $user->id);

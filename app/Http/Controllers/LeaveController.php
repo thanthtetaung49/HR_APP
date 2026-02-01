@@ -72,7 +72,7 @@ class LeaveController extends AccountBaseController
         $endDate = $request->query('endDate', 'null');
 
         $exportAll = false;
-        if($startDate == "null" && $endDate == "null"){
+        if ($startDate == "null" && $endDate == "null") {
             $exportAll = true;
         }
 
@@ -109,12 +109,10 @@ class LeaveController extends AccountBaseController
         if ($this->addPermission == 'added') {
             $this->defaultAssign = user();
             $this->leaveQuotas = $this->defaultAssign->leaveTypes;
-        }
-        else if (isset(request()->default_assign)) {
+        } else if (isset(request()->default_assign)) {
             $this->defaultAssign = User::with('roles')->findOrFail(request()->default_assign);
             $this->leaveQuotas = $this->defaultAssign->leaveTypes;
-        }
-        else {
+        } else {
             $this->leaveTypes = LeaveType::all();
         }
 
@@ -130,7 +128,8 @@ class LeaveController extends AccountBaseController
         return view('leaves.create', $this->data);
     }
 
-    private function checkAttendance(array $dates, $user_id, $leave_half_day = null, $leave_half_day_type = null) {
+    private function checkAttendance(array $dates, $user_id, $leave_half_day = null, $leave_half_day_type = null)
+    {
 
         foreach ($dates as $date) {
 
@@ -150,7 +149,7 @@ class LeaveController extends AccountBaseController
             $halfMarkDateTime = Carbon::createFromFormat('Y-m-d H:i:s', $date->format('Y-m-d') . ' ' . $halfMarkTime->toTimeString(), $this->company->timezone);
 
             $query = Attendance::whereDate('clock_in_time', $date)
-                               ->where('user_id', $user_id);
+                ->where('user_id', $user_id);
 
 
             if (!is_null($leave_half_day)) {
@@ -178,16 +177,14 @@ class LeaveController extends AccountBaseController
                 }
 
                 $clockInTime = Carbon::createFromFormat('Y-m-d H:i:s', $additionalCheck->clock_in_time, 'UTC')
-                ->setTimezone($this->company->timezone);
+                    ->setTimezone($this->company->timezone);
 
                 if ($leave_half_day_type == 'first_half') {
-                    if($clockInTime->lessThan($halfMarkDateTime))
-                    {
+                    if ($clockInTime->lessThan($halfMarkDateTime)) {
                         return true;
                     }
                 } else if ($leave_half_day_type == 'second_half') {
-                    if($clockInTime->greaterThan($halfMarkDateTime))
-                    {
+                    if ($clockInTime->greaterThan($halfMarkDateTime)) {
                         return true;
                     }
                 }
@@ -240,8 +237,7 @@ class LeaveController extends AccountBaseController
             }
 
             session(['leaves_duration' => 'multiple']);
-        }
-        else {
+        } else {
             $leaveDate = Carbon::createFromFormat($this->company->date_format, $request->leave_date);
             $multiDates[] = $leaveDate->startOfDay();;
         }
@@ -257,7 +253,7 @@ class LeaveController extends AccountBaseController
         // check for the attendance on that day and throw warning if exits
         $this->attendanceAlreadyMarked = $this->checkAttendance($multiDates, $request->user_id, $leave_half_day, $leave_half_day_type);
 
-        if($this->attendanceAlreadyMarked && $request->markLeave == 'no') {
+        if ($this->attendanceAlreadyMarked && $request->markLeave == 'no') {
             return Reply::dataOnly(['status' => 'attendanceMarked']);
         }
 
@@ -267,21 +263,21 @@ class LeaveController extends AccountBaseController
 
 
         $holidays = Holiday::whereIn('date', $multiDatesFormatted)
-            ->where(function ($query) use ( $employee) {
-                $query->where(function ($subquery) use ( $employee) {
+            ->where(function ($query) use ($employee) {
+                $query->where(function ($subquery) use ($employee) {
                     $subquery->whereJsonContains('department_id_json', $employee->employeeDetails->department_id)
                         ->orWhereNull('department_id_json');
                 });
-                $query->where(function ($subquery) use ( $employee) {
+                $query->where(function ($subquery) use ($employee) {
                     $subquery->whereJsonContains('designation_id_json', $employee->employeeDetails->designation_id)
                         ->orWhereNull('designation_id_json');
                 });
-                $query->where(function ($subquery) use ( $employee) {
+                $query->where(function ($subquery) use ($employee) {
                     $subquery->whereJsonContains('employment_type_json', $employee->employeeDetails->employment_type)
                         ->orWhereNull('employment_type_json');
                 });
             })
-        ->get('date');
+            ->get('date');
 
         $multiDates = collect($multiDates)->filter(function ($date) use ($holidays) {
             return $holidays->where('date', $date)->isEmpty();
@@ -387,7 +383,7 @@ class LeaveController extends AccountBaseController
      */
     public function show($id)
     {
-        $this->leave = Leave::with('approvedBy', 'user')->where(function($q) use($id){
+        $this->leave = Leave::with('approvedBy', 'user')->where(function ($q) use ($id) {
             $q->where('id', $id);
             $q->orWhere('unique_id', $id);
         })->firstOrFail();
@@ -416,8 +412,7 @@ class LeaveController extends AccountBaseController
             $this->pendingCountLeave = $this->multipleLeaves->where('status', 'pending')->count();
 
             $this->view = 'leaves.ajax.multiple-leaves';
-        }
-        else {
+        } else {
             $this->view = 'leaves.ajax.show';
         }
 
@@ -448,19 +443,17 @@ class LeaveController extends AccountBaseController
         if ($this->editPermission == 'added') {
             $this->defaultAssign = user();
             $this->leaveUser = $this->defaultAssign;
-        }
-        else if (isset(request()->default_assign)) {
+        } else if (isset(request()->default_assign)) {
             $this->defaultAssign = User::withoutGlobalScope(ActiveScope::class)->with('leaveTypes')->findOrFail(request()->default_assign);
             $this->leaveUser = $this->defaultAssign;
-        }
-        else {
+        } else {
             $this->leaveUser = User::withoutGlobalScope(ActiveScope::class)->with('leaveTypes')->findOrFail($this->leave->user_id);
         }
 
         $this->employees = User::allEmployees(null, false);
         $assignedEmployee = $this->employees->where('id', $this->leave->user_id)->first();
 
-        if ($assignedEmployee->status == 'active'){
+        if ($assignedEmployee->status == 'active') {
             $this->employees = User::allEmployees(null, true);
         }
 
@@ -522,10 +515,25 @@ class LeaveController extends AccountBaseController
         }
 
         $leaveDate = Carbon::createFromFormat($this->company->date_format, $request->leave_date);
-
         $applyLeavesCount = ($leave->duration == 'half day' ? 0.5 : 1);
 
-        $holiday = Holiday::where('date', $leaveDate->format('Y-m-d'))->first();
+        // $holiday = Holiday::where('date', $leaveDate->format('Y-m-d'))->first();
+        $holiday = Holiday::where('date',  $leaveDate->format('Y-m-d'))
+            ->where(function ($query) use ($employee) {
+                $query->where(function ($subquery) use ($employee) {
+                    $subquery->whereJsonContains('department_id_json', $employee->employeeDetails->department_id)
+                        ->orWhereNull('department_id_json');
+                });
+                $query->where(function ($subquery) use ($employee) {
+                    $subquery->whereJsonContains('designation_id_json', $employee->employeeDetails->designation_id)
+                        ->orWhereNull('designation_id_json');
+                });
+                $query->where(function ($subquery) use ($employee) {
+                    $subquery->whereJsonContains('employment_type_json', $employee->employeeDetails->employment_type)
+                        ->orWhereNull('employment_type_json');
+                });
+            })
+            ->first();
 
         if ($holiday) {
             return Reply::error(__('messages.holidayLeaveApplyError'));
@@ -583,10 +591,9 @@ class LeaveController extends AccountBaseController
 
         $leave->save();
 
-        if ($leave->duration == 'multiple' && $leave->unique_id){
-            $route = route('leaves.show', $leave->unique_id).'?tab=multiple-leaves';
-        }
-        else{
+        if ($leave->duration == 'multiple' && $leave->unique_id) {
+            $route = route('leaves.show', $leave->unique_id) . '?tab=multiple-leaves';
+        } else {
             $route = route('leaves.index');
         }
 
@@ -613,27 +620,23 @@ class LeaveController extends AccountBaseController
             || ($this->deletePermission == 'both' && ($leave->user_id == user()->id || $leave->added_by == user()->id) || ($this->deleteApproveLeavePermission == 'none'))
         ));
 
-        if(!is_null(request()->uniId) && request()->duration == 'multiple')
-        {
+        if (!is_null(request()->uniId) && request()->duration == 'multiple') {
             $leaves = Leave::where('unique_id', request()->uniId)->get();
 
             foreach ($leaves as $item) {
                 Leave::destroy($item->id);
             }
-        }
-        else {
+        } else {
             Leave::destroy($id);
         }
 
         $totalLeave = $leave->duration == 'multiple' && !is_null($uniqueID) ? Leave::where('unique_id', $uniqueID)->count() : 0;
 
-        if($totalLeave == 0){
+        if ($totalLeave == 0) {
             $route = route('leaves.index');
-        }
-        elseif(request()->type == 'delete-single' && !is_null($uniqueID) && $leave->duration == 'multiple'){
+        } elseif (request()->type == 'delete-single' && !is_null($uniqueID) && $leave->duration == 'multiple') {
             $route = route('leaves.show', $leave->unique_id);
-        }
-        else{
+        } else {
             $route = '';
         }
 
@@ -735,24 +738,24 @@ class LeaveController extends AccountBaseController
     public function applyQuickAction(Request $request)
     {
         switch ($request->action_type) {
-        case 'delete':
-            $this->deleteRecords($request);
+            case 'delete':
+                $this->deleteRecords($request);
 
-            return Reply::success(__('messages.deleteSuccess'));
-        case 'change-leave-status':
-            $result = $this->changeBulkStatus($request);
+                return Reply::success(__('messages.deleteSuccess'));
+            case 'change-leave-status':
+                $result = $this->changeBulkStatus($request);
 
-            if ($result['updated'] > 0 && $result['skipped'] > 0) {
-                $message = __('messages.updateSuccessWithSomeSkipped');
-            } elseif ($result['updated'] > 0) {
-                $message = __('messages.updateSuccess');
-            } else {
-                $message = __('messages.noUpdateMade');
-            }
+                if ($result['updated'] > 0 && $result['skipped'] > 0) {
+                    $message = __('messages.updateSuccessWithSomeSkipped');
+                } elseif ($result['updated'] > 0) {
+                    $message = __('messages.updateSuccess');
+                } else {
+                    $message = __('messages.noUpdateMade');
+                }
 
-            return Reply::success($message);
-        default:
-            return Reply::error(__('messages.selectAction'));
+                return Reply::success($message);
+            default:
+                return Reply::error(__('messages.selectAction'));
         }
     }
 
@@ -761,16 +764,13 @@ class LeaveController extends AccountBaseController
         abort_403(user()->permission('delete_leave') != 'all');
         $leaves = Leave::whereIn('id', explode(',', $request->row_ids))->get();
 
-        foreach($leaves as $leave)
-        {
-            if(!is_null($leave->unique_id) && $leave->duration == 'multiple')
-            {
+        foreach ($leaves as $leave) {
+            if (!is_null($leave->unique_id) && $leave->duration == 'multiple') {
                 $leavesWithSameUniqueId = Leave::where('unique_id', $leave->unique_id)->get();
                 foreach ($leavesWithSameUniqueId as $singleLeave) {
                     Leave::destroy($singleLeave->id);
                 }
-            }
-            else {
+            } else {
                 Leave::destroy($leave->id);
             }
         }
@@ -784,20 +784,17 @@ class LeaveController extends AccountBaseController
 
         $updatedCount = 0;
         $skippedCount = 0;
-        foreach($leaves as $leave)
-        {
+        foreach ($leaves as $leave) {
             // Check if the leave status is already approved or rejected
             if ($leave->duration != 'multiple' && in_array($leave->status, ['approved', 'rejected'])) {
                 $skippedCount++;
                 continue;
             }
 
-            if(!is_null($leave->unique_id) && $leave->duration == 'multiple')
-            {
+            if (!is_null($leave->unique_id) && $leave->duration == 'multiple') {
                 $uniqueLeaves = Leave::where('unique_id', $leave->unique_id)->get();
 
-                foreach($uniqueLeaves as $uniqueLeave)
-                {
+                foreach ($uniqueLeaves as $uniqueLeave) {
 
                     // Ensure the unique leave status is not approved or rejected
                     if (in_array($uniqueLeave->status, ['approved', 'rejected'])) {
@@ -809,8 +806,7 @@ class LeaveController extends AccountBaseController
                     $uniqueLeave->save();
                     $updatedCount++;
                 }
-            }
-            else {
+            } else {
 
                 $leave->status = $request->status;
                 $leave->save();
@@ -822,7 +818,6 @@ class LeaveController extends AccountBaseController
             'updated' => $updatedCount,
             'skipped' => $skippedCount
         ];
-
     }
 
     public function leaveAction(ActionLeave $request)
@@ -831,16 +826,15 @@ class LeaveController extends AccountBaseController
 
         abort_403(!($this->reportingTo) && user()->permission('approve_or_reject_leaves') == 'none');
 
-        if($request->type == 'single'){
+        if ($request->type == 'single') {
             $leave = Leave::findOrFail($request->leaveId);
             $this->leaveStore($leave, $request);
-        }
-        else {
+        } else {
             $leaves = Leave::where('unique_id', $request->leaveId)->where('status', 'pending')->get();
             session(['leaves_notification' => 'multiple']);
             $totalLeaves = $leaves->count();
 
-            if($totalLeaves > 1){
+            if ($totalLeaves > 1) {
                 $firstLeaveDate = $leaves->first() ? $leaves->first()->leave_date->format($this->company->date_format) : null;
                 $lastLeaveDate = $leaves->last() ? $leaves->last()->leave_date->format($this->company->date_format) : null;
                 $dateRange = $firstLeaveDate ? $firstLeaveDate . ' to ' . $lastLeaveDate : null;
@@ -856,7 +850,6 @@ class LeaveController extends AccountBaseController
 
                 $this->leaveStore($leave, $request);
             }
-
         }
 
         if (session()->has('dateRange')) {
@@ -886,7 +879,7 @@ class LeaveController extends AccountBaseController
     public function preApprove(Request $request)
     {
         $this->reportingTo = EmployeeDetails::where('reporting_to', user()->id)->first();
-    
+
         if ($request->has('leaveUId') && $request->leaveUId != null) {
             Leave::where('unique_id', $request->leaveUId)
                 ->update(['manager_status_permission' => $request->action]);
@@ -939,7 +932,7 @@ class LeaveController extends AccountBaseController
         $leaveStartDate = null;
         $leaveEndDate = null;
 
-        if($settings && $settings->leaves_start_from == 'year_start'){
+        if ($settings && $settings->leaves_start_from == 'year_start') {
 
             if ($yearStartMonth > $now->month) {
                 // Not completed a year yet
@@ -949,8 +942,7 @@ class LeaveController extends AccountBaseController
                 $leaveStartDate = Carbon::create($now->year, $yearStartMonth, 1);
                 $leaveEndDate = $leaveStartDate->copy()->addYear()->subDay();
             }
-
-        } elseif ($settings && $settings->leaves_start_from == 'joining_date'){
+        } elseif ($settings && $settings->leaves_start_from == 'joining_date') {
 
             $joiningDate = Carbon::parse($this->employee->employeedetails->joining_date->format((now(company()->timezone)->year) . '-m-d'));
             $joinMonth = $joiningDate->month;
@@ -965,7 +957,6 @@ class LeaveController extends AccountBaseController
                 $leaveStartDate = $joiningDate;
                 $leaveEndDate = $joiningDate->copy()->addYear()->subDay();
             }
-
         }
 
         $this->employeeLeavesQuotas = $this->employee->leaveTypes;
@@ -979,7 +970,8 @@ class LeaveController extends AccountBaseController
 
             if (
                 ($leavesQuota->leaveType->deleted_at == null || $leavesQuota->leaves_used > 0) &&
-                $leavesQuota->leaveType && ($leavesQuota->leaveType->leaveTypeCondition($leavesQuota->leaveType, $this->employee))) {
+                $leavesQuota->leaveType && ($leavesQuota->leaveType->leaveTypeCondition($leavesQuota->leaveType, $this->employee))
+            ) {
 
                 $hasLeaveQuotas = true;
                 $allowedEmployeeLeavesQuotas[] = $leavesQuota;
@@ -1004,8 +996,7 @@ class LeaveController extends AccountBaseController
         if ($request->date != null) {
             $date = companyToDateString($request->date);
             $users = Leave::where('leave_date', $date)->where('status', 'approved')->count();
-        }
-        else{
+        } else {
             $users = '';
         }
 
@@ -1031,11 +1022,10 @@ class LeaveController extends AccountBaseController
         $userRole = [];
         $userRoles = $roles->roles->count() > 1 ? $roles->roles->where('name', '!=', 'employee') : $roles->roles;
 
-        foreach($userRoles as $role){
+        foreach ($userRoles as $role) {
             $userRole[] = $role->id;
         }
 
         $this->userRole = $userRole;
     }
-
 }

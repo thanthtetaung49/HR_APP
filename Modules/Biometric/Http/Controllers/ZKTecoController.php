@@ -21,7 +21,6 @@ class ZKTecoController extends Controller
      */
     public function handleAttendanceData(Request $request)
     {
-
         $sn = strtoupper($request->input('SN'));
 
         if (!$sn) {
@@ -42,6 +41,7 @@ class ZKTecoController extends Controller
         ]);
 
         $rawContent = $request->getContent();
+        // $rawContent = "SLTTGI0100017\t2026-01-14 07:51:35\t0\t1\t\t0\t0";
         // Split raw input by newlines in case of multiple logs
         $rows = preg_split('/\\r\\n|\\r|\\n/', $rawContent);
 

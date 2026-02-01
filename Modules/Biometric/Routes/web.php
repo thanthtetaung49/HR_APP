@@ -5,9 +5,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Biometric\Http\Controllers\BiometricAttendanceController;
 use Modules\Biometric\Http\Controllers\BiometricDeviceController;
 use Modules\Biometric\Http\Controllers\BiometricEmployeeController;
-
-
-
+use Modules\Biometric\Http\Controllers\ZKTecoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,5 +36,5 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('biometric-employees/fetch-all', [BiometricEmployeeController::class, 'fetchAll'])->name('biometric-employees.fetch-all');
 
     // Biometric testing route
-    Route::get('get-biometric-attendance/test', [BiometricAttendanceController::class, 'test']);
+    Route::get('get-biometric-attendance/test', [ZKTecoController::class, 'handleAttendanceData']);
 });
