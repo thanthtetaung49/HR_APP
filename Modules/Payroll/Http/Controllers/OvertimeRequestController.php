@@ -9,6 +9,8 @@ use App\Models\Designation;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Http\Controllers\AccountBaseController;
+use App\Models\Holiday;
+use App\Models\Location;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Payroll\Entities\EmployeeSalaryGroup;
@@ -41,9 +43,8 @@ class OvertimeRequestController extends AccountBaseController
      */
     public function index(OvertimeRequestDataTable $dataTable, Request $request)
     {
-        $this->departments = Team::all();
-        $this->designations = Designation::allDesignations();
-        $this->employees = User::allEmployees(active:true);
+        $this->employees = User::allEmployees(active: true);
+        $this->locations = Location::all();
 
         $now = now();
         $this->year = $now->format('Y');
@@ -60,6 +61,15 @@ class OvertimeRequestController extends AccountBaseController
 
     public function getOvertimeData(Request $request)
     {
+        $roles = auth()->user()->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
 
         // Get today's records
         $overtimeRequestBase = OvertimeRequest::with(['user'])
@@ -67,13 +77,21 @@ class OvertimeRequestController extends AccountBaseController
             ->leftJoin('users as actionby', 'actionby.id', '=', 'overtime_requests.action_by')
             ->leftJoin('employee_details', 'users.id', '=', 'employee_details.user_id');
 
+        if (!$isAdmin && !$isHRmanager) {
+            $overtimeRequestBase = $overtimeRequestBase->where('overtime_requests.user_id', auth()->user()->id);
+        }
+
         // Apply filters
+        if (!is_null($request->location) && $request->location != 'all' && $request->location != '') {
+            $overtimeRequestBase = $overtimeRequestBase->where('users.location_id', $request->location);
+        }
+
         if (!is_null($request->designation) && $request->designation != 'all' && $request->designation != '') {
-            $overtimeRequestBase = $overtimeRequestBase->where('employee_details.designation_id', $request->designation);
+            $overtimeRequestBase = $overtimeRequestBase->where('users.designation_id', $request->designation);
         }
 
         if (!is_null($request->department) && $request->department != 'all' && $request->department != '') {
-            $overtimeRequestBase = $overtimeRequestBase->where('employee_details.department_id', $request->department);
+            $overtimeRequestBase = $overtimeRequestBase->where('users.department_id', $request->department);
         }
 
         if ($request->year != 'all' && $request->year != '') {
@@ -108,6 +126,7 @@ class OvertimeRequestController extends AccountBaseController
 
         // Data for the view
         $this->overtimeData = [
+            'overTimeRequestBase' => $overtimeRequestBase->get(),
             'requested' => $requestedCount,
             'approved' => $approvedCount,
             'rejected' => $rejectedCount,
@@ -117,7 +136,6 @@ class OvertimeRequestController extends AccountBaseController
         ];
 
         return Reply::dataOnly(['overtimeData' => $this->overtimeData]);
-
     }
 
     static public function formatMinutesToHours($existedHours, $minutes)
@@ -125,12 +143,11 @@ class OvertimeRequestController extends AccountBaseController
         $hours = floor($minutes / 60);
         $remainingMinutes = $minutes % 60;
 
-        if($remainingMinutes > 0 ){
+        if ($remainingMinutes > 0) {
             return sprintf('%d hrs %d mins', ($hours + $existedHours), $remainingMinutes);
         }
 
         return sprintf('%d hrs', ($hours + $existedHours));
-
     }
 
     /**
@@ -178,28 +195,26 @@ class OvertimeRequestController extends AccountBaseController
             ->map(function ($date) {
                 return Carbon::parse($date)->format('Y-m-d');
             })
-        ->toArray();
+            ->toArray();
 
         $userPolicy = OvertimePolicyEmployee::with('policy', 'policy.payCode')->where('user_id', $userId)->first();
 
         $userData = User::find($userId);
 
-        $convertedDates = array_map(function($datesOvertime) {
+        $convertedDates = array_map(function ($datesOvertime) {
             $carbonDate = Carbon::createFromFormat(company()->date_format, $datesOvertime);
             return $carbonDate->format('Y-m-d');
         }, $datesOvertime);
 
-        foreach($convertedDates as $overDates)
-        {
-            if(in_array($overDates, $requestRecords))
-            {
+        foreach ($convertedDates as $overDates) {
+            if (in_array($overDates, $requestRecords)) {
                 return Reply::error(__('payroll::messages.recordInsertedAlready'));
             }
         }
 
         $hours = array_sum($request->overtime_hours);
 
-        if($request->overtime_hours){
+        if ($request->overtime_hours) {
 
             $overtimeHours = $request->overtime_hours;
             $overtimeDates = $request->date;
@@ -208,23 +223,42 @@ class OvertimeRequestController extends AccountBaseController
 
             $batch_key = \Str::random(16);
 
-            foreach($overtimeHours as $key => $hours){
+            foreach ($overtimeHours as $key => $hours) {
+                $date = Carbon::createFromFormat(company()->date_format, $request->date[$key])->format('Y-m-d');
+
+                $employeeShift = User::leftJoin('employee_shift_schedules', function ($join) use ($date) {
+                    $join->on('employee_shift_schedules.user_id', '=', 'users.id')
+                        ->whereDate('employee_shift_schedules.date', $date);
+                })
+                    ->select(
+                        DB::raw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) as employee_shift_id')
+                    )
+                    ->where('users.id', $userId)
+                    ->first();
+
+                $holidayDate = Holiday::where('date', $date)->get();
 
                 $minutes = $overtimeMinutes[$key] ?? 0;
 
-                if($userPolicy->policy->payCode->fixed == 1){
-                    $amount = $hours * $userPolicy->policy->payCode->fixed_amount;
-                    $perMinAmount = $userPolicy->policy->payCode->fixed_amount / 60;
-                    $amount = ($amount + ($minutes * $perMinAmount));
-                }
-                else{
-                    $amount = $hours * ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->policy->payCode->time);
-                    $perMinAmount = ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->policy->payCode->time) / 60;
-
-                    $amount = ($amount + ($minutes * $perMinAmount));
+                if ($userPolicy->policy->payCode->fixed == 1) {
+                    $hourlyRate = $userPolicy->policy->payCode->fixed_amount;
+                } else {
+                    $hourlyRate = $userData->employeeDetail->overtime_hourly_rate;
                 }
 
-                $date = Carbon::createFromFormat(company()->date_format, $overtimeDates[$key])->format('Y-m-d');
+                if ($employeeShift->employee_shift_id == 1 || !$holidayDate->isEmpty()) {
+                    $amount = $hours * $hourlyRate * 2;
+                    $perMinAmount = $hourlyRate / 60;
+                    $amount = ($amount + ($minutes * $perMinAmount));
+                } elseif ($userPolicy->policy->payCode->fixed == 1) {
+                    $amount = $hours * $hourlyRate;
+                    $perMinAmount = $hourlyRate / 60;
+                    $amount = ($amount + ($minutes * $perMinAmount));
+                } else {
+                    $amount = $hours * ($hourlyRate * $userPolicy->policy->payCode->time);
+                    $perMinAmount = ($hourlyRate * $userPolicy->policy->payCode->time) / 60;
+                    $amount = ($amount + ($minutes * $perMinAmount));
+                }
 
                 $overtimeRequest = new OvertimeRequest();
                 $overtimeRequest->user_id = $userId;
@@ -260,10 +294,9 @@ class OvertimeRequestController extends AccountBaseController
         $this->employee = $this->overtimeRequest->user;
         $userPolicy = OvertimePolicyEmployee::with('policy', 'policy.payCode')->where('user_id', $this->employee->id)->first();
 
-        if($userPolicy->policy->payCode->fixed == 1){
+        if ($userPolicy->policy->payCode->fixed == 1) {
             $this->amount = $userPolicy->policy->payCode->fixed_amount;
-        }
-        else{
+        } else {
             $this->amount = $this->employee->employeeDetail->overtime_hourly_rate;
         }
 
@@ -296,7 +329,7 @@ class OvertimeRequestController extends AccountBaseController
 
     public function update(UpdateRequest $request, $id)
     {
-        $date = Carbon::createFromFormat( company()->date_format, $request->date)->format('Y-m-d');
+        $date = Carbon::createFromFormat(company()->date_format, $request->date)->format('Y-m-d');
 
         $overtimeRequest = OvertimeRequest::find($id);
 
@@ -305,8 +338,7 @@ class OvertimeRequestController extends AccountBaseController
             ->where('id', '<>', $id)
             ->first();
 
-        if(!is_null($requestRecord))
-        {
+        if (!is_null($requestRecord)) {
             return Reply::error(__('payroll::messages.recordInsertedAlready'));
         }
 
@@ -318,12 +350,11 @@ class OvertimeRequestController extends AccountBaseController
 
         $minutes = $request->minutes ? floatval($request->minutes) : 0;
 
-        if($userPolicy->policy->payCode->fixed == 1){
+        if ($userPolicy->policy->payCode->fixed == 1) {
             $amount = $hours * $userPolicy->policy->payCode->fixed_amount;
             $perMinAmount = $userPolicy->policy->payCode->fixed_amount / 60;
             $amount = ($amount + ($minutes * $perMinAmount));
-        }
-        else{
+        } else {
             $amount = $hours * ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->policy->payCode->time);
             $perMinAmount = ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->policy->payCode->time) / 60;
 
@@ -358,10 +389,9 @@ class OvertimeRequestController extends AccountBaseController
     {
         $hours = $overtimeData[$dateData]->overtime_hours;
 
-        if($userPolicy->payCode->fixed == 1){
+        if ($userPolicy->payCode->fixed == 1) {
             $amount = $hours * $userPolicy->payCode->fixed_amount;
-        }
-        else{
+        } else {
             $amount = $hours * ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->payCode->time);
         }
 
@@ -372,11 +402,11 @@ class OvertimeRequestController extends AccountBaseController
     {
 
         $overtimes = DB::table('attendances as a')
-            ->leftJoin('employee_shift_schedules as ess', function($join) {
+            ->leftJoin('employee_shift_schedules as ess', function ($join) {
                 $join->on('a.employee_shift_id', '=', 'ess.id')
                     ->where('ess.date', '=', DB::raw('DATE(a.shift_start_time)'));
             })
-            ->join('employee_shifts as es', function($join) {
+            ->join('employee_shifts as es', function ($join) {
                 $join->on('ess.employee_shift_id', '=', 'es.id')
                     ->orOn('a.employee_shift_id', '=', 'es.id');
             })
@@ -412,13 +442,12 @@ class OvertimeRequestController extends AccountBaseController
             ->toArray();
 
         return $overtimes;
-
     }
 
     public function calculateTotalHours($userId, $startDate, $endDate)
     {
         $results = DB::table('attendances as a')
-            ->join('employee_shift_schedules as ess', function($join) {
+            ->join('employee_shift_schedules as ess', function ($join) {
                 $join->on('a.user_id', '=', 'ess.user_id')
                     ->on(DB::raw('DATE(a.clock_in_time)'), '=', 'ess.date')
                     ->on('a.employee_shift_id', '=', 'ess.employee_shift_id')
@@ -441,7 +470,6 @@ class OvertimeRequestController extends AccountBaseController
 
         // Output the formatted results
         return $formattedResults;
-
     }
 
     public function changeStatus(Request $request)
@@ -481,12 +509,10 @@ class OvertimeRequestController extends AccountBaseController
 
         if ($daysBefore->month < $currentDate->month) {
             $resultDate = $currentDate->copy()->startOfMonth();
-        }
-        else {
+        } else {
             $resultDate = $daysBefore;
         }
 
         return ['applyDate' => $resultDate, 'currentMonthDate' => $currentDate->copy()];
     }
-
 }

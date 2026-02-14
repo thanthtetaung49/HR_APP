@@ -385,15 +385,15 @@ class PayrollController extends AccountBaseController
 
             // Leave Without Pay
             $leave = DB::table('leaves')->select(
-                DB::raw("CAST(SUM(CASE WHEN leaves.leave_type_id = 7 THEN 1 ELSE 0 END) AS UNSIGNED) AS absentLeave"),
-                DB::raw("CAST(SUM(CASE WHEN leaves.leave_type_id = 6 AND leaves.duration <> 'half day' THEN 1 ELSE 0 END) AS UNSIGNED) AS normalLeaveWithoutPay"),
-                DB::raw("CAST(SUM(CASE WHEN leaves.leave_type_id = 6 AND leaves.duration = 'half day' THEN 1 ELSE 0 END) AS UNSIGNED) AS halfDayLeaveWithoutPay"),
+                DB::raw("CAST(SUM(CASE WHEN leaves.leave_type_id = 20 THEN 1 ELSE 0 END) AS UNSIGNED) AS absentLeave"),
+                DB::raw("CAST(SUM(CASE WHEN leaves.leave_type_id = 19 AND leaves.duration <> 'half day' THEN 1 ELSE 0 END) AS UNSIGNED) AS normalLeaveWithoutPay"),
+                DB::raw("CAST(SUM(CASE WHEN leaves.leave_type_id = 19 AND leaves.duration = 'half day' THEN 1 ELSE 0 END) AS UNSIGNED) AS halfDayLeaveWithoutPay"),
                 DB::raw(
                     "
                     CAST(
                         (
-                            SUM(CASE WHEN leaves.leave_type_id = 6 AND leaves.duration <> 'half day' THEN 1 ELSE 0 END) +
-                            SUM(CASE WHEN leaves.leave_type_id = 6 AND leaves.duration = 'half day' THEN 1 ELSE 0 END) * 0.5
+                            SUM(CASE WHEN leaves.leave_type_id = 19 AND leaves.duration <> 'half day' THEN 1 ELSE 0 END) +
+                            (SUM(CASE WHEN leaves.leave_type_id = 19 AND leaves.duration = 'half day' THEN 1 ELSE 0 END) * 0.5)
                         ) AS DECIMAL(5, 1)
                     )
                     AS totalLeaveWithoutPay
@@ -407,6 +407,8 @@ class PayrollController extends AccountBaseController
                 ->whereDate('leaves.leave_date', '>=', $startDate)
                 ->whereDate('leaves.leave_date', '<=', $endDate)
                 ->first();
+
+            // dd($leave);
 
             // halfDay Late
             $halfDay = Attendance::select(
@@ -476,11 +478,41 @@ class PayrollController extends AccountBaseController
                     ->groupBy('additional_basic_salaries.type')
                     ->get();
 
-                $overtimeAmount = OvertimeRequest::where('user_id', $userId)
-                    ->where('status', 'accept')
-                    ->whereDate('date', '>=', $startDate)
-                    ->whereDate('date', '<=', $endDate)
+                // $overtimeAmount = OvertimeRequest::where('user_id', $userId)
+                //     ->where('status', 'accept')
+                //     ->whereDate('date', '>=', $startDate)
+                //     ->whereDate('date', '<=', $endDate)
+                //     ->sum('amount');
+
+                $employeeOverTime = OvertimeRequest::with(['actionBy', 'user', 'company', 'policy', 'policy.payCode'])
+                    ->leftJoin('users', 'users.id', '=', 'overtime_requests.user_id')
+                    ->leftJoin('employee_shift_schedules', function ($join) {
+                        $join->on('employee_shift_schedules.user_id', '=', 'users.id')
+                            ->on('employee_shift_schedules.date', '=', 'overtime_requests.date');
+                    })
+                    ->leftJoin('holidays', 'holidays.date', '=', 'overtime_requests.date')
+                    ->select(
+                        'overtime_requests.*',
+                        'users.name',
+                        DB::raw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) as employee_shift_id'),
+                        'holidays.date as holiday_date'
+                    )
+                    ->where('overtime_requests.user_id', $userId)
+                    ->where('overtime_requests.status', 'accept')
+                    ->whereBetween('overtime_requests.date', [$startDate, $endDate]);
+
+                $overtimeAmount = (clone $employeeOverTime)->where(function ($query) {
+                    $query->where('employee_shift_schedules.employee_shift_id', '<>', 1)
+                        ->whereNotNull('employee_shift_schedules.employee_shift_id')
+                        ->whereNull('holidays.date');
+                })
                     ->sum('amount');
+
+                $offDayHolidaySalary = (clone $employeeOverTime)->where(function ($query) {
+                    $query->where('employee_shift_schedules.employee_shift_id', '=', 1)
+                        ->whereNotNull('employee_shift_schedules.employee_shift_id')
+                        ->orWhereNotNull('holidays.date');
+                })->sum('amount');
 
                 $detuction = Detection::where('user_id', $userId)->first();
 
@@ -544,7 +576,7 @@ class PayrollController extends AccountBaseController
                 }
 
                 // $payableSalary = $perDaySalary * $payDays;
-                $offDayHolidaySalary = $this->offDayHolidayOvertime($startDate, $endDate, $userId, $holidayData);
+                // $offDayHolidaySalary = $this->offDayHolidayOvertime($startDate, $endDate, $userId, $holidayData);
 
                 // dd($offDayHolidaySalary);
 
@@ -603,7 +635,7 @@ class PayrollController extends AccountBaseController
                     'net_salary' => (round(($netSalary), 2) < 0) ? 0.00 : round(($netSalary), 2),
                     'gross_salary' => round($totalBasicSalary, 2), // null
                     'total_deductions' => round(($totalDetection), 2),
-                    'month' => $startDate->month,
+                    'month' => $endDate->month,
                     'payroll_cycle_id' => $payrollCycle,
                     'salary_from' => $startDate->format('Y-m-d'),
                     'salary_to' => $endDate->format('Y-m-d'),
@@ -653,7 +685,7 @@ class PayrollController extends AccountBaseController
         return Reply::dataOnly(['status' => 'success']);
     }
 
-    protected function calculateTdsSalary($userId, $joiningDate, $financialyearStart, $financialyearEnd, $payrollMonthEndDate, $payrollMonthStartDate)
+    protected function calculateTdsSalary($userId, $joiningDate, $finaqncialyearStart, $financialyearEnd, $payrollMonthEndDate, $payrollMonthStartDate)
     {
 
         $totalEarning = 0;
@@ -1342,7 +1374,7 @@ class PayrollController extends AccountBaseController
             ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
             ->where('attendances.half_day', 'no')
             ->where('attendances.user_id', $userId)
-            ->where('attendances.employee_shift_id', '<>', 1) // employee_shift_id 1 must be offDay
+            ->where('attendances.employee_shift_id', '<>', 1) // employee_shift_id 1 must not be offDay
             ->groupBy(DB::raw('DATE(attendances.clock_in_time), attendances.user_id'))
             ->havingRaw('SUM(TIMESTAMPDIFF(SECOND, attendances.clock_in_time, attendances.clock_out_time)) >= ?', [
                 8 * 60 * 60

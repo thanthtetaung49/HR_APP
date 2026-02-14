@@ -67,13 +67,13 @@ class BankReportDataTable extends BaseDataTable
         $month = request()->month;
         $year = request()->year;
 
-        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', DB::raw('CAST(salary_slips.month AS SIGNED) + 1 as test'))
+        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month')
             ->leftJoin('salary_slips', 'salary_slips.user_id', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
             ->leftJoin('locations', 'teams.location_id', 'locations.id')
             ->where('salary_slips.year', $year)
-            ->where(DB::raw('CAST(salary_slips.month AS SIGNED) + 1'), $month);
+            ->where(DB::raw('CAST(salary_slips.month AS SIGNED)'), $month);
 
         if (isset(request()->locationId) && request()->locationId != '') {
             $model->where('locations.id', request()->locationId);

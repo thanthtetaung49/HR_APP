@@ -141,7 +141,7 @@
             data['month'] = month;
             data['year'] = year;
 
-            const currentMonthMinusOne = parseInt($("#month").val()) - 1;
+            const currentMonthMinusOne = parseInt($("#month").val());
 
             const monthName = new Date(year, currentMonthMinusOne - 1).toLocaleString('en-US', {
                 month: 'long'
