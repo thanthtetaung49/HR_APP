@@ -97,7 +97,7 @@ class OvertimeRequestDataTable extends BaseDataTable
 
                 $amount = $row->amount;
 
-                if (!$row->holiday_date || $row->employee_shift_id == 1) {
+                if ($row->holiday_date || $row->employee_shift_id == 1) {
                     $amount = $hourlyRate * 2;
                     $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
                 }
