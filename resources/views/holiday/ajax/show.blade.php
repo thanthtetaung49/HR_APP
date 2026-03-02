@@ -43,15 +43,10 @@
                 <div class="card-body">
                     <x-cards.data-row :label="__('app.date')" :value="$holiday->date->translatedFormat(company()->date_format)" html="true" />
                     <x-cards.data-row :label="__('modules.holiday.occasion')" :value="$holiday->occassion" html="true" />
-                        {{-- @dd($department) --}}
-                    <x-cards.data-row :label="__('app.department')" :value="$department ? $department : '--'" html="true" />
+                    {{-- <x-cards.data-row :label="__('app.department')" :value="$department ? $department : '--'" html="true" />
                     <x-cards.data-row :label="__('app.designation')" :value="$designation ? $designation : '--'" html="true" />
 
-                    <x-cards.data-row :label="__('modules.employees.employmentType')" :value="$employment_type ? $employment_type : '--'" />
-
-
-
-
+                    <x-cards.data-row :label="__('modules.employees.employmentType')" :value="$employment_type ? $employment_type : '--'" /> --}}
 
                 </div>
             </div>

@@ -835,14 +835,11 @@ class AttendanceController extends AccountBaseController
         $month = $request->month;
 
         $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->subMonth()->setDay(26)->startOfDay();
-        $endDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->setDay(25);
+        $endDate = $startDate->copy()->addMonth()->setDay(25);
 
-        $lastDayOfMonth = $startDate->copy()->lastOfMonth()->startOfDay();
-        $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 26);
+        $daysInMonth = (int) abs($endDate->diffInDays($startDate));
         $totalWorkingDays = $daysInMonth;
 
-        // $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $request->month . '-' . $request->year)->startOfMonth()->startOfDay();
-        // $endDate = $startDate->copy()->endOfMonth()->endOfDay();
         $userId = $request->userId;
 
         $attendances = Attendance::userAttendanceByDate($startDate, $endDate, $userId); // Getting Attendance Data
@@ -861,6 +858,7 @@ class AttendanceController extends AccountBaseController
         // ]);
 
         $daysPresent = Attendance::countDaysPresentByUser($startDate, $endDate, $userId);
+
         $daysLate = Attendance::countDaysLateByUser($startDate, $endDate, $userId);
         $halfDays = Attendance::countHalfDaysByUser($startDate, $endDate, $userId);
         $daysAbsent = (($totalWorkingDays - $daysPresent) < 0) ? '0' : ($totalWorkingDays - $daysPresent);
@@ -969,7 +967,7 @@ class AttendanceController extends AccountBaseController
         // Getting View data
         $view = view('attendances.ajax.user_attendance', ['dateWiseData' => $dateWiseData, 'global' => $this->company])->render();
 
-        return Reply::dataOnly(['status' => 'success', 'data' => $view, 'daysPresent' => $daysPresent, 'daysLate' => $daysLate, 'halfDays' => $halfDays, 'totalWorkingDays' => $totalWorkingDays, 'absentDays' => $daysAbsent, 'holidays' => $holidayCount]);
+        return Reply::dataOnly(['status' => 'success', 'data' => $view, 'daysPresent' => $daysPresent, 'daysLate' => $daysLate, 'halfDays' => $halfDays, 'totalWorkingDays' => $totalWorkingDays, 'absentDays' => $daysAbsent, 'holidays' => $holidayCount, 'startDate' => $startDate, 'endDate' => $endDate]);
     }
 
     /**

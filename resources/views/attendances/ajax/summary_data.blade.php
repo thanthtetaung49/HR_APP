@@ -51,9 +51,12 @@ $addAttendancePermission = user()->permission('add_attendance');
                                     data-attendance-date="{{ $key2 }}"><i
                                         class="fa fa-times text-lightest"></i></a>
                             @elseif ($day == 'Holiday')
-                                <a href="javascript:;" data-toggle="tooltip"
+                                {{-- <a href="javascript:;" data-toggle="tooltip"
                                     data-original-title="{{ $holidayOccasions[$key2] }}"
                                     data-user-id="{{ $userId }}" data-attendance-date="{{ $key2 }}"><i
+                                        class="fa fa-star text-warning"></i></a> --}}
+                                         <a @if ($addAttendancePermission == 'all') href="javascript:;" class="edit-attendance" @endif data-user-id="{{ $userId }}"
+                                    data-attendance-date="{{ $key2 }}"><i
                                         class="fa fa-star text-warning"></i></a>
                             @else
                                 @if ($day != '-')

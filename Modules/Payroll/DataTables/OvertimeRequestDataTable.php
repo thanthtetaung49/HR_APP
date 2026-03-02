@@ -141,8 +141,6 @@ class OvertimeRequestDataTable extends BaseDataTable
             })
             ->leftJoin('holidays', 'holidays.date', '=', 'overtime_requests.date');
 
-        // dd($overtimeRequest->get()->toArray());
-
         if (!in_array('admin', user_roles())) {
             $overtimeRequest = $overtimeRequest->where(function ($query) use ($roleId) {
                 $query->where('overtime_requests.user_id', user()->id)

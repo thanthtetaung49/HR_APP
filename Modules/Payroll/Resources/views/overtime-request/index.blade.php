@@ -157,6 +157,12 @@
                     @lang('payroll::modules.payroll.addRequest')
                 </x-forms.link-primary>
             @endif
+
+            @if (canDataTableExport())
+                <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                    @lang('app.exportExcel')
+                </x-forms.button-secondary>
+            @endif
         </div>
         <!-- Add Task Export Buttons End -->
         <!-- Task Box Start -->
@@ -227,8 +233,7 @@
             function() {
                 if ($('#designation').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
-                }
-                else if ($('#department').val() !== "all") {
+                } else if ($('#department').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#location').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -458,5 +463,24 @@
         });
 
 
+        @if (canDataTableExport())
+            $('#export-all').click(function(e) {
+                e.preventDefault();
+
+                var data = {
+                    employee: $('#selectEmployee').val(),
+                    location: $('#location').val(),
+                    department: $('#department').val(),
+                    designation: $('#designation').val(),
+                    year: $('#year').val(),
+                    month: $('#month').val()
+                };
+
+                var queryString = $.param(data);
+                var baseUrl = "{{ route('overtime-requests.export_overtime_requests') }}";
+
+                window.location.href = baseUrl + '?' + queryString;
+            });
+        @endif
     </script>
 @endpush

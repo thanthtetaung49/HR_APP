@@ -2,6 +2,7 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
+use App\Exports\PayrollExport;
 use Carbon\Carbon;
 use App\Models\Team;
 use App\Models\User;
@@ -16,24 +17,18 @@ use App\Models\Designation;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Models\ProjectTimeLog;
 use App\Models\EmployeeDetails;
 use App\Models\ExpensesCategory;
-use App\Models\AttendanceSetting;
 use Illuminate\Support\Facades\DB;
 use App\Models\EmployeeShiftSchedule;
-use Modules\Payroll\Entities\SalaryTds;
 use Modules\Payroll\Entities\SalarySlip;
 use Modules\Payroll\Entities\PayrollCycle;
 use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Entities\OvertimeRequest;
 use App\Http\Controllers\AccountBaseController;
-use App\Models\EmployeeShift;
-use Carbon\CarbonPeriod;
 use Illuminate\Support\Facades\Log;
-use MacsiDigital\OAuth2\Support\Token\DB as TokenDB;
+use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\DataTables\PayrollDataTable;
-use Modules\Payroll\Entities\EmployeeSalaryGroup;
 use Modules\Payroll\Entities\SalaryPaymentMethod;
 use Modules\Payroll\Entities\EmployeeMonthlySalary;
 use Modules\Payroll\Notifications\SalaryStatusEmail;
@@ -462,8 +457,10 @@ class PayrollController extends AccountBaseController
                 ->pluck('holiday_date')
                 ->values(); // Getting Holiday Data
 
-            $eveningShiftPresentCount = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+            $eveningShiftPresentCount = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId); // Getting Attendance Data
             $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData);
+
+            // dd($gazattedPresentCount);
 
             if ($endDate->greaterThan($joiningDate)) {
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
@@ -477,12 +474,6 @@ class PayrollController extends AccountBaseController
                     ->whereDate('date', '<=', $endDate)
                     ->groupBy('additional_basic_salaries.type')
                     ->get();
-
-                // $overtimeAmount = OvertimeRequest::where('user_id', $userId)
-                //     ->where('status', 'accept')
-                //     ->whereDate('date', '>=', $startDate)
-                //     ->whereDate('date', '<=', $endDate)
-                //     ->sum('amount');
 
                 $employeeOverTime = OvertimeRequest::with(['actionBy', 'user', 'company', 'policy', 'policy.payCode'])
                     ->leftJoin('users', 'users.id', '=', 'overtime_requests.user_id')
@@ -678,7 +669,6 @@ class PayrollController extends AccountBaseController
                     SalarySlip::create($data);
                 }
             }
-            // dd('stop');
         }
 
 
@@ -1183,28 +1173,28 @@ class PayrollController extends AccountBaseController
             ->where('date', '>=', $startDate)
             ->where('date', '<=', $endDate);
 
-        if (is_null($userId)) {
-            return $holiday->groupBy('date')->get();
-        }
+        // if (is_null($userId)) {
+        //     return $holiday->groupBy('date')->get();
+        // }
 
-        $user = User::find($userId);
+        // $user = User::find($userId);
 
-        $holiday = $holiday->where(function ($query) use ($user) {
-            $query->where(function ($subquery) use ($user) {
-                $subquery->where(function ($q) use ($user) {
-                    $q->where('department_id_json', 'like', '%' . $user->employeeDetail->department_id . '%')
-                        ->orWhereNull('department_id_json');
-                });
-                $subquery->where(function ($q) use ($user) {
-                    $q->where('designation_id_json', 'like', '%' . $user->employeeDetail->designation_id . '%')
-                        ->orWhereNull('designation_id_json');
-                });
-                $subquery->where(function ($q) use ($user) {
-                    $q->where('employment_type_json', 'like', '%' . $user->employeeDetail->employment_type . '%')
-                        ->orWhereNull('employment_type_json');
-                });
-            });
-        });
+        // $holiday = $holiday->where(function ($query) use ($user) {
+        //     $query->where(function ($subquery) use ($user) {
+        //         $subquery->where(function ($q) use ($user) {
+        //             $q->where('department_id_json', 'like', '%' . $user->employeeDetail->department_id . '%')
+        //                 ->orWhereNull('department_id_json');
+        //         });
+        //         $subquery->where(function ($q) use ($user) {
+        //             $q->where('designation_id_json', 'like', '%' . $user->employeeDetail->designation_id . '%')
+        //                 ->orWhereNull('designation_id_json');
+        //         });
+        //         $subquery->where(function ($q) use ($user) {
+        //             $q->where('employment_type_json', 'like', '%' . $user->employeeDetail->employment_type . '%')
+        //                 ->orWhereNull('employment_type_json');
+        //         });
+        //     });
+        // });
 
         return $holiday->groupBy('date')->get();
     }
@@ -1381,10 +1371,12 @@ class PayrollController extends AccountBaseController
             ])
             ->count();
 
+        // dd($presentCount);
+
         return $presentCount;
     }
 
-    public function countEveningShiftPresentByUser($startDate, $endDate, $userId, $holidayData)
+    public function countEveningShiftPresentByUser($startDate, $endDate, $userId)
     {
         $totalPresent = Attendance::select(
             DB::raw('COUNT(DISTINCT DATE(attendances.clock_in_time)) as presentCount')
@@ -1679,5 +1671,15 @@ class PayrollController extends AccountBaseController
         }
 
         return $attendanceSettings->shift;
+    }
+
+
+    public function exportPayroll ($year = null, $payrollCycle = null, $month = null, $searchText = null) {
+
+        abort_403(!canDataTableExport());
+
+        $date = now()->format('Y-m-d');
+
+        return Excel::download(new PayrollExport($year, $payrollCycle, $month, $searchText), 'Payroll_' . $date . '.xlsx');
     }
 }

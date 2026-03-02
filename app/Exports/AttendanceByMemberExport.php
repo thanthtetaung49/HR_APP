@@ -2,17 +2,18 @@
 
 namespace App\Exports;
 
-use Carbon\Carbon;
-use App\Models\Leave;
+use App\Models\Attendance;
 use App\Models\Holiday;
+use App\Models\Leave;
+use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use Carbon\CarbonPeriod;
-use App\Models\Attendance;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Concerns\Exportable;
-use Maatwebsite\Excel\Concerns\WithMapping;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
 
 class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapping
 {
@@ -81,6 +82,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
             $item->occassion = '';
         });
 
+
         // Add New Collection if period date does not match with attendance collection...
         $employeedata = array();
         $emp_attendance = 0;
@@ -117,6 +119,8 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                     }
                 }
 
+                // Log::info($att->status);
+
                 $attendances->push($att);
             } else if ($date->lessThan(now())) {
                 // Else date present in attendance then check for holiday and leave
@@ -133,6 +137,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                 foreach ($holidays as $holiday) {
 
                     if ($date->format('Y-m-d') == $holiday->holiday_date && !$attendances->whereBetween('date', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])->count()) {
+                        Log::info(1);
                         $att->status = 'Holiday';
                         $att->occassion = $holiday->occassion;
                         $attendances->push($att);
@@ -142,6 +147,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
                     }
                 }
             }
+
         }
 
         $employee_temp = array();
@@ -274,7 +280,7 @@ class AttendanceByMemberExport implements FromCollection, WithHeadings, WithMapp
     public function checkHolidays($attendances, $date, $occassion)
     {
         foreach ($attendances as $attendance) {
-            if ($date->format('Y-m-d') == Carbon::parse($attendance->clock_in_time)->format('Y-m-d')) {
+            if ($date->format('Y-m-d') == Carbon::parse($attendance->date)->format('Y-m-d')) {
                 $attendance->status = 'Holiday';
                 $attendance->occassion = $occassion;
             }

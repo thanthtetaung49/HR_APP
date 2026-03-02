@@ -75,32 +75,32 @@ class Holiday extends BaseModel
 
         // dd($startDate, $endDate);
 
-        if (is_null($userId)) {
-            return $holiday->get();
-        }
+        // if (is_null($userId)) {
+        //     return $holiday->get();
+        // }
 
-        $user = User::find($userId);
+        // $user = User::find($userId);
 
-        // dd($user->employeeDetail->designation_id);
+        // // dd($user->employeeDetail->designation_id);
 
-        if ($user) {
-            $holiday = $holiday->where(function ($query) use ($user) {
-                $query->where(function ($subquery) use ($user) {
-                    $subquery->where(function ($q) use ($user) {
-                        $q->where('department_id_json', 'like', '%' . $user->employeeDetail->department_id . '%')
-                            ->orWhereNull('department_id_json');
-                    });
-                    $subquery->where(function ($q) use ($user) {
-                        $q->where('designation_id_json', 'like', '%' . $user->employeeDetail->designation_id . '%')
-                            ->orWhereNull('designation_id_json');
-                    });
-                    $subquery->where(function ($q) use ($user) {
-                        $q->where('employment_type_json', 'like', '%' . $user->employeeDetail->employment_type  . '%')
-                            ->orWhereNull('employment_type_json');
-                    });
-                });
-            });
-        }
+        // if ($user) {
+        //     $holiday = $holiday->where(function ($query) use ($user) {
+        //         $query->where(function ($subquery) use ($user) {
+        //             $subquery->where(function ($q) use ($user) {
+        //                 $q->where('department_id_json', 'like', '%' . $user->employeeDetail->department_id . '%')
+        //                     ->orWhereNull('department_id_json');
+        //             });
+        //             $subquery->where(function ($q) use ($user) {
+        //                 $q->where('designation_id_json', 'like', '%' . $user->employeeDetail->designation_id . '%')
+        //                     ->orWhereNull('designation_id_json');
+        //             });
+        //             $subquery->where(function ($q) use ($user) {
+        //                 $q->where('employment_type_json', 'like', '%' . $user->employeeDetail->employment_type  . '%')
+        //                     ->orWhereNull('employment_type_json');
+        //             });
+        //         });
+        //     });
+        // }
 
         // dd($holiday->get()->toArray());
 

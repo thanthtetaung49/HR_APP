@@ -106,21 +106,6 @@
                                     fieldName="selectAllEmployee" />
                             </div>
 
-                            {{-- <div class="col-md-4 mb-4">
-                                <label class="f-14 text-dark-grey mb-12 my-3"
-                                    for="{{ $field->name . '_' . $field->id }}">{{ $field->label }}</label>
-                                <select class="form-control select-picker" name="{{ $field->name }}"
-                                    id="{{ $field->name . '_' . $field->id }}" data-container="body"
-                                    data-live-search="true">
-                                    <option value="all">@lang('app.all')</option>
-
-                                    @foreach ($field->values as $value)
-                                        <option value="{{ explode(' ', $value)[1] - 1 }}">{{ $value }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div> --}}
-
                             @php
                                 $roles = $user->roles;
 
@@ -134,7 +119,7 @@
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control select-picker" name="rank_id" id="rank_id"
-                                        data-live-search="true" >
+                                        data-live-search="true">
                                         <option value="">---</option>
                                         <option value="1">Rank 1</option>
                                         <option value="2">Rank 2</option>
@@ -179,8 +164,12 @@
             </div>
         @endif
 
-
         <div class="d-flex mt-4 justify-content-end action-bar">
+            @if (canDataTableExport())
+                <x-forms.button-secondary id="export-all" class="mr-3 mb-2 mb-lg-0" icon="file-export">
+                    @lang('app.exportExcel')
+                </x-forms.button-secondary>
+            @endif
 
             <x-datatable.actions>
                 <div class="select-status mr-3">
@@ -622,5 +611,22 @@
                 }
             })
         }
+
+        @if (canDataTableExport())
+            $('#export-all').click(function() {
+                var year = $('#year').val();
+                var payrollCycle = $('#payrollCycle').val();
+                var month = $('#month').val();
+                var searchText = $('#search-text-field').val();
+
+                var url = "{{ route('payroll.export_pay_roll', [':year', ':payrollCycle', ':month', ':searchText']) }}";
+
+                console.log(url);
+
+
+                url = url.replace(':year', year).replace(':payrollCycle', payrollCycle).replace(':month', month).replace(':searchText', searchText);
+                window.location.href = url;
+            });
+        @endif
     </script>
 @endpush

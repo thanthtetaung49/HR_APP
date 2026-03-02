@@ -155,15 +155,18 @@ class HolidayController extends AccountBaseController
                 $holiday->notification_sent = $notificationSent;
 
                 if (!empty($request->department)) {
-                    $holiday->department_id_json = json_encode($request->department);
+                    // $holiday->department_id_json = json_encode($request->department);
+                    $holiday->department_id_json = null;
                 }
 
                 if (!empty($request->designation)) {
-                    $holiday->designation_id_json = json_encode($request->designation);
+                    // $holiday->designation_id_json = json_encode($request->designation);
+                    $holiday->designation_id_json = null;
                 }
 
                 if (!empty($request->employment_type)) {
-                    $holiday->employment_type_json = json_encode($request->employment_type);
+                    // $holiday->employment_type_json = json_encode($request->employment_type);
+                    $holiday->employment_type_json = null;
                 }
 
                 $holiday->save();

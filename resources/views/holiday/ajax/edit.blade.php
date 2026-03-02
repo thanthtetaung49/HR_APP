@@ -18,7 +18,7 @@
                         </div>
                     </div>
 
-                    <div class="col-lg-6">
+                    {{-- <div class="col-lg-6">
                         <x-forms.label class="my-3" fieldId="employee_department" :fieldLabel="__('app.department')">
                         </x-forms.label>
                         <x-forms.input-group>
@@ -26,9 +26,10 @@
                                 data-live-search="true" multiple data-size="6">
 
                                 @foreach ($teams as $team)
-                                <option {{ in_array($team->id, $departmentArray) ? 'selected' : '' }} value="{{ $team->id }}">
-                                    {{ $team->team_name }}</option>
-                            @endforeach
+                                    <option {{ in_array($team->id, $departmentArray) ? 'selected' : '' }}
+                                        value="{{ $team->id }}">
+                                        {{ $team->team_name }}</option>
+                                @endforeach
                             </select>
                         </x-forms.input-group>
                     </div>
@@ -39,11 +40,6 @@
                         <x-forms.input-group>
                             <select class="form-control select-picker" name="designation[]" id="employee_designation"
                                 data-live-search="true" multiple data-size="4">
-
-                                {{-- @foreach ($designations as $designation)
-                                    <option {{ in_array($designation->id, $designationArray) ? 'selected' : '' }} value="{{ $designation->id }}">
-                                        {{ $designation->name }}</option>
-                                @endforeach --}}
                             </select>
                         </x-forms.input-group>
                     </div>
@@ -63,7 +59,7 @@
                             <option value="trainee" @if (is_array($employmentTypeArray) && in_array('trainee', $employmentTypeArray)) selected @endif>@lang('app.trainee')
                             </option>
                         </x-forms.select>
-                    </div>
+                    </div> --}}
                 </div>
 
                 <x-form-actions>
@@ -114,9 +110,11 @@
             $.ajax({
                 type: "get",
                 url: url,
-                data: { departmentIds: departmentIds },
+                data: {
+                    departmentIds: departmentIds
+                },
                 dataType: "json",
-                success: function (response) {
+                success: function(response) {
                     $("#employee_designation").html('');
                     let designations = response.designations;
 
@@ -127,13 +125,14 @@
                             var selected = '';
                         }
 
-                        let option = `<option value="${designation.id}" ${selected}>${designation.name}</option>`;
+                        let option =
+                            `<option value="${designation.id}" ${selected}>${designation.name}</option>`;
 
                         $("#employee_designation").append(option);
                     });
                     $("#employee_designation").selectpicker('refresh');
                 },
-                error: function (xhr, status, error) {
+                error: function(xhr, status, error) {
                     console.error('AJAX Error: ' + status + error);
                 }
             });

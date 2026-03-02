@@ -2,32 +2,37 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Team;
-use App\Models\User;
+use App\Events\BulkShiftEvent;
+use App\Exports\ShiftRosterHistory;
+use App\Exports\ShiftScheduleExport;
 use App\Helper\Files;
 use App\Helper\Reply;
-use App\Models\Company;
-use App\Models\Holiday;
-use App\Models\Location;
-use Carbon\CarbonPeriod;
-use App\Models\Attendance;
-use App\Scopes\ActiveScope;
-use App\Traits\ImportExcel;
-use Illuminate\Http\Request;
-use App\Models\EmployeeShift;
-use App\Events\BulkShiftEvent;
-use Illuminate\Support\Carbon;
-use App\Models\AttendanceSetting;
-use Illuminate\Support\Facades\DB;
-use App\Exports\ShiftScheduleExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Requests\EmployeeShift\StoreBulkShift;
 use App\Imports\EmployeeShiftsImport;
 use App\Jobs\ImportEmployeeShiftsJob;
-use App\Models\EmployeeShiftSchedule;
+use App\Models\Attendance;
+use App\Models\AttendanceSetting;
+use App\Models\Company;
 use App\Models\EmailNotificationSetting;
+use App\Models\EmployeeShift;
 use App\Models\EmployeeShiftChangeRequest;
+use App\Models\EmployeeShiftRosterChangeHistory;
+use App\Models\EmployeeShiftSchedule;
+use App\Models\Holiday;
+use App\Models\Location;
+use App\Models\Team;
+use App\Models\User;
+use App\Scopes\ActiveScope;
+use App\Traits\ImportExcel;
+use Carbon\CarbonPeriod;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon as SupportCarbon;
-use App\Http\Requests\EmployeeShift\StoreBulkShift;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use ZipArchive;
 
 class EmployeeShiftScheduleController extends AccountBaseController
 {
@@ -449,6 +454,13 @@ class EmployeeShiftScheduleController extends AccountBaseController
             'employee_shift_id' => $request->employee_shift_id
         ]);
 
+
+        EmployeeShiftRosterChangeHistory::create([
+            'user_id' => $request->user_id,
+            'date' => $request->shift_date,
+            'employee_shift_id' => $request->employee_shift_id
+        ]);
+
         $this->shiftUpdateInAttendance($employeeShift->id);
 
         return Reply::success(__('messages.employeeShiftAdded'));
@@ -458,8 +470,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
     {
         $employeeShift = EmployeeShiftSchedule::findOrFail($id);
         $employeeShift->employee_shift_id = $request->employee_shift_id;
-
-        // dd($employeeShift->toArray());
 
         if (!$request->hasFile('file')) {
             Files::deleteFile($employeeShift->file, 'employee-shift-file/' . $id);
@@ -473,6 +483,12 @@ class EmployeeShiftScheduleController extends AccountBaseController
         }
 
         $employeeShift->save();
+
+        EmployeeShiftRosterChangeHistory::create([
+            'user_id' => $request->user_id,
+            'date' => $request->shift_date,
+            'employee_shift_id' => $request->employee_shift_id
+        ]);
 
         $this->shiftUpdateInAttendance($id);
 
@@ -619,6 +635,54 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
         return Excel::download(new ShiftScheduleExport($year, $month, $id, $department, $startDate, $endDate, $viewType), 'Attendance_From_' . $startDate->format('d-m-Y') . '_To_' . $date->format('d-m-Y') . '.xlsx');
     }
+
+    // public function exportAllShift($year, $month, $id, $department, $startDate, $viewType)
+    // {
+    //     abort_403(!canDataTableExport());
+
+    //     if ($viewType == 'week') {
+    //         $now = Carbon::parse($startDate, company()->timezone);
+    //         $startDate = $now->copy()->startOfWeek(attendance_setting()->week_start_from);
+    //         $endDate = $startDate->copy()->addDays(6);
+    //     } else {
+    //         $startDate = Carbon::createFromFormat('d-m-Y', '01-' . $month . '-' . $year)->startOfMonth()->startOfDay();
+    //         $endDate = $startDate->copy()->endOfMonth()->endOfDay();
+    //     }
+
+    //     $date = $endDate->lessThan(now()) ? $endDate : now();
+
+    //     $tempDir = storage_path('app/temp');
+    //     if (!File::exists($tempDir)) {
+    //         File::makeDirectory($tempDir, 0755, true);
+    //     }
+
+    //     $fileName1 = 'Shift_Schedule.xlsx';
+    //     $fileName2 = 'Shift_History.xlsx';
+    //     $zipName = 'Exports_' . now()->timestamp . '.zip';
+    //     $zipPath = $tempDir . DIRECTORY_SEPARATOR . $zipName;
+
+    //     Excel::store(new ShiftScheduleExport($year, $month, $id, $department, $startDate, $endDate, $viewType), "temp/{$fileName1}");
+    //     Excel::store(new ShiftRosterHistory($startDate, $endDate), "temp/{$fileName2}");
+
+    //     $scheduleFullPath = Storage::disk('local')->path("temp/{$fileName1}");
+    //     $scheduleHistoryFullPath = Storage::disk('local')->path("temp/{$fileName2}");
+
+    //     $zip = new ZipArchive;
+    //     if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+    //         if (file_exists($scheduleFullPath) && file_exists($scheduleHistoryFullPath)) {
+    //             $zip->addFile($scheduleFullPath, $fileName1);
+    //             $zip->addFile($scheduleHistoryFullPath, $fileName2);
+    //         }
+    //         $zip->close();
+    //     } else {
+    //         return "Could not create ZIP file";
+    //     }
+
+    //     File::delete($tempDir . DIRECTORY_SEPARATOR . $fileName1);
+    //     File::delete($tempDir . DIRECTORY_SEPARATOR . $fileName2);
+
+    //     return response()->download($zipPath)->deleteFileAfterSend(true);
+    // }
 
     public function employeeShiftCalendar(Request $request)
     {

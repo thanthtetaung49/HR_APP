@@ -38,8 +38,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('payroll/download/{id}', [PayrollController::class, 'downloadPdf'])->name('payroll.download_pdf');
     Route::post('payroll/get-cycle-data', [PayrollController::class, 'getCycleData'])->name('payroll.get-cycle-data');
     Route::post('payroll/get_expense_title', [PayrollController::class, 'getExpenseTitle'])->name('payroll.get_expense_title');
-    // Route::get('payroll/get_employee/{payrollCycle?}/{departmentId?}', [PayrollController::class, 'byDepartment'])->name('payroll.get-employee');
     Route::get('payroll/get_employee', [PayrollController::class, 'byRank'])->name('payroll.get-employee');
+
+    Route::get('payroll/export_pay_roll/{year}/{payrollCycle?}/{month?}/{searchText?}', [PayrollController::class, 'exportPayroll'])->name('payroll.export_pay_roll');
 
     Route::resource('payroll', PayrollController::class);
 
@@ -71,7 +72,11 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('overtime-request-accept/{id}', [OvertimeRequestController::class, 'acceptRequest'])->name('overtime-request-accept');
     Route::get('overtime-request-policy/{id}', [OvertimeRequestController::class, 'getUserPolicy'])->name('overtime-request-policy');
     Route::get('overtime-request-data', [OvertimeRequestController::class, 'getOvertimeData'])->name('overtime-request-data');
+    Route::get('overtime-requests/export', [OvertimeRequestController::class, 'exportOvertimeRequests'])
+    ->name('overtime-requests.export_overtime_requests');
+
     Route::resource('overtime-requests', OvertimeRequestController::class);
+
 
     Route::resource('payroll-expenses', PayrollExpenseController::class)->only(['index', 'show', 'destroy']);
 

@@ -262,26 +262,27 @@ class LeaveController extends AccountBaseController
         });
 
 
-        $holidays = Holiday::whereIn('date', $multiDatesFormatted)
-            ->where(function ($query) use ($employee) {
-                $query->where(function ($subquery) use ($employee) {
-                    $subquery->whereJsonContains('department_id_json', $employee->employeeDetails->department_id)
-                        ->orWhereNull('department_id_json');
-                });
-                $query->where(function ($subquery) use ($employee) {
-                    $subquery->whereJsonContains('designation_id_json', $employee->employeeDetails->designation_id)
-                        ->orWhereNull('designation_id_json');
-                });
-                $query->where(function ($subquery) use ($employee) {
-                    $subquery->whereJsonContains('employment_type_json', $employee->employeeDetails->employment_type)
-                        ->orWhereNull('employment_type_json');
-                });
-            })
-            ->get('date');
+        // $holidays = Holiday::whereIn('date', $multiDatesFormatted)
+        //     ->where(function ($query) use ($employee) {
+        //         $query->where(function ($subquery) use ($employee) {
+        //             $subquery->whereJsonContains('department_id_json', $employee->employeeDetails->department_id)
+        //                 ->orWhereNull('department_id_json');
+        //         });
+        //         $query->where(function ($subquery) use ($employee) {
+        //             $subquery->whereJsonContains('designation_id_json', $employee->employeeDetails->designation_id)
+        //                 ->orWhereNull('designation_id_json');
+        //         });
+        //         $query->where(function ($subquery) use ($employee) {
+        //             $subquery->whereJsonContains('employment_type_json', $employee->employeeDetails->employment_type)
+        //                 ->orWhereNull('employment_type_json');
+        //         });
+        //     })
+        //     ->get('date');
 
-        $multiDates = collect($multiDates)->filter(function ($date) use ($holidays) {
-            return $holidays->where('date', $date)->isEmpty();
-        });
+
+        // $multiDates = collect($multiDates)->filter(function ($date) use ($holidays) {
+        //     return $holidays->where('date', $date)->isEmpty();
+        // });
 
         $multiDatesWithoutHolidayFormatted = collect($multiDates)->map(function ($date) {
             return $date->format('Y-m-d');
@@ -308,21 +309,35 @@ class LeaveController extends AccountBaseController
 
         $totalAllowedLeaves = $employeeLeaveQuotaRemaining + $appliedLeavesCount - $pendingAppliedLeavesCount;
 
-        $applyLeavesCount = ($multiDates->count() * ($duration == 'half day' ? 0.5 : 1));
+        // dd($multiDates->count());
+        // dd(count($multiDates));
+
+        $applyLeavesCount = (count($multiDates) * ($duration == 'half day' ? 0.5 : 1));
 
         if ($totalAllowedLeaves < $applyLeavesCount && $leaveType->over_utilization == 'not_allowed') {
             return Reply::error(__('messages.leaveLimitError'));
         }
 
-        if ($multiDates->count() == 0) {
+        if (count($multiDates) == 0) {
             return Reply::error(__('messages.noLeaveApplyForSelectedDate'));
         }
 
+        // dd($multiDates->first());
+
+        // $currentMonthLeaves = Leave::where('leave_type_id', $leaveType->id)
+        //     ->where('user_id', $request->user_id)
+        //     ->whereBetween('leave_date', [$multiDates->first()->copy()->startOfMonth(), $multiDates->first()->copy()->endOfMonth()])
+        //     ->whereIn('status', ['approved', 'pending'])
+        //     ->get();
+
+
         $currentMonthLeaves = Leave::where('leave_type_id', $leaveType->id)
             ->where('user_id', $request->user_id)
-            ->whereBetween('leave_date', [$multiDates->first()->copy()->startOfMonth(), $multiDates->first()->copy()->endOfMonth()])
+            ->whereBetween('leave_date', [$multiDates[0]->copy()->startOfMonth(), $multiDates[0]->copy()->endOfMonth()])
             ->whereIn('status', ['approved', 'pending'])
             ->get();
+
+        // dd($currentMonthLeaves);
 
         $currentMonthLeavesCount = ($currentMonthLeaves->where('duration', 'half day')->count() * 0.5) + $currentMonthLeaves->where('duration', '!=', 'half day')->count();
 
@@ -362,6 +377,8 @@ class LeaveController extends AccountBaseController
             $leave->leave_date = $leaveDate->format('Y-m-d');
             $leave->reason = $request->reason;
             $leave->status = ($request->has('status') ? $request->status : 'pending');
+
+            // dd($leave);
             $leave->save();
 
             $leaveIds[] = $leave->id;
@@ -518,26 +535,26 @@ class LeaveController extends AccountBaseController
         $applyLeavesCount = ($leave->duration == 'half day' ? 0.5 : 1);
 
         // $holiday = Holiday::where('date', $leaveDate->format('Y-m-d'))->first();
-        $holiday = Holiday::where('date',  $leaveDate->format('Y-m-d'))
-            ->where(function ($query) use ($employee) {
-                $query->where(function ($subquery) use ($employee) {
-                    $subquery->whereJsonContains('department_id_json', $employee->employeeDetails->department_id)
-                        ->orWhereNull('department_id_json');
-                });
-                $query->where(function ($subquery) use ($employee) {
-                    $subquery->whereJsonContains('designation_id_json', $employee->employeeDetails->designation_id)
-                        ->orWhereNull('designation_id_json');
-                });
-                $query->where(function ($subquery) use ($employee) {
-                    $subquery->whereJsonContains('employment_type_json', $employee->employeeDetails->employment_type)
-                        ->orWhereNull('employment_type_json');
-                });
-            })
-            ->first();
+        // $holiday = Holiday::where('date',  $leaveDate->format('Y-m-d'))
+        //     ->where(function ($query) use ($employee) {
+        //         $query->where(function ($subquery) use ($employee) {
+        //             $subquery->whereJsonContains('department_id_json', $employee->employeeDetails->department_id)
+        //                 ->orWhereNull('department_id_json');
+        //         });
+        //         $query->where(function ($subquery) use ($employee) {
+        //             $subquery->whereJsonContains('designation_id_json', $employee->employeeDetails->designation_id)
+        //                 ->orWhereNull('designation_id_json');
+        //         });
+        //         $query->where(function ($subquery) use ($employee) {
+        //             $subquery->whereJsonContains('employment_type_json', $employee->employeeDetails->employment_type)
+        //                 ->orWhereNull('employment_type_json');
+        //         });
+        //     })
+        //     ->first();
 
-        if ($holiday) {
-            return Reply::error(__('messages.holidayLeaveApplyError'));
-        }
+        // if ($holiday) {
+        //     return Reply::error(__('messages.holidayLeaveApplyError'));
+        // }
 
         $leaveApplied = Leave::whereIn('status', ['approved', 'pending'])
             ->where('user_id', $request->user_id)
@@ -588,6 +605,7 @@ class LeaveController extends AccountBaseController
         if ($request->has('status')) {
             $leave->status = $request->status;
         }
+
 
         $leave->save();
 

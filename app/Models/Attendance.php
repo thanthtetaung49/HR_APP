@@ -283,6 +283,8 @@ class Attendance extends BaseModel
     {
         $totalPresent = DB::select('SELECT count(DISTINCT DATE(attendances.clock_in_time) ) as presentCount from attendances where DATE(attendances.clock_in_time) >= "' . $startDate . '" and DATE(attendances.clock_in_time) <= "' . $endDate . '" and user_id="' . $userId . '" ');
 
+        // dd($totalPresent);
+
         return $totalPresent[0]->presentCount;
     }
 

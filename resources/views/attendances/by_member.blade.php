@@ -228,6 +228,7 @@ $addAttendancePermission = user()->permission('add_attendance');
                 blockUI: true,
                 container: '.content-wrapper',
                 success: function(response) {
+                    console.log(response);
                     $('#attendance-data').html(response.data);
                     $('#daysPresent').html(response.daysPresent);
                     $('#daysLate').html(response.daysLate);

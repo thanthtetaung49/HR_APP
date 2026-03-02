@@ -5,13 +5,13 @@
 @endpush
 
 @section('filter-section')
-
     <x-filters.filter-box>
         <!-- DATE START -->
         <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
             <div class="select-status d-flex">
-                <input type="text" class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
+                <input type="text"
+                    class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
                     id="datatableRange" placeholder="@lang('placeholders.dateRange')">
             </div>
         </div>
@@ -27,7 +27,7 @@
                         <option value="all">@lang('app.all')</option>
                     @endif
                     @foreach ($employees as $employee)
-                            <x-user-option :user="$employee" :selected="request('assignee') == 'me' && $employee->id == user()->id"/>
+                        <x-user-option :user="$employee" :selected="request('assignee') == 'me' && $employee->id == user()->id" />
                     @endforeach
                 </select>
             </div>
@@ -42,9 +42,21 @@
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($employeeShifts as $item)
-                        <option
-                            value="{{ $item->id }}">{{ $item->shift_name }}</option>
+                        <option value="{{ $item->id }}">{{ $item->shift_name }}</option>
                     @endforeach
+                </select>
+            </div>
+        </div>
+
+        <div class="select-box d-flex  py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.status')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="filterStatus" id="filterStatus" data-live-search="true"
+                    data-size="8">
+                    <option value="all">@lang('app.all')</option>
+                    <option value="waiting">@lang('app.waiting')</option>
+                    <option value="accepted">@lang('app.accept')</option>
+                    <option value="rejected">@lang('app.reject')</option>
                 </select>
             </div>
         </div>
@@ -60,11 +72,10 @@
         </div>
         <!-- RESET END -->
     </x-filters.filter-box>
-
 @endsection
 
 @php
-$addTimelogPermission = user()->permission('add_timelogs');
+    $addTimelogPermission = user()->permission('add_timelogs');
 @endphp
 
 
@@ -94,11 +105,10 @@ $addTimelogPermission = user()->permission('add_timelogs');
 
             <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
                 <a href="{{ route('shifts.index') }}" class="btn btn-secondary f-14" data-toggle="tooltip"
-                data-original-title="@lang('app.summary')"><i class="side-icon bi bi-list-ul"></i></a>
+                    data-original-title="@lang('app.summary')"><i class="side-icon bi bi-list-ul"></i></a>
 
-            <a href="{{ route('shifts-change.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
-                data-original-title="@lang('modules.attendance.shiftChangeRequests')"><i
-                    class="side-icon bi bi-hourglass-split"></i></a>
+                <a href="{{ route('shifts-change.index') }}" class="btn btn-secondary f-14 btn-active" data-toggle="tooltip"
+                    data-original-title="@lang('modules.attendance.shiftChangeRequests')"><i class="side-icon bi bi-hourglass-split"></i></a>
             </div>
         </div>
         <!-- Add Task Export Buttons End -->
@@ -111,7 +121,6 @@ $addTimelogPermission = user()->permission('add_timelogs');
         <!-- Task Box End -->
     </div>
     <!-- CONTENT WRAPPER END -->
-
 @endsection
 
 @push('scripts')
@@ -137,6 +146,7 @@ $addTimelogPermission = user()->permission('add_timelogs');
             var shift_id = $('#shift_id').val();
             var employee = $('#employee').val();
             var approved = $('#status').val();
+            var filterStatus = $("#filterStatus").val();
 
 
             data['startDate'] = startDate;
@@ -144,12 +154,13 @@ $addTimelogPermission = user()->permission('add_timelogs');
             data['shift_id'] = shift_id;
             data['employee'] = employee;
             data['status'] = approved;
+            data['filterStatus'] = filterStatus;
         });
         const showTable = () => {
             window.LaravelDataTables["shift-table"].draw(true);
         }
 
-        $('#employee, #status, #shift_id').on('change keyup',
+        $('#employee, #status, #shift_id, #filterStatus').on('change keyup',
             function() {
                 if ($('#employee').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -160,6 +171,9 @@ $addTimelogPermission = user()->permission('add_timelogs');
                 } else if ($('#status').val() != "") {
                     $('#reset-filters').removeClass('d-none');
                     showTable();
+                } else if ($('#filterStatus').val() != "") {
+                    $('#reset-filters').removeClass('d-none');
+                    showTable()
                 } else {
                     $('#reset-filters').addClass('d-none');
                     showTable();
@@ -296,7 +310,7 @@ $addTimelogPermission = user()->permission('add_timelogs');
                 $('#datatableRange').data('daterangepicker').setStartDate('{{ request('start') }}')
                 $('#datatableRange').data('daterangepicker').setEndDate('{{ request('end') }}')
                 $('#datatableRange').val('{{ request('start') }}' +
-                    ' @lang("app.to") ' + '{{ request('end') }}');
+                    ' @lang('app.to') ' + '{{ request('end') }}');
                 showTable();
             });
         </script>

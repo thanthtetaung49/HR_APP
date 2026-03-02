@@ -2,19 +2,18 @@
 
 namespace Modules\Payroll\Http\Controllers;
 
-use App\Models\Team;
-use App\Models\User;
+use App\Exports\OvertimeRequestExport;
 use App\Helper\Reply;
-use App\Models\Designation;
-use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use App\Http\Controllers\AccountBaseController;
 use App\Models\Holiday;
 use App\Models\Location;
+use App\Models\Role;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-use Modules\Payroll\Entities\EmployeeSalaryGroup;
-use Modules\Payroll\Entities\EmployeeMonthlySalary;
+use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\DataTables\OvertimeRequestDataTable;
 use Modules\Payroll\Entities\OvertimePolicy;
 use Modules\Payroll\Entities\OvertimePolicyEmployee;
@@ -514,5 +513,49 @@ class OvertimeRequestController extends AccountBaseController
         }
 
         return ['applyDate' => $resultDate, 'currentMonthDate' => $currentDate->copy()];
+    }
+
+    // "{{ route('overtime-requests.export_overtime_requests', [':selectEmployee', ':location', ':department', ':designation', ':year', ':month']) }}";
+
+
+    public function exportOvertimeRequests(Request $request)
+    {
+        abort_403(!canDataTableExport());
+
+        $employee = $request->query('employee');
+        $location       = $request->query('location');
+        $department     = $request->query('department');
+        $designation    = $request->query('designation');
+        $year           = $request->query('year');
+        $month          = $request->query('month');
+        $roleId = self::getUserSecondRole();
+
+        $date = now()->format('Y-m-d');
+
+        return Excel::download(new OvertimeRequestExport($employee, $location, $department, $designation, $year, $month, $roleId), 'Overtime_Requests_' . $date . '.xlsx');
+    }
+
+
+    static public function getUserSecondRole()
+    {
+        $roles = Role::all();
+
+        $roleIds = user()->roles()->pluck('role_id')->toArray();
+
+        if (count($roleIds) > 1) {
+            if (isset($roleIds[1])) {
+                $userRole = $roles->filter(function ($value, $key) use ($roleIds) {
+                    return $value->id == $roleIds[1];
+                })->first();
+
+                $userSecondRole = ($userRole->name != 'employee') ? $roleIds[1] : $roleIds[0];
+            } else {
+                $userSecondRole = $roleIds[0];
+            }
+        } else {
+            $userSecondRole = $roleIds[0];
+        }
+
+        return $userSecondRole;
     }
 }

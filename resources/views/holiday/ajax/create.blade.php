@@ -7,15 +7,13 @@
                 <input type="hidden" name="redirect_url" value="{{ $redirectUrl }}">
                 <div class="pt-20 pl-20 pr-20 row">
                     <div class="col-lg-5">
-                        <x-forms.text class="date-picker" :fieldLabel="__('app.date')" fieldName="date[]"
-                            fieldId="dateField1" :fieldPlaceholder="__('app.date')" fieldValue="{{ $date }}"
-                            fieldRequired="true" />
+                        <x-forms.text class="date-picker" :fieldLabel="__('app.date')" fieldName="date[]" fieldId="dateField1"
+                            :fieldPlaceholder="__('app.date')" fieldValue="{{ $date }}" fieldRequired="true" />
                     </div>
                     <div class="col-lg-5">
                         <div class="my-3 form-group">
-                            <x-forms.text :fieldLabel="__('modules.holiday.occasion')" fieldName="occassion[]"
-                                fieldId="occassion1" :fieldPlaceholder="__('modules.holiday.occasion')" fieldValue=""
-                                fieldRequired="true" />
+                            <x-forms.text :fieldLabel="__('modules.holiday.occasion')" fieldName="occassion[]" fieldId="occassion1"
+                                :fieldPlaceholder="__('modules.holiday.occasion')" fieldValue="" fieldRequired="true" />
                         </div>
                     </div>
                     <input type="hidden" name="notification_sent" value="yes">
@@ -33,51 +31,45 @@
                     </div>
                 </div>
                 <!--  ADD ITEM END-->
-                <div class="pt-20 pl-20 pr-20 row">
-                <div class="col-lg-5">
-                    <x-forms.label class="my-3" fieldId="employee_department"
-                    :fieldLabel="__('app.department')" >
-                </x-forms.label>
-                <x-forms.input-group>
-                    <select class="form-control select-picker" name="department[]"
-                        id="employee_department" data-live-search="true" multiple>
+                {{-- <div class="pt-20 pl-20 pr-20 row">
+                    <div class="col-lg-5">
+                        <x-forms.label class="my-3" fieldId="employee_department" :fieldLabel="__('app.department')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="department[]" id="employee_department"
+                                data-live-search="true" multiple>
 
-                        @foreach ($teams as $team)
-                            <option value="{{ $team->id }}">{{ $team->team_name }}</option>
-                        @endforeach
-                    </select>
-                </x-forms.input-group>
-                </div>
+                                @foreach ($teams as $team)
+                                    <option value="{{ $team->id }}">{{ $team->team_name }}</option>
+                                @endforeach
+                            </select>
+                        </x-forms.input-group>
+                    </div>
 
-                <div class="col-lg-5">
+                    <div class="col-lg-5">
 
-                        <x-forms.label class="my-3" fieldId="employee_designation"
-                        :fieldLabel="__('app.designation')" >
-                    </x-forms.label>
-                    <x-forms.input-group>
-                        <select class="form-control select-picker" name="designation[]"
-                            id="employee_designation" data-live-search="true" multiple data-size="5">
+                        <x-forms.label class="my-3" fieldId="employee_designation" :fieldLabel="__('app.designation')">
+                        </x-forms.label>
+                        <x-forms.input-group>
+                            <select class="form-control select-picker" name="designation[]" id="employee_designation"
+                                data-live-search="true" multiple data-size="5">
+                            </select>
+                        </x-forms.input-group>
 
-                            {{-- @foreach ($designations as $designation)
-                                <option value="{{ $designation->id }}">{{ $designation->name }}</option>
-                            @endforeach --}}
-                        </select>
-                    </x-forms.input-group>
+                    </div>
 
-                </div>
+                    <div class="col-lg-5 mb-3">
+                        <x-forms.select fieldId="employment_type" :fieldLabel="__('modules.employees.employmentType')" fieldName="employment_type[]"
+                            :fieldPlaceholder="__('placeholders.date')" multiple data-size="5">
 
-                <div class="col-lg-5 mb-3">
-                    <x-forms.select fieldId="employment_type" :fieldLabel="__('modules.employees.employmentType')"
-                    fieldName="employment_type[]" :fieldPlaceholder="__('placeholders.date')" multiple data-size="5">
-
-                    <option value="full_time">@lang('app.fullTime')</option>
-                    <option value="part_time">@lang('app.partTime')</option>
-                    <option value="on_contract">@lang('app.onContract')</option>
-                    <option value="internship">@lang('app.internship')</option>
-                    <option value="trainee">@lang('app.trainee')</option>
-                </x-forms.select>
-                </div>
-            </div>
+                            <option value="full_time">@lang('app.fullTime')</option>
+                            <option value="part_time">@lang('app.partTime')</option>
+                            <option value="on_contract">@lang('app.onContract')</option>
+                            <option value="internship">@lang('app.internship')</option>
+                            <option value="trainee">@lang('app.trainee')</option>
+                        </x-forms.select>
+                    </div>
+                </div> --}}
 
                 <x-form-actions>
                     <x-forms.button-primary id="save-holiday-form" class="mr-3" icon="check">@lang('app.save')
@@ -135,7 +127,7 @@
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",
             multipleSeparator: " ",
             selectedTextFormat: "count > 8",
-            countSelectedText: function (selected, total) {
+            countSelectedText: function(selected, total) {
                 return selected + " {{ __('app.membersSelected') }} ";
             }
         });
@@ -147,18 +139,21 @@
             $.ajax({
                 type: "get",
                 url: url,
-                data: { departmentIds: departmentIds },
+                data: {
+                    departmentIds: departmentIds
+                },
                 dataType: "json",
-                success: function (response) {
+                success: function(response) {
                     $("#employee_designation").html('');
                     let designations = response.designations;
                     designations.forEach(function(designation) {
-                        let option = `<option value="${designation.id}">${designation.name}</option>`;
+                        let option =
+                            `<option value="${designation.id}">${designation.name}</option>`;
                         $("#employee_designation").append(option);
                     });
                     $("#employee_designation").selectpicker('refresh');
                 },
-                error: function (xhr, status, error) {
+                error: function(xhr, status, error) {
                     console.error('AJAX Error: ' + status + error);
                 }
             });
@@ -170,7 +165,7 @@
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",
             multipleSeparator: " ",
             selectedTextFormat: "count > 8",
-            countSelectedText: function (selected, total) {
+            countSelectedText: function(selected, total) {
                 return selected + " {{ __('app.membersSelected') }} ";
             }
         });
@@ -181,7 +176,7 @@
             deselectAllText: "{{ __('modules.permission.deselectAll') }}",
             multipleSeparator: " ",
             selectedTextFormat: "count > 8",
-            countSelectedText: function (selected, total) {
+            countSelectedText: function(selected, total) {
                 return selected + " {{ __('app.membersSelected') }} ";
             }
         });
