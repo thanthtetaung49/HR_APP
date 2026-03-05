@@ -8,7 +8,6 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Bus\Queueable;
 use App\Traits\ExcelImportable;
 use App\Models\EmployeeShift;
-use App\Models\EmployeeShiftRosterChangeHistory;
 use Illuminate\Support\Facades\DB;
 use App\Models\EmployeeShiftSchedule;
 use Illuminate\Queue\SerializesModels;
@@ -95,12 +94,6 @@ class ImportEmployeeShiftsJob implements ShouldQueue
                             'shift_end_time' =>  $date . ' ' . $shift->office_end_time
                         ]
                     );
-
-                    EmployeeShiftRosterChangeHistory::create([
-                        'user_id' => $userId,
-                        'date' => $date,
-                        'employee_shift_id' => $employeeShiftId
-                    ]);
 
                     Log::info('success');
 

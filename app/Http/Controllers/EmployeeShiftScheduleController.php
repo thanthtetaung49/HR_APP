@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Events\BulkShiftEvent;
-use App\Exports\ShiftRosterHistory;
 use App\Exports\ShiftScheduleExport;
 use App\Helper\Files;
 use App\Helper\Reply;
@@ -16,7 +15,6 @@ use App\Models\Company;
 use App\Models\EmailNotificationSetting;
 use App\Models\EmployeeShift;
 use App\Models\EmployeeShiftChangeRequest;
-use App\Models\EmployeeShiftRosterChangeHistory;
 use App\Models\EmployeeShiftSchedule;
 use App\Models\Holiday;
 use App\Models\Location;
@@ -26,13 +24,9 @@ use App\Scopes\ActiveScope;
 use App\Traits\ImportExcel;
 use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon as SupportCarbon;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
-use ZipArchive;
 
 class EmployeeShiftScheduleController extends AccountBaseController
 {
@@ -454,13 +448,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
             'employee_shift_id' => $request->employee_shift_id
         ]);
 
-
-        EmployeeShiftRosterChangeHistory::create([
-            'user_id' => $request->user_id,
-            'date' => $request->shift_date,
-            'employee_shift_id' => $request->employee_shift_id
-        ]);
-
         $this->shiftUpdateInAttendance($employeeShift->id);
 
         return Reply::success(__('messages.employeeShiftAdded'));
@@ -483,12 +470,6 @@ class EmployeeShiftScheduleController extends AccountBaseController
         }
 
         $employeeShift->save();
-
-        EmployeeShiftRosterChangeHistory::create([
-            'user_id' => $request->user_id,
-            'date' => $request->shift_date,
-            'employee_shift_id' => $request->employee_shift_id
-        ]);
 
         $this->shiftUpdateInAttendance($id);
 
