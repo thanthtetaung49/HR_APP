@@ -38,6 +38,8 @@ class EmployeeShiftChangeRequestController extends AccountBaseController
             $this->employeeShifts = EmployeeShift::get();
         }
 
+        // dd($this->employeeShifts);
+
         return $dataTable->render('shift-change.index', $this->data);
     }
 

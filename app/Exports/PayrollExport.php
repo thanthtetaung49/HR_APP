@@ -9,6 +9,8 @@ use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
+use MacsiDigital\OAuth2\Support\Token\DB;
+use Modules\Payroll\Entities\SalarySlip;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldAutoSize, WithMapping
@@ -42,35 +44,12 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
             $endDate = Carbon::parse($month[1])->setDay(25);
         }
 
-        $users = User::join('role_user', 'role_user.user_id', '=', 'users.id')
-            ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
-            ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
-            ->join('salary_slips', 'salary_slips.user_id', '=', 'users.id')
-            ->join('roles', 'roles.id', '=', 'role_user.role_id')
-            ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
-            ->join('payroll_cycles', 'payroll_cycles.id', '=', 'employee_payroll_cycles.payroll_cycle_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to', 'salary_slips.total_deductions')
-            ->where('roles.name', '<>', 'client')
-            ->where('salary_slips.payroll_cycle_id', $this->payrollCycle)
-            ->where('salary_slips.year', $this->year);
+        $salarySlips = SalarySlip::select('users.name', 'salary_slips.*')
+            ->leftJoin('users', 'users.id', '=', 'salary_slips.user_id')
+            ->where('salary_slips.salary_from', '>=', $startDate)
+            ->where('salary_slips.salary_to', '>=', $endDate);
 
-
-        if (!is_null($startDate) && !is_null($endDate)) {
-            $users = $users->whereRaw('Date(salary_slips.salary_from) = ?', [$startDate]);
-            $users = $users->whereRaw('Date(salary_slips.salary_to) = ?', [$endDate]);
-        }
-
-        if ($this->searchText != '') {
-            $users = $users->where(function ($query) {
-                $query->where('users.name', 'like', '%' . $this->searchText . '%')
-                    ->orWhere('users.email', 'like', '%' . $this->searchText . '%');
-            });
-        }
-
-
-        $users->groupBy('users.id');
-
-        return $users->get();
+        return $salarySlips->get();
     }
 
     public function headings(): array
@@ -78,12 +57,28 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
         return [
             '#',
             __('app.name'),
-            __('payroll::modules.payroll.netSalary'),
-            __('payroll::modules.payroll.earning'),
-            __('payroll::modules.payroll.totalDeductions'),
             __('payroll::modules.payroll.duration'),
-            __('modules.payments.paidOn'),
-            __('app.status'),
+            __('payroll::modules.payroll.basicPay'),
+            __('payroll::modules.payroll.actualBasicSalary'),
+            __('payroll::modules.payroll.technicalAllowance'),
+            __('payroll::modules.payroll.livingCostAllowance'),
+            __('payroll::modules.payroll.specialAllowance'),
+            __('payroll::modules.payroll.Overtime'),
+            __('payroll::modules.payroll.offDayHolidaySalary'),
+            __('payroll::modules.payroll.gazattedAllowance'),
+            __('payroll::modules.payroll.eveningShiftAllowance'),
+            __('payroll::modules.payroll.absent'),
+            __('payroll::modules.payroll.leaveWithoutPay'),
+            __('payroll::modules.payroll.afterLateDetection'),
+            __('payroll::modules.payroll.betweenLateDetection'),
+            __('payroll::modules.payroll.creditSales'),
+            __('payroll::modules.payroll.deposit'),
+            __('payroll::modules.payroll.loan'),
+            __('payroll::modules.payroll.ssb'),
+            __('payroll::modules.payroll.otherDetection'),
+            __('payroll::modules.payroll.totalAllowance'),
+            __('payroll::modules.payroll.totalDeductions'),
+            __('payroll::modules.payroll.netSalary'),
         ];
     }
 
@@ -98,15 +93,33 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
     {
         static $index = 0;
 
+        $netSalary = $row->gross_salary - $row->total_deductions;
+
         return [
             ++$index,
             $row->name,
-            $row->net_salary,
-            $row->gross_salary,
-            $row->total_deductions,
-            Carbon::parse($row->salary_from)->format('d M Y') . ' to ' . Carbon::parse($row->salary_to)->format('d M Y'),
-            Carbon::parse($row->paid_on)->format('d M Y'),
-            ucfirst($row->salary_status)
+            Carbon::parse($row->salary_from)->format('Y-m-d') . ' to ' . Carbon::parse($row->salary_to)->format('Y-m-d'),
+            $row->basic_salary ? $row->basic_salary : 0,
+            $row->monthly_salary ? $row->monthly_salary : 0,
+            $row->technical_allowance ? $row->technical_allowance : 0,
+            $row->living_cost_allowance ? $row->living_cost_allowance : 0,
+            $row->special_allowance ? $row->special_allowance : 0,
+            $row->overtime_amount ? $row->overtime_amount : 0,
+            $row->off_day_holiday_salary ? $row->off_day_holiday_salary : 0,
+            $row->gazatted_allowance ? $row->gazatted_allowance : 0,
+            $row->evening_shift_allowance ? $row->evening_shift_allowance : 0,
+            $row->absent ? $row->absent : 0,
+            $row->leave_without_pay_detection ? $row->leave_without_pay_detection : 0,
+            $row->after_late_detection ? $row->after_late_detection : 0,
+            $row->between_late_detection ? $row->between_late_detection : 0,
+            $row->credit_sales ? $row->credit_sales : 0,
+            $row->deposit ? $row->deposit : 0,
+            $row->loan ? $row->loan : 0,
+            $row->ssb ? $row->ssb : 0,
+            $row->other_detection ? $row->other_detection : 0,
+            $row->gross_salary ? $row->gross_salary : 0,
+            $row->total_deductions ? $row->total_deductions : 0,
+            $netSalary ? $netSalary : 0,
         ];
     }
 }

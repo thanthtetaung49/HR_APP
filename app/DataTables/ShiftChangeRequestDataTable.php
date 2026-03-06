@@ -41,7 +41,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
                 return  $row->status === 'waiting' ? $action : null;
             })
             ->addColumn('employee_name', function ($row) {
-                return $row->shiftSchedule->user->name;
+                return $row->shiftSchedule->user?->name;
             })
             ->editColumn('name', function ($row) {
                 return view('components.employee', [
@@ -112,9 +112,9 @@ class ShiftChangeRequestDataTable extends BaseDataTable
             $model->where('employee_shift_change_requests.status', '=', $status);
         }
 
-        // $model = $model->where('employee_shift_change_requests.status', 'waiting');
 
-        $model = $model->select('employee_shift_change_requests.*');
+        $model = $model->select('employee_shift_change_requests.*')->whereHas('shiftSchedule.user');
+
 
         return $model;
     }

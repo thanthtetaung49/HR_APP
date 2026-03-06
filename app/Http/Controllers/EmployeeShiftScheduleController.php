@@ -910,7 +910,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
         }
     }
 
-    public function importSalary()
+    public function importShift()
     {
         $this->pageTitle =  __('app.importExcel') . ' ' . __('app.menu.shifts');
 
@@ -928,6 +928,8 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
     public function importStore(Request $request)
     {
+        abort_403(!canDataTableExport());
+
         $rvalue = $this->importFileProcess($request, EmployeeShiftsImport::class);
 
         if ($rvalue == 'abort') {

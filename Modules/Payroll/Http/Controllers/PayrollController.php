@@ -1675,7 +1675,6 @@ class PayrollController extends AccountBaseController
 
 
     public function exportPayroll ($year = null, $payrollCycle = null, $month = null, $searchText = null) {
-
         abort_403(!canDataTableExport());
 
         $date = now()->format('Y-m-d');

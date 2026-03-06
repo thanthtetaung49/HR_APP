@@ -819,7 +819,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
         Route::resource('shifts-change', EmployeeShiftChangeRequestController::class);
     });
 
-    Route::get('employee-shifts/import', [EmployeeShiftScheduleController::class, 'importSalary'])->name('shifts.import');
+    Route::get('employee-shifts/import', [EmployeeShiftScheduleController::class, 'importShift'])->name('shifts.import');
     Route::post('employee-shifts/import', [EmployeeShiftScheduleController::class, 'importStore'])->name('shifts.import.store');
     Route::post('employee-shifts/import/process', [EmployeeShiftScheduleController::class, 'importProcess'])->name('shifts.import.process');
 
