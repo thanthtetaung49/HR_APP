@@ -91,6 +91,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $allowance->technical_allowance = $request->technical_allowance;
         $allowance->living_cost_allowance = $request->living_cost_allowance;
         $allowance->special_allowance = $request->special_allowance;
+        $allowance->other_allowance = $request->other_allowance;
         $allowance->save();
 
         // detection
@@ -769,6 +770,8 @@ class EmployeeMonthlySalaryController extends AccountBaseController
     {
         $user_id = $request->user_id;
 
+        // dd($request->all());
+
         // allowance
         $allowance = Allowance::where('user_id', $user_id)->first();
         $allowance->user_id = $request->user_id;
@@ -776,6 +779,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $allowance->technical_allowance = $request->technical_allowance;
         $allowance->living_cost_allowance = $request->living_cost_allowance;
         $allowance->special_allowance = $request->special_allowance;
+        $allowance->other_allowance = $request->other_allowance;
         $allowance->save();
 
         // detection
@@ -787,6 +791,8 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection->loan = $request->loan;
         $detection->ssb = $request->ssb;
         $detection->save();
+
+        // dd($allowance);
 
         // $salary = EmployeeMonthlySalary::where('id', $id)->where('type', 'initial')->first();
 

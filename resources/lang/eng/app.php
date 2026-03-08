@@ -458,6 +458,7 @@ return array(
         'miroboard' => 'Miroboard',
         'bankaccount' => 'Bank Account',
         'bankaccountNumber' => 'Bank Account Number',
+        'location' => 'Location',
         'amount' => 'Amount',
         'nrc' => 'NRC',
         'award' => 'Award',

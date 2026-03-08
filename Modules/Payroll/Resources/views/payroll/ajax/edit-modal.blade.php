@@ -84,6 +84,12 @@
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.specialAllowance')" fieldName="special_allowance" fieldId="special_allowance"
                             :fieldPlaceholder="__('payroll::modules.payroll.specialAllowance')" :fieldValue="$salarySlip->user->userAllowances->special_allowance" />
                     </div>
+
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherAllowance')" fieldName="other_allowance" fieldId="other_allowance"
+                            :fieldPlaceholder="__('payroll::modules.payroll.otherAllowance')" :fieldValue="$salarySlip->user->userAllowances->other_allowance" />
+                    </div>
+
                 </div>
                 <div class="border-bottom-grey"></div>
 

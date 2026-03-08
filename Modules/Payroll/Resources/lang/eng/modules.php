@@ -104,6 +104,7 @@ return array(
         'technicalAllowance' => 'Technical Allowance',
         'livingCostAllowance' => 'Living Cost Allowance',
         'specialAllowance' => 'Special Allowance',
+        'otherAllowance' => 'Other Allowance',
         'basicValueType' => 'Basic Value Type',
         'salaryComponent' => 'Salary Component',
         'calculationType' => 'Calculation Type',

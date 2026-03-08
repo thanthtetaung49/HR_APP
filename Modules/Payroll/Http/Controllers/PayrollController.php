@@ -3,36 +3,36 @@
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Exports\PayrollExport;
-use Carbon\Carbon;
-use App\Models\Team;
-use App\Models\User;
 use App\Helper\Reply;
-use App\Models\Leave;
-use App\Models\Expense;
-use App\Models\Holiday;
+use App\Http\Controllers\AccountBaseController;
 use App\Models\Allowance;
-use App\Models\Detection;
 use App\Models\Attendance;
 use App\Models\Designation;
+use App\Models\Detection;
+use App\Models\EmployeeDetails;
+use App\Models\EmployeeShiftSchedule;
+use App\Models\Expense;
+use App\Models\ExpensesCategory;
+use App\Models\Holiday;
+use App\Models\Leave;
+use App\Models\Team;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use App\Models\EmployeeDetails;
-use App\Models\ExpensesCategory;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use App\Models\EmployeeShiftSchedule;
-use Modules\Payroll\Entities\SalarySlip;
-use Modules\Payroll\Entities\PayrollCycle;
-use Modules\Payroll\Entities\PayrollSetting;
-use Modules\Payroll\Entities\OvertimeRequest;
-use App\Http\Controllers\AccountBaseController;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Modules\Payroll\DataTables\PayrollDataTable;
-use Modules\Payroll\Entities\SalaryPaymentMethod;
 use Modules\Payroll\Entities\EmployeeMonthlySalary;
-use Modules\Payroll\Notifications\SalaryStatusEmail;
 use Modules\Payroll\Entities\EmployeeVariableComponent;
+use Modules\Payroll\Entities\OvertimeRequest;
+use Modules\Payroll\Entities\PayrollCycle;
+use Modules\Payroll\Entities\PayrollSetting;
+use Modules\Payroll\Entities\SalaryPaymentMethod;
+use Modules\Payroll\Entities\SalarySlip;
+use Modules\Payroll\Notifications\SalaryStatusEmail;
 
 class PayrollController extends AccountBaseController
 {
@@ -141,6 +141,7 @@ class PayrollController extends AccountBaseController
         $this->technicalAllowance = $this->salarySlip->technical_allowance;
         $this->livingCostAllowance = $this->salarySlip->living_cost_allowance;
         $this->specialAllowance = $this->salarySlip->special_allowance;
+        $this->otherAllowance = $this->salarySlip->other_allowance;
         $this->overtimeAmount =  $this->salarySlip->overtime_amount;
         $this->offDayHolidaySalary =  $this->salarySlip->off_day_holiday_salary;
         $this->gazattedAllowance =  $this->salarySlip->gazatted_allowance;
@@ -244,31 +245,51 @@ class PayrollController extends AccountBaseController
         $technicalAllowance = $request->technical_allowance;
         $livingCostAllowance = $request->living_cost_allowance;
         $specialAllowance = $request->special_allowance;
+        $otherAllowance = $request->other_allowance;
 
-        $basicSalaryInMonth = $salarySlip->monthly_salary + $technicalAllowance + $livingCostAllowance + $specialAllowance;
-        $totalDetection = $salarySlip->absent + $salarySlip->leave_without_pay_detection + $request->other_detection + $request->credit_sales + $request->deposit + $request->loan + $request->ssb;
+        $otherDetection = $request->other_detection;
+        $creditSales = $request->credit_sales;
+        $deposit = $request->deposit;
+        $loan = $request->loan;
+        $ssb = $request->ssb;
+
+        $basicSalaryInMonth = $salarySlip->monthly_salary + $technicalAllowance + $livingCostAllowance + $specialAllowance + $otherAllowance;
+        $totalDetection = $salarySlip->absent + $salarySlip->leave_without_pay_detection + $otherDetection + $creditSales + $deposit + $loan + $ssb;
 
         $netSalary = $basicSalaryInMonth - $totalDetection;
 
         // salarySlip
+        $salarySlip->paid_on = Carbon::parse($request->paid_on);
+        $salarySlip->salary_payment_method_id = $request->salary_payment_method_id;
         $salarySlip->status = $request->status;
         $salarySlip->total_deductions = round(($totalDetection), 2);
         $salarySlip->net_salary = round(($netSalary), 2);
         $salarySlip->gross_salary = round(($basicSalaryInMonth), 2);
         $salarySlip->last_updated_by = user()->id;
+        $salarySlip->technical_allowance = $technicalAllowance;
+        $salarySlip->living_cost_allowance = $livingCostAllowance;
+        $salarySlip->special_allowance = $specialAllowance;
+        $salarySlip->other_allowance = $otherAllowance;
+        $salarySlip->other_detection = $otherDetection;
+        $salarySlip->credit_sales = $creditSales;
+        $salarySlip->deposit = $deposit;
+        $salarySlip->loan = $loan;
+        $salarySlip->ssb = $ssb;
 
         // allowance
         $userAllowance->basic_salary = $request->basic_salary;
-        $userAllowance->living_cost_allowance = $request->living_cost_allowance;
-        $userAllowance->technical_allowance = $request->technical_allowance;
-        $userAllowance->special_allowance = $request->special_allowance;
+        $userAllowance->living_cost_allowance = $livingCostAllowance;
+        $userAllowance->technical_allowance = $technicalAllowance;
+        $userAllowance->special_allowance = $specialAllowance;
+        $userAllowance->other_allowance = $otherAllowance;
 
         // detection
-        $userDetection->other_detection = $request->other_detection;
-        $userDetection->credit_sales = $request->credit_sales;
-        $userDetection->deposit = $request->deposit;
-        $userDetection->loan = $request->loan;
-        $userDetection->ssb = $request->ssb;
+        $userDetection->other_detection = $otherDetection;
+        $userDetection->credit_sales = $creditSales;
+        $userDetection->deposit = $deposit;
+        $userDetection->loan = $loan;
+        $userDetection->ssb = $ssb;
+
 
         $salarySlip->save();
         $userAllowance->save();
@@ -521,6 +542,7 @@ class PayrollController extends AccountBaseController
                 $technicalAllowance = $allowance ? $allowance->technical_allowance : 0;
                 $livingCostAllowance = $allowance ? $allowance->living_cost_allowance : 0;
                 $specialAllowance = $allowance ? $allowance->special_allowance : 0;
+                $otherAllowance = $allowance ? $allowance->other_allowance : 0;
 
                 $perDaySalary = $fixedBasicSalary / $daysInMonth;
 
@@ -533,30 +555,52 @@ class PayrollController extends AccountBaseController
                     $perDayTechAllowance = $perDayTechAllowance * 14;
                     $perDayLivingCostAllowance = $perDayLivingCostAllowance * 14;
                     $perDaySpecialAllowance = $perDaySpecialAllowance * 14;
+                    $perDayOtherAllowance = $perDayOtherAllowance * 14;
                 }
 
                 $basicSalaryInMonth = $perDaySalary * $daysInMonth;
                 $technicalAllowance = $perDayTechAllowance * $daysInMonth;
                 $livingCostAllowance = $perDayLivingCostAllowance * $daysInMonth;
                 $specialAllowance = $perDaySpecialAllowance * $daysInMonth;
+                $otherAllowance = $perDayOtherAllowance * $daysInMonth;
+
+                // dd($basicSalaryInMonth);
+
+                // dd([
+                //     'joiningDate' => $joiningDate,
+                //     'existDate' => $exitDate,
+                //     'startDate' => $startDate,
+                //     'endDate' => $endDate,
+                //     'joiningDateIsBetweenInStartDateAndEndDate' => $joiningDate->between($startDate, $endDate),
+                //     'joiningDateIsGreaterThanStartDate' => $joiningDate->greaterThan($startDate)
+                // ]);
 
                 // joining date
                 if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
+                    // dd('1');
                     $daysDifference = $joiningDate->diffInDays($endDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
+                    $otherAllowance = $daysDifference * $perDayOtherAllowance;
                 }
 
                 // exist date
                 if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
+                    // dd('2');
                     $daysDifference = $startDate->diffInDays($exitDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
+                    $otherAllowance = $daysDifference * $perDayOtherAllowance;
                 }
+
+                // dd([
+                //     'joiningDate' => $joiningDate,
+                //     'existDate' => $exitDate
+                // ]);
 
                 foreach ($additionalSalaries as $additionalSalary) {
                     if ($additionalSalary->type == 'increment') {
@@ -565,11 +609,6 @@ class PayrollController extends AccountBaseController
                         $basicSalaryInMonth -= (int) $additionalSalary->amount;
                     }
                 }
-
-                // $payableSalary = $perDaySalary * $payDays;
-                // $offDayHolidaySalary = $this->offDayHolidayOvertime($startDate, $endDate, $userId, $holidayData);
-
-                // dd($offDayHolidaySalary);
 
                 $gazattedAllowance = $gazattedPresentCount * 3000;
                 $eveningShiftAllowance = $eveningShiftPresentCount * 500;
@@ -608,7 +647,7 @@ class PayrollController extends AccountBaseController
                 // detection calculation
                 $totalDetection = ($totalLeaveWithoutPaySalary) + $otherDetection + $creditSales + $deposit + $loan + $ssb + $absentDetection;
 
-                $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $gazattedAllowance + $eveningShiftAllowance;
+                $allowanceCalculation = $technicalAllowance + $livingCostAllowance + $specialAllowance + $gazattedAllowance + $eveningShiftAllowance + $otherAllowance;
 
                 $earnings = $allowanceCalculation + $overtimeAmount + $offDayHolidaySalary;
 
@@ -647,6 +686,7 @@ class PayrollController extends AccountBaseController
                     'technical_allowance' => $technicalAllowance,
                     'living_cost_allowance' => $livingCostAllowance,
                     'special_allowance' => $specialAllowance,
+                    'other_allowance' => $otherAllowance,
                     'other_detection' => $otherDetection,
                     'credit_sales' => $creditSales,
                     'deposit' => $deposit,
@@ -888,6 +928,7 @@ class PayrollController extends AccountBaseController
         $this->technicalAllowance = $this->salarySlip->technical_allowance;
         $this->livingCostAllowance = $this->salarySlip->living_cost_allowance;
         $this->specialAllowance = $this->salarySlip->special_allowance;
+        $this->otherAllowance = $this->salarySlip->other_allowance;
         $this->overtimeAmount =  $this->salarySlip->overtime_amount;
         $this->offDayHolidaySalary =  $this->salarySlip->off_day_holiday_salary;
         $this->gazattedAllowance =  $this->salarySlip->gazatted_allowance;
@@ -1674,7 +1715,8 @@ class PayrollController extends AccountBaseController
     }
 
 
-    public function exportPayroll ($year = null, $payrollCycle = null, $month = null, $searchText = null) {
+    public function exportPayroll($year = null, $payrollCycle = null, $month = null, $searchText = null)
+    {
         abort_403(!canDataTableExport());
 
         $date = now()->format('Y-m-d');

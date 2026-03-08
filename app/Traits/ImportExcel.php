@@ -62,7 +62,7 @@ trait ImportExcel
             $this->fileHeading = (new HeadingRowImport)->toArray(public_path(Files::UPLOAD_FOLDER . '/' . Files::IMPORT_FOLDER . '/' . $this->file))[0][0];
             HeadingRowFormatter::default(config('excel.imports.heading_row.formatter'));
 
-            array_shift($excelData);
+            // array_shift($excelData);
             $this->matchedColumns = collect($this->columns)->whereIn('id', $this->heading)->pluck('id');
             $importMatchedColumns = array();
 
@@ -74,6 +74,7 @@ trait ImportExcel
         }
 
         $this->importSample = array_slice($excelData, 0, 5);
+
     }
 
     public function importJobProcess($request, $importClass, $importJobClass)

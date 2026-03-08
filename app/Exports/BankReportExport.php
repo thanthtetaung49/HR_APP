@@ -29,13 +29,13 @@ class BankReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
      */
     public function collection()
     {
-        $model = User::select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', DB::raw('CAST(salary_slips.month AS SIGNED) + 1 as test'))
+       $model = User::select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month')
             ->leftJoin('salary_slips', 'salary_slips.user_id', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
             ->leftJoin('locations', 'teams.location_id', 'locations.id')
             ->where('salary_slips.year', $this->year)
-            ->where(DB::raw('CAST(salary_slips.month AS SIGNED) + 1'), $this->month);
+            ->where(DB::raw('CAST(salary_slips.month AS SIGNED)'), $this->month);
 
 
         if (isset($this->location) && $this->location != 'all') {
@@ -57,6 +57,7 @@ class BankReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
         return [
             "#",
             __('app.menu.employees'),
+            __('app.menu.location'),
             __('app.menu.nrc'),
             __('app.menu.bankaccountNumber'),
             __('app.menu.amount')
@@ -90,6 +91,7 @@ class BankReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
         return [
             ++$index,
             $row['name'],
+            $row['location_name'],
             $nrc,
             $row['bank_account_number'],
             $netSalary,

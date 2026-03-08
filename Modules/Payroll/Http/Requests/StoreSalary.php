@@ -21,6 +21,7 @@ class StoreSalary extends FormRequest
             'technical_allowance' => 'required',
             'living_cost_allowance' => 'required',
             'special_allowance' => 'required',
+            'other_allowance' => 'required',
             'other_detection' => 'required',
             'credit_sales' => 'required',
             'deposit' => 'required',

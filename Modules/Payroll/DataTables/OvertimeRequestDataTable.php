@@ -180,8 +180,10 @@ class OvertimeRequestDataTable extends BaseDataTable
             $overtimeRequest = $overtimeRequest->whereMonth('overtime_requests.date', $request->month);
         }
 
+        // dd($request->employee);
+
         if ($request->employee != 'all' && $request->employee != '') {
-            $overtimeRequest = $overtimeRequest->whereMonth('overtime_requests.user_id', $request->employee);
+            $overtimeRequest = $overtimeRequest->where('overtime_requests.user_id', $request->employee);
         }
 
         return $overtimeRequest;

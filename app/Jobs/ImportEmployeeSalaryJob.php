@@ -51,7 +51,11 @@ class ImportEmployeeSalaryJob implements ShouldQueue
             $this->isColumnExists('technical_allowance') &&
             $this->isColumnExists('living_cost_allowance') &&
             $this->isColumnExists('special_allowance') &&
-            $this->isColumnExists('other_detection')
+            $this->isColumnExists('other_allowance') &&
+            $this->isColumnExists('other_detection') &&
+            $this->isColumnExists('credit_sales') &&
+            $this->isColumnExists('deposit') &&
+            $this->isColumnExists('loan')  && $this->isColumnExists('ssb')
         ) {
 
             // user that have employee role
@@ -69,6 +73,7 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $technical_allowance = $this->isColumnExists('technical_allowance') ? $this->getColumnValue('technical_allowance') : 0;
                     $living_cost_allowance = $this->isColumnExists('living_cost_allowance') ? $this->getColumnValue('living_cost_allowance') : 0;
                     $special_allowance = $this->isColumnExists('special_allowance') ? $this->getColumnValue('special_allowance') : 0;
+                    $other_allowance = $this->isColumnExists('other_allowance') ? $this->getColumnValue('other_allowance') : 0;
                     $other_detection = $this->isColumnExists('other_detection') ? $this->getColumnValue('other_detection') : 0;
                     $credit_sales = $this->isColumnExists('credit_sales') ? $this->getColumnValue('credit_sales') : 0;
                     $deposit = $this->isColumnExists('deposit') ? $this->getColumnValue('deposit') : 0;
@@ -81,7 +86,8 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                             'basic_salary' => $basic_salary,
                             'technical_allowance' => $technical_allowance,
                             'living_cost_allowance' => $living_cost_allowance,
-                            'special_allowance' => $special_allowance
+                            'special_allowance' => $special_allowance,
+                            'other_allowance' => $other_allowance
                         ]
                     );
 

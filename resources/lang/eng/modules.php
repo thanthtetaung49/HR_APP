@@ -11,7 +11,8 @@ return array(
         'basicSalary' => 'Basic Salary',
         'technicalAllowance' => 'Technical Allowance',
         'livingCostAllowance' => 'Living Cost Allowance',
-        'specialAllowance' => 'Special Allowance'
+        'specialAllowance' => 'Special Allowance',
+        'otherAllowance' => 'Other Allowance'
     ),
     'detection' => array(
         'otherDetection' => 'Other Deductions',

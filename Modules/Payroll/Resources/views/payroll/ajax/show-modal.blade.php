@@ -149,6 +149,13 @@
                                     </tr>
 
                                     <tr>
+                                        <td>@lang('payroll::modules.payroll.otherAllowance') for {{ $month }}</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($otherAllowance, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
                                         <td>@lang('payroll::modules.payroll.Overtime')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($overtimeAmount, $currency->currency ? $currency->currency->id : company()->currency->id) }}
