@@ -156,6 +156,13 @@
                                     </tr>
 
                                     <tr>
+                                        <td>@lang('payroll::modules.payroll.depositRefund') for {{ $month }}</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($depositRefund, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
                                         <td>@lang('payroll::modules.payroll.Overtime')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($overtimeAmount, $currency->currency ? $currency->currency->id : company()->currency->id) }}
@@ -248,6 +255,13 @@
                                         <td>@lang('payroll::modules.payroll.ssb')</td>
                                         <td class="text-right text-uppercase">
                                             {{ currency_format($ssb, $currency->currency ? $currency->currency->id : company()->currency->id) }}
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>@lang('payroll::modules.payroll.incomeTax')</td>
+                                        <td class="text-right text-uppercase">
+                                            {{ currency_format($incomeTax, $currency->currency ? $currency->currency->id : company()->currency->id) }}
                                         </td>
                                     </tr>
 

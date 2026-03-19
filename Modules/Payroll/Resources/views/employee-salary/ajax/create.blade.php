@@ -265,6 +265,11 @@
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.otherAllowance')" fieldName="other_allowance"
                                         fieldId="other_allowance" :fieldPlaceholder="__('payroll::modules.payroll.otherAllowance')" :fieldValue="0" />
                                 </div>
+
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.depositRefund')" fieldName="deposit_refund"
+                                        fieldId="deposit_refund" :fieldPlaceholder="__('payroll::modules.payroll.depositRefund')" :fieldValue="0" />
+                                </div>
                             </div>
 
                             <div class="border-bottom-grey"></div>
@@ -292,6 +297,11 @@
                                 <div class="col-lg-3 col-md-3">
                                     <x-forms.text :fieldLabel="__('payroll::modules.payroll.ssb')" fieldName="ssb" fieldId="ssb"
                                         :fieldPlaceholder="__('payroll::modules.payroll.ssb')" :fieldValue="0"/>
+                                </div>
+
+                                <div class="col-lg-3 col-md-3">
+                                    <x-forms.text :fieldLabel="__('payroll::modules.payroll.incomeTax')" fieldName="income_tax" fieldId="income_tax"
+                                        :fieldPlaceholder="__('payroll::modules.payroll.incomeTax')" :fieldValue="0"/>
                                 </div>
                             </div>
 

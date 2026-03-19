@@ -92,6 +92,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $allowance->living_cost_allowance = $request->living_cost_allowance;
         $allowance->special_allowance = $request->special_allowance;
         $allowance->other_allowance = $request->other_allowance;
+        $allowance->deposit_refund = $request->deposit_refund;
         $allowance->save();
 
         // detection
@@ -102,6 +103,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection->deposit = $request->deposit;
         $detection->loan = $request->loan;
         $detection->ssb = $request->ssb;
+        $detection->income_tax = $request->income_tax;
 
         $detection->save();
 
@@ -780,6 +782,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $allowance->living_cost_allowance = $request->living_cost_allowance;
         $allowance->special_allowance = $request->special_allowance;
         $allowance->other_allowance = $request->other_allowance;
+        $allowance->deposit_refund = $request->deposit_refund;
         $allowance->save();
 
         // detection
@@ -790,6 +793,7 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $detection->deposit = $request->deposit;
         $detection->loan = $request->loan;
         $detection->ssb = $request->ssb;
+        $detection->income_tax = $request->income_tax;
         $detection->save();
 
         // dd($allowance);

@@ -297,6 +297,17 @@
                                 ) !!}
                             </td>
                         </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.depositRefund') for {{ $month }}</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($depositRefund, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+
                         <tr>
                             <td>@lang('payroll::modules.payroll.Overtime')</td>
                             <td align="right" class="text-uppercase">
@@ -426,6 +437,16 @@
                             <td>@lang('payroll::modules.payroll.ssb')</td>
                             <td align="right" class="text-uppercase">
                                 {{ currency_format($ssb, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
+                                {!! htmlentities(
+                                    $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
+                                ) !!}
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>@lang('payroll::modules.payroll.incomeTax')</td>
+                            <td align="right" class="text-uppercase">
+                                {{ currency_format($incomeTax, $payrollSetting->currency ? $payrollSetting->currency->id : company()->currency->id, false) }}
                                 {!! htmlentities(
                                     $payrollSetting->currency ? $payrollSetting->currency->currency_code : company()->currency->currency_code,
                                 ) !!}

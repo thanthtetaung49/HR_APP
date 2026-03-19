@@ -52,10 +52,13 @@ class ImportEmployeeSalaryJob implements ShouldQueue
             $this->isColumnExists('living_cost_allowance') &&
             $this->isColumnExists('special_allowance') &&
             $this->isColumnExists('other_allowance') &&
+            $this->isColumnExists('deposit_refund') &&
             $this->isColumnExists('other_detection') &&
             $this->isColumnExists('credit_sales') &&
             $this->isColumnExists('deposit') &&
-            $this->isColumnExists('loan')  && $this->isColumnExists('ssb')
+            $this->isColumnExists('loan')  &&
+            $this->isColumnExists('ssb') &&
+            $this->isColumnExists('income_tax')
         ) {
 
             // user that have employee role
@@ -74,11 +77,14 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                     $living_cost_allowance = $this->isColumnExists('living_cost_allowance') ? $this->getColumnValue('living_cost_allowance') : 0;
                     $special_allowance = $this->isColumnExists('special_allowance') ? $this->getColumnValue('special_allowance') : 0;
                     $other_allowance = $this->isColumnExists('other_allowance') ? $this->getColumnValue('other_allowance') : 0;
+                    $deposit_refund = $this->isColumnExists('deposit_refund') ? $this->getColumnValue('deposit_refund') : 0;
+
                     $other_detection = $this->isColumnExists('other_detection') ? $this->getColumnValue('other_detection') : 0;
                     $credit_sales = $this->isColumnExists('credit_sales') ? $this->getColumnValue('credit_sales') : 0;
                     $deposit = $this->isColumnExists('deposit') ? $this->getColumnValue('deposit') : 0;
                     $loan = $this->isColumnExists('loan') ? $this->getColumnValue('loan') : 0;
                     $ssb = $this->isColumnExists('ssb') ? $this->getColumnValue('ssb') : 0;
+                    $income_tax = $this->isColumnExists('income_tax') ? $this->getColumnValue('income_tax') : 0;
 
                     Allowance::updateOrCreate(
                         ['user_id' => $user->id],
@@ -87,7 +93,8 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                             'technical_allowance' => $technical_allowance,
                             'living_cost_allowance' => $living_cost_allowance,
                             'special_allowance' => $special_allowance,
-                            'other_allowance' => $other_allowance
+                            'other_allowance' => $other_allowance,
+                            'deposit_refund' => $deposit_refund
                         ]
                     );
 
@@ -99,7 +106,8 @@ class ImportEmployeeSalaryJob implements ShouldQueue
                             'credit_sales' => $credit_sales,
                             'deposit' => $deposit,
                             'loan' => $loan,
-                            'ssb' => $ssb
+                            'ssb' => $ssb,
+                            'income_tax' => $income_tax
                         ]
                     );
 

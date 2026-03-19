@@ -29,6 +29,7 @@ trait ImportExcel
         $excelData = Excel::toArray(new $importClass, public_path(Files::UPLOAD_FOLDER . '/' . Files::IMPORT_FOLDER . '/' . $this->file))[0];
 
         if ($request->has('heading')) {
+            // dd($excelData);
             array_shift($excelData);
         }
 
@@ -63,6 +64,7 @@ trait ImportExcel
             HeadingRowFormatter::default(config('excel.imports.heading_row.formatter'));
 
             // array_shift($excelData);
+
             $this->matchedColumns = collect($this->columns)->whereIn('id', $this->heading)->pluck('id');
             $importMatchedColumns = array();
 

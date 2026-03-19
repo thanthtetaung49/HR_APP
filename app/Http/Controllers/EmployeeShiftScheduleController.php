@@ -291,6 +291,8 @@ class EmployeeShiftScheduleController extends AccountBaseController
             ->onlyEmployee()
             ->groupBy('users.id');
 
+        // dd($this->weekStartDate->month, $this->weekEndDate->month, $request->year);
+
         $location_id = $request->location;
         $department_id = $request->department;
         $designation_id = $request->designation;

@@ -30,7 +30,7 @@ class BankReportDataTable extends BaseDataTable
                 return ++$index;
             })
             ->editColumn('net_salary', function ($user) {
-                return $user->net_salary ? $user->net_salary . ' MMK' : 0 . ' MMK';
+                return $user->net_salary ? round($user->net_salary, 2) : 0;
             })
             ->editColumn('nrc', function ($user) {
                 $employee = EmployeeDetails::where('user_id', $user->id)->first();
@@ -73,7 +73,8 @@ class BankReportDataTable extends BaseDataTable
             ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
             ->leftJoin('locations', 'teams.location_id', 'locations.id')
             ->where('salary_slips.year', $year)
-            ->where(DB::raw('CAST(salary_slips.month AS SIGNED)'), $month);
+            ->where(DB::raw('CAST(salary_slips.month AS SIGNED)'), $month)
+            ->whereNotNull('users.bank_account_number');
 
         if (isset(request()->locationId) && request()->locationId != '') {
             $model->where('locations.id', request()->locationId);

@@ -105,6 +105,8 @@ return array(
         'livingCostAllowance' => 'Living Cost Allowance',
         'specialAllowance' => 'Special Allowance',
         'otherAllowance' => 'Other Allowance',
+        'depositRefund' => 'Deposit Refund',
+        'incomeTax' => 'Income Tax',
         'basicValueType' => 'Basic Value Type',
         'salaryComponent' => 'Salary Component',
         'calculationType' => 'Calculation Type',

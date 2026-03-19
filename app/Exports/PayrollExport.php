@@ -47,8 +47,10 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
         $startDate = $this->startDate;
         $endDate = $this->endDate;
 
-        $salarySlips = SalarySlip::select('users.name', 'salary_slips.*')
+        $salarySlips = SalarySlip::select('users.name', 'locations.location_name', 'teams.team_name', 'salary_slips.*')
             ->leftJoin('users', 'users.id', '=', 'salary_slips.user_id')
+            ->leftJoin('locations', 'users.location_id', '=', 'locations.id')
+            ->leftJoin('teams', 'users.department_id', '=', 'teams.id')
             ->where('salary_slips.salary_from', '>=', $startDate)
             ->where('salary_slips.salary_to', '>=', $endDate);
 
@@ -60,6 +62,8 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
         return [
             '#',
             __('app.name'),
+            __('app.location'),
+            __('app.menu.teams'),
             __('payroll::modules.payroll.duration'),
             __('payroll::modules.payroll.basicPay'),
             __('payroll::modules.payroll.actualBasicSalary') . ' for ' . $this->payrollMonth,
@@ -67,6 +71,7 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
             __('payroll::modules.payroll.livingCostAllowance'). ' for ' . $this->payrollMonth,
             __('payroll::modules.payroll.specialAllowance'). ' for ' . $this->payrollMonth,
             __('payroll::modules.payroll.otherAllowance'). ' for ' . $this->payrollMonth,
+            __('payroll::modules.payroll.depositRefund'). ' for ' . $this->payrollMonth,
             __('payroll::modules.payroll.Overtime'),
             __('payroll::modules.payroll.offDayHolidaySalary'),
             __('payroll::modules.payroll.gazattedAllowance'),
@@ -79,6 +84,7 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
             __('payroll::modules.payroll.deposit'),
             __('payroll::modules.payroll.loan'),
             __('payroll::modules.payroll.ssb'),
+            __('payroll::modules.payroll.incomeTax'),
             __('payroll::modules.payroll.otherDetection'),
             __('payroll::modules.payroll.totalAllowance'),
             __('payroll::modules.payroll.totalDeductions'),
@@ -102,6 +108,8 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
         return [
             ++$index,
             $row->name,
+            $row->location_name,
+            $row->team_name,
             Carbon::parse($row->salary_from)->format('Y-m-d') . ' to ' . Carbon::parse($row->salary_to)->format('Y-m-d'),
             $row->basic_salary,
             $row->monthly_salary,
@@ -109,6 +117,7 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
             $row->living_cost_allowance,
             $row->special_allowance,
             $row->other_allowance,
+            $row->deposit_refund,
             $row->overtime_amount,
             $row->off_day_holiday_salary,
             $row->gazatted_allowance,
@@ -121,6 +130,7 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
             $row->deposit,
             $row->loan,
             $row->ssb,
+            $row->income_tax,
             $row->other_detection,
             $row->gross_salary,
             $row->total_deductions,

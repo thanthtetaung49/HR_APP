@@ -90,6 +90,11 @@
                             :fieldPlaceholder="__('payroll::modules.payroll.otherAllowance')" :fieldValue="$salarySlip->user->userAllowances->other_allowance" />
                     </div>
 
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.depositRefund')" fieldName="deposit_refund" fieldId="deposit_refund"
+                            :fieldPlaceholder="__('payroll::modules.payroll.depositRefund')" :fieldValue="$salarySlip->user->userAllowances->deposit_refund" />
+                    </div>
+
                 </div>
                 <div class="border-bottom-grey"></div>
 
@@ -116,6 +121,11 @@
                     <div class="col-lg-3 col-md-3">
                         <x-forms.text :fieldLabel="__('payroll::modules.payroll.ssb')" fieldName="ssb" fieldId="ssb" :fieldPlaceholder="__('payroll::modules.payroll.ssb')"
                             :fieldValue="$salarySlip->user->userDetection->ssb" />
+                    </div>
+
+                    <div class="col-lg-3 col-md-3">
+                        <x-forms.text :fieldLabel="__('payroll::modules.payroll.incomeTax')" fieldName="income_tax" fieldId="income_tax" :fieldPlaceholder="__('payroll::modules.payroll.incomeTax')"
+                            :fieldValue="$salarySlip->user->userDetection->income_tax" />
                     </div>
                 </div>
 

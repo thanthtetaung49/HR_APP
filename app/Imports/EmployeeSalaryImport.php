@@ -20,11 +20,13 @@ class EmployeeSalaryImport implements ToArray
             array('id' => 'living_cost_allowance', 'name' => __('modules.allowance.livingCostAllowance'), 'required' => 'Yes'),
             array('id' => 'special_allowance', 'name' => __('modules.allowance.specialAllowance'), 'required' => 'Yes'),
             array('id' => 'other_allowance', 'name' => __('modules.allowance.otherAllowance'), 'required' => 'Yes'),
+            array('id' => 'deposit_refund', 'name' => __('modules.allowance.depositRefund'), 'required' => 'Yes'),
             array('id' => 'other_detection', 'name' => __('modules.detection.otherDetection'), 'required' => 'Yes'),
             array('id' => 'credit_sales', 'name' => __('modules.detection.creditSales'), 'required' => 'Yes'),
             array('id' => 'deposit', 'name' => __('modules.detection.deposit'), 'required' => 'Yes'),
             array('id' => 'loan', 'name' => __('modules.detection.loan'), 'required' => 'Yes'),
             array('id' => 'ssb', 'name' => __('modules.detection.ssb'), 'required' => 'Yes'),
+            array('id' => 'income_tax', 'name' => __('modules.detection.incomeTax'), 'required' => 'Yes'),
         );
     }
 

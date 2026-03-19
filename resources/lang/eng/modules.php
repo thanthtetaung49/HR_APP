@@ -12,14 +12,16 @@ return array(
         'technicalAllowance' => 'Technical Allowance',
         'livingCostAllowance' => 'Living Cost Allowance',
         'specialAllowance' => 'Special Allowance',
-        'otherAllowance' => 'Other Allowance'
+        'otherAllowance' => 'Other Allowance',
+        'depositRefund' => 'Deposit Refund',
     ),
     'detection' => array(
         'otherDetection' => 'Other Deductions',
         'creditSales' => 'Credit Sales',
         'deposit' => 'Deposit',
         'loan' => 'Loan',
-        'ssb' => 'SSB'
+        'ssb' => 'SSB',
+        'incomeTax' => 'Income Tax'
     ),
     'dashboard' => array(
         'totalClients' => 'Total Clients',
