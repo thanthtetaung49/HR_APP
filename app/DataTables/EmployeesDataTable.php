@@ -458,6 +458,8 @@ class EmployeesDataTable extends BaseDataTable
             });
         }
 
+        // dd($users->get()->toArray(), $location_id);
+
         if ($rankId != 'all' && $rankId != '') {
             $users = $users->where('designations.rank_id', $rankId);
         }

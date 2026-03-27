@@ -6,6 +6,7 @@ use App\DataTables\BaseDataTable;
 use App\Models\AttendanceSetting;
 use App\Models\Role;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Html\Column;
 use Modules\Payroll\Entities\OvertimeRequest;
 use Modules\Payroll\Entities\PayrollSetting;

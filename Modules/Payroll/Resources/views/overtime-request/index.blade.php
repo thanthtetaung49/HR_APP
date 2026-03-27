@@ -183,13 +183,13 @@
         getOvertimeData();
 
         $('#overtime-request').on('preXhr.dt', function(e, settings, data) {
-
             const designation = $('#designation').val();
             const department = $('#department').val();
             const year = $('#year').val();
             const month = $('#month').val();
             const location = $('#location').val();
             const employee = $('#selectEmployee').val();
+
             data['designation'] = designation;
             data['department'] = department;
             data['year'] = year;
@@ -211,14 +211,14 @@
             const month = $('#month').val();
             const employee = $('#selectEmployee').val();
 
-            var url = "{{ route('overtime-request-data') }}?designation=" + designation + "&department=" + department +
+            var url = "{{ route('overtime-request-data') }}?location=" + location + "&designation=" + designation +
+                "&department=" + department +
                 "&year=" + year + "&month=" + month + "&employee=" + employee;
 
             $.easyAjax({
                 type: 'GET',
                 url: url,
                 success: function(response) {
-                    console.log(response.overtimeData);
                     $('#requested').html(response.overtimeData.requested);
                     $('#approved').html(response.overtimeData.approved);
                     $('#rejected').html(response.overtimeData.rejected);
@@ -426,6 +426,8 @@
                     $("#department").selectpicker('refresh');
                     $("#designation").html(`<option value="">--</option>`);
                     $("#designation").selectpicker('refresh');
+
+                    showTable();
                 }
 
             });
@@ -450,16 +452,24 @@
                     let designations = response.data;
                     let html = `<option value="">--</option>`;
 
-                    designations.forEach((designation) => {
-                        html += `
+                    if (designations) {
+                        designations.forEach((designation) => {
+                            html += `
                             <option value="${designation.id}">${designation.name}</option>
                         `
-                    });
+                        });
+                    }
 
                     $("#designation").html(html);
                     $("#designation").selectpicker('refresh');
+
+                    showTable();
                 }
             });
+        });
+
+        $("#designation").on('change', function() {
+            showTable();
         });
 
 

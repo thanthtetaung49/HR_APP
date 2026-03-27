@@ -30,7 +30,7 @@ class BankReportDataTable extends BaseDataTable
                 return ++$index;
             })
             ->editColumn('net_salary', function ($user) {
-                return $user->net_salary ? round($user->net_salary, 2) : 0;
+                return $user->net_salary ? round($user->net_salary, 0) : 0;
             })
             ->editColumn('nrc', function ($user) {
                 $employee = EmployeeDetails::where('user_id', $user->id)->first();

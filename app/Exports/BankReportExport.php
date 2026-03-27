@@ -95,7 +95,7 @@ class BankReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
             $row['location_name'],
             $nrc,
             $row['bank_account_number'],
-            round($netSalary, 2),
+            round($netSalary, 0),
         ];
     }
 }

@@ -194,9 +194,13 @@ class EmployeeController extends AccountBaseController
     {
         $id = $request->id;
 
-        $department = Team::findOrFail($id);
-        $designation_ids = json_decode($department->designation_ids);
-        $designations = Designation::whereIn('id', $designation_ids)->get();
+        $designations = null;
+
+        if ($id) {
+            $department = Team::findOrFail($id);
+            $designation_ids = json_decode($department?->designation_ids);
+            $designations = Designation::whereIn('id', $designation_ids)->get();
+        }
 
         return response()->json([
             'data' => $designations,
