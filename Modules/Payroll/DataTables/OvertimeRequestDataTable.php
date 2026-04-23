@@ -97,14 +97,17 @@ class OvertimeRequestDataTable extends BaseDataTable
                 $minutes = round(((($row->hours * 60) + $row->minutes) / 60), 1);
 
                 $amount = $row->amount;
+                $hours = $row->hours;
 
                 if ($row->holiday_date || $row->employee_shift_id == 1) {
-                    $amount = $hourlyRate * 2;
+                    // $amount = $hours * $hourlyRate * 2;
                     $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
                 }
                 elseif ($row->policy->payCode->fixed == 1) {
+                    // $amount = $hours * $hourlyRate;
                     $calculation = '( ' . $hourlyRate . ' ( *' . $row->fixed_amount . ' * ' . $minutes . ')';
                 } else {
+                    // $amount = $hours * ($hourlyRate * $row->policy->payCode->time);
                     $calculation = '( ' . $hourlyRate . ' ( *' . $row->policy->payCode->time . ' ' . __('payroll::app.times') . ') * ' . $minutes . ')';
                 }
 

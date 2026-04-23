@@ -45,6 +45,11 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
     public function index(Request $request)
     {
+        // dd(
+        //     in_array('admin', user_roles()) || (company()->employee_can_export_data && in_array('employee', user_roles()))
+        // );
+        // dd(user_roles());
+
         $this->viewShiftPermission = user()->permission('view_shift_roster');
         $this->manageEmployeeShifts = user()->permission('manage_employee_shifts');
 

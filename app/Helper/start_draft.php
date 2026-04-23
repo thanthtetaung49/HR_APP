@@ -1090,7 +1090,6 @@ if (!function_exists('user_role_ids')) {
 }
 
 if (!function_exists('canDataTableExport')) {
-
     function canDataTableExport()
     {
         return in_array('admin', user_roles()) || (company()->employee_can_export_data && in_array('employee', user_roles()));

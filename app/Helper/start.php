@@ -1150,7 +1150,7 @@ if (!function_exists('canDataTableExport')) {
     function canDataTableExport()
     {
         // return in_array('admin', user_roles()) || (company()->employee_can_export_data && in_array('employee', user_roles()));
-        return in_array('admin', user_roles()) || in_array('hr-manager', user_roles());
+        return in_array('admin', user_roles()) || in_array('hr-manager', user_roles()) || in_array('hr-officer', user_roles());
     }
 }
 

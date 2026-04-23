@@ -333,6 +333,18 @@ class OvertimeRequestController extends AccountBaseController
 
         $overtimeRequest = OvertimeRequest::find($id);
 
+        $employeeShift = User::leftJoin('employee_shift_schedules', function ($join) use ($date) {
+            $join->on('employee_shift_schedules.user_id', '=', 'users.id')
+                ->whereDate('employee_shift_schedules.date', $date);
+        })
+            ->select(
+                DB::raw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) as employee_shift_id')
+            )
+            ->where('users.id', $overtimeRequest->user_id)
+            ->first();
+
+        $holidayDate = Holiday::where('date', $date)->get();
+
         $requestRecord = OvertimeRequest::where('user_id', $overtimeRequest->user_id)
             ->whereDate('date', $date)
             ->where('id', '<>', $id)
@@ -351,13 +363,22 @@ class OvertimeRequestController extends AccountBaseController
         $minutes = $request->minutes ? floatval($request->minutes) : 0;
 
         if ($userPolicy->policy->payCode->fixed == 1) {
-            $amount = $hours * $userPolicy->policy->payCode->fixed_amount;
-            $perMinAmount = $userPolicy->policy->payCode->fixed_amount / 60;
+            $hourlyRate = $userPolicy->policy->payCode->fixed_amount;
+        } else {
+            $hourlyRate = $userData->employeeDetail->overtime_hourly_rate;
+        }
+
+        if ($employeeShift->employee_shift_id == 1 || !$holidayDate->isEmpty()) {
+            $amount = $hours * $hourlyRate * 2;
+            $perMinAmount = $hourlyRate / 60;
+            $amount = ($amount + ($minutes * $perMinAmount));
+        } elseif ($userPolicy->policy->payCode->fixed == 1) {
+            $amount = $hours * $hourlyRate;
+            $perMinAmount = $hourlyRate / 60;
             $amount = ($amount + ($minutes * $perMinAmount));
         } else {
-            $amount = $hours * ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->policy->payCode->time);
-            $perMinAmount = ($userData->employeeDetail->overtime_hourly_rate * $userPolicy->policy->payCode->time) / 60;
-
+            $amount = $hours * ($hourlyRate * $userPolicy->policy->payCode->time);
+            $perMinAmount = ($hourlyRate * $userPolicy->policy->payCode->time) / 60;
             $amount = ($amount + ($minutes * $perMinAmount));
         }
 

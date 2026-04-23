@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use GPBMetadata\Google\Api\Log;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -142,21 +143,33 @@ class OvertimeRequestExport implements FromCollection, ShouldAutoSize, WithStyle
         if ($row->policy->payCode->fixed == 1) {
             $hourlyRate = $row->fixed_amount;
         } else {
-            $hourlyRate = $row->user->employeeDetail->overtime_hourly_rate;
+            // dd($row->user->employeeDetail->toArray());
+            $hourlyRate = $row->user?->employeeDetail?->overtime_hourly_rate ?? 0;
         }
+
+        // \Log::debug('hourly rate', ['hourly_rate' => $hourlyRate, 'row' => $row->toArray()]);
 
         $minutes = round(((($row->hours * 60) + $row->minutes) / 60), 1);
 
         $amount = $row->amount;
 
         if ($row->holiday_date || $row->employee_shift_id == 1) {
-            $amount = $hourlyRate * 2;
+            // $amount = $hourlyRate * 2;
             $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
         } elseif ($row->policy->payCode->fixed == 1) {
             $calculation = '( ' . $hourlyRate . ' ( *' . $row->fixed_amount . ' * ' . $minutes . ')';
         } else {
             $calculation = '( ' . $hourlyRate . ' ( *' . $row->policy->payCode->time . ' ' . __('payroll::app.times') . ') * ' . $minutes . ')';
         }
+
+        // dd([
+        //     $row->name,
+        //     $row->created_at->format(company()->date_format) ?? '--',
+        //     $row->date->format(company()->date_format) ?? '--',
+        //     $hours . ' ' . $minutes,
+        //     $row->overtime_reason,
+        //     $currencySymbol . ' ' . $amount . ' ' . $calculation
+        // ]);
 
 
         return [

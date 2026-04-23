@@ -33,8 +33,12 @@ $addAttendancePermission = user()->permission('add_attendance');
                                 <span data-toggle="tooltip" data-original-title="{{ $leaveReasons[$userId][$key2] }}"><i
                                         class="fa fa-plane-departure text-red"></i></span>
                             @elseif ($day == 'Day Off')
-                                <span data-toggle="tooltip" data-original-title="@lang('modules.attendance.dayOff')"><i
-                                        class="fa fa-calendar-week text-red"></i></span>
+                                {{-- <span data-toggle="tooltip" data-original-title="@lang('modules.attendance.dayOff')"><i
+                                        class="fa fa-calendar-week text-red"></i></span> --}}
+
+                                    <a @if ($addAttendancePermission == 'all') href="javascript:;" class="edit-attendance" @endif data-user-id="{{ $userId }}"
+                                    data-attendance-date="{{ $key2 }}"><span data-toggle="tooltip" data-original-title="@lang('modules.attendance.dayOff')"><i
+                                        class="fa fa-calendar-week text-red"></i></span></a>
                             @elseif ($day == 'Half Day')
                                 @if ($attendanceDate->isFuture())
                                     <span data-toggle="tooltip" data-original-title="@lang('modules.attendance.halfDay')"><i
@@ -56,8 +60,10 @@ $addAttendancePermission = user()->permission('add_attendance');
                                     data-user-id="{{ $userId }}" data-attendance-date="{{ $key2 }}"><i
                                         class="fa fa-star text-warning"></i></a> --}}
                                          <a @if ($addAttendancePermission == 'all') href="javascript:;" class="edit-attendance" @endif data-user-id="{{ $userId }}"
-                                    data-attendance-date="{{ $key2 }}"><i
-                                        class="fa fa-star text-warning"></i></a>
+                                    data-attendance-date="{{ $key2 }}">
+                                    <span data-toggle="tooltip" data-original-title="@lang('modules.attendance.holiday')"><i
+                                        class="fa fa-star text-warning"></i></span>
+                                    </a>
                             @else
                                 @if ($day != '-')
                                     @php
