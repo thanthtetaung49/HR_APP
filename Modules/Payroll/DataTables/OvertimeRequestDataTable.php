@@ -97,18 +97,17 @@ class OvertimeRequestDataTable extends BaseDataTable
                 $minutes = round(((($row->hours * 60) + $row->minutes) / 60), 1);
 
                 $amount = $row->amount;
-                $hours = $row->hours;
+                // $hours = $row->hours;
 
-                if ($row->holiday_date || $row->employee_shift_id == 1) {
-                    // $amount = $hours * $hourlyRate * 2;
-                    $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
-                }
-                elseif ($row->policy->payCode->fixed == 1) {
-                    // $amount = $hours * $hourlyRate;
-                    $calculation = '( ' . $hourlyRate . ' ( *' . $row->fixed_amount . ' * ' . $minutes . ')';
+                // if ($row->holiday_date || $row->employee_shift_id == 1) {
+                //     // $amount = $hours * $hourlyRate * 2;
+                //     $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
+                // }
+
+                if ($row->policy->payCode->fixed == 1) {
+                    $calculation = '( ' . $hourlyRate . ' ( ' . $row->overtime_rate . ' * ' . $row->fixed_amount . ' * ' . $minutes . ')';
                 } else {
-                    // $amount = $hours * ($hourlyRate * $row->policy->payCode->time);
-                    $calculation = '( ' . $hourlyRate . ' ( *' . $row->policy->payCode->time . ' ' . __('payroll::app.times') . ') * ' . $minutes . ')';
+                    $calculation = '( ' . $hourlyRate . ' ( ' . $row->overtime_rate . ' * ' . $row->policy->payCode->time . ' ' . __('payroll::app.times') . ') * ' . $minutes . ')';
                 }
 
                 return $currencySymbol . ' ' . $amount . ' ' . $calculation;

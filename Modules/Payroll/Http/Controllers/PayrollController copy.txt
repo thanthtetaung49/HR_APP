@@ -527,19 +527,30 @@ class PayrollController extends AccountBaseController
                     ->where('overtime_requests.status', 'accept')
                     ->whereBetween('overtime_requests.date', [$startDate, $endDate]);
 
-                $overtimeAmount = (clone $employeeOverTime)
-                    ->where(function ($query) {
-                        $query->whereRaw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) <> ?', [1])
-                            ->whereNull('holidays.date');
-                    })
-                    ->sum('overtime_requests.amount');
+                $overtimeAmount = (clone $employeeOverTime)->where(function ($query) {
+                    $query->where('employee_shift_schedules.employee_shift_id', '<>', 1)
+                        ->whereNotNull('employee_shift_schedules.employee_shift_id')
+                        ->whereNull('holidays.date');
+                })
+                    ->sum('amount');
+
+                // dd($overtimeAmount);
 
                 $offDayHolidayOvertimeAmount = (clone $employeeOverTime)->where(function ($query) {
-                   $query->whereRaw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) = ?', [1])
+                    $query->where('employee_shift_schedules.employee_shift_id', '=', 1)
                         ->whereNotNull('employee_shift_schedules.employee_shift_id')
                         ->orWhereNotNull('holidays.date');
                 })
-                    ->sum('overtime_requests.amount');
+                    ->sum('amount');
+                // ->get()
+                // ->select('date', 'amount');
+
+                // dd($offDayHolidayOvertimeAmount->toArray());
+
+                // dd([
+                //     'normal OT' => $overtimeAmount,
+                //     'off day and holiday OT' => $offDayHolidayOvertimeAmount
+                // ]);
 
                 $detuction = Detection::where('user_id', $userId)->first();
 
@@ -580,8 +591,6 @@ class PayrollController extends AccountBaseController
                 // dd($payDays);
 
                 $basicSalaryInMonth = $perDaySalary * $payDays;
-
-                // dd($basicSalaryInMonth);
                 // dd($perDaySalary, $payDays, $basicSalaryInMonth);
                 $technicalAllowance = $perDayTechAllowance * $daysInMonth;
                 $livingCostAllowance = $perDayLivingCostAllowance * $daysInMonth;
@@ -668,8 +677,6 @@ class PayrollController extends AccountBaseController
                 $payrollSetting = PayrollSetting::first();
 
                 // dd($offDayHolidayOvertimeAmount);
-
-                // dd($basicSalaryInMonth);
 
                 $data = [
                     'user_id' => $userId,
@@ -1169,11 +1176,15 @@ class PayrollController extends AccountBaseController
 
             $holidayDates = $this->getHolidayByDates($HolidayStartDate->toDateString(), $HolidayEndDate->toDateString(), $userId)->pluck('holiday_date')->values(); // Getting Holiday Data
 
+            // dd($holidayData);
+
             $holidayCount = $holidayDates->count();
 
             $totalDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
 
             $query = User::query()
+                // Optional: filter by name if needed
+                // ->whereIn('users.id', $userId)
                 ->select('users.id', 'users.name')
                 ->addSelect([
                     'basic_salary' => \App\Models\Allowance::select('basic_salary')
@@ -1222,6 +1233,7 @@ class PayrollController extends AccountBaseController
                         }),
                 ]);
 
+            // Execute and wrap in a collection to handle the final math
             $results = $query->get()->map(function ($user) use ($holidayCount, $totalDays) {
                 $att = $user->attendance_count ?? 0;
                 $off = $user->offday_count ?? 0;
@@ -1239,11 +1251,100 @@ class PayrollController extends AccountBaseController
 
                 return $user;
             })
-                ->whereIn('id', $userId);
+            ->whereIn('id', $userId);
 
             $payDays = $results->first()->pay_days ?? 0;
 
-            // dd($payDays);
+
+            // $totalWorkingDays = $daysInMonth - $holidays;
+
+            // // get day off in month
+            // $totalDayOffInMonth = EmployeeShiftSchedule::where('user_id', $userId)
+            //     ->where('date', '>=', $startDate->toDateString())
+            //     ->where('date', '<=', $endDate->toDateString())
+            //     ->where('employee_shift_id', '=', 1)
+            //     ->get();
+
+            // $dayOffDate = $totalDayOffInMonth->pluck('date')->toArray();
+
+            // $attendance = Attendance::where(DB::raw('DATE(attendances.clock_in_time)'), '>=', $startDate->toDateString())
+            //     ->where(DB::raw('DATE(attendances.clock_in_time)'), '<=', $endDate->toDateString())
+            //     ->where('half_day', 'no')
+            //     ->where('user_id', $userId)
+            //     ->whereNotIn(DB::raw('DATE(attendances.clock_in_time)'), $holidayData)
+            //     ->whereIn(DB::raw('DATE(attendances.clock_in_time)'), $dayOffDate)
+            //     ->get();
+
+            // // dd($attendance->toArray(), $dayOffDate, $holidayData);
+
+            // $totalDayoffCountInMonth = $totalDayOffInMonth->count();
+            // $dayOffPresentInAttendance = $attendance->count();
+
+            // $dayoffCount = 0;
+
+            // if ($dayOffPresentInAttendance > 0) {
+            //     // no attendance data in day off
+            //     $dayOffPresentInAttendance = $dayOffPresentInAttendance;
+            // }
+
+            // // total day off shift for the month - 4
+            // // dayofattendance in day off - 1
+            // $dayoffCount = $totalDayoffCountInMonth - $dayOffPresentInAttendance;
+
+            // // dd($dayoffCount);
+
+            // $fullDayPresentCount = $this->countFullDaysPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+            // $halfDayPresentCount = $this->countHalfDaysPresentByUser($startDate, $endDate, $userId, $holidayData); // Getting Attendance Data
+
+            // $presentCount = $fullDayPresentCount + $halfDayPresentCount;
+
+            // $leaveCount = Leave::join('leave_types', 'leave_types.id', 'leaves.leave_type_id')->where('user_id', $userId)
+            //     ->where('leave_date', '>=', $startDate)
+            //     ->where('leave_date', '<=', $endDate)
+            //     ->where('status', 'approved')->get();
+
+            // $unpaidHaldDayCount = $leaveCount->filter(function ($value, $key) {
+            //     return $value->duration == "half day" && $value->paid == 0;
+            // })->count();
+
+            // $unpaidFullDayCount = $leaveCount->filter(function ($value, $key) {
+            //     return $value->duration <> 'half day' && $value->paid == 0;
+            // })->count();
+
+            // $halfDayCountUnpaid = ($unpaidHaldDayCount / 2);
+
+            // $UnpaidleaveCount = $unpaidFullDayCount + $halfDayCountUnpaid;
+
+            // $PaidLeaveHalfDayCount = $leaveCount->filter(function ($value, $key) {
+            //     return $value->duration == 'half day' && $value->paid == 1;
+            // })->count();
+
+            // $PaidLeaveFullDayCount = $leaveCount->filter(function ($value, $key) {
+            //     return $value->duration <> 'half day' && $value->paid == 1;
+            // })->count();
+
+            // $halfDayCountPaid = ($PaidLeaveHalfDayCount / 2);
+
+            // $PaidLeaveCount = $PaidLeaveFullDayCount + $halfDayCountPaid;
+
+            // // $absentCount = ($totalWorkingDays - $presentCount) - ($UnpaidleaveCount + $PaidLeaveCount);
+
+            // if ($markApprovedLeavesPaid) {
+            //     $totalPresentCount = $presentCount + $PaidLeaveCount + $UnpaidleaveCount;
+            // }
+
+            // $payDays = $totalPresentCount + $holidays + $dayoffCount;
+
+            // // dd([
+            // //     'pay days' => $payDays,
+            // //     'total present count' => $totalPresentCount,
+            // //     'holidays' => $holidays,
+            // //     'dayoff count' => $dayoffCount,
+            // // ]);
+
+            // // dd($totalPresentCount, $holidays, $dayoffCount, $payDays);
+
+            // $payDays = ($payDays > $daysInMonth) ? $daysInMonth : $payDays;
 
             return $payDays;
         }

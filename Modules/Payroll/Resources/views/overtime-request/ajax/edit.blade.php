@@ -2,11 +2,13 @@
 
 <style>
     .disabled {
-            background-color: #F9D6D6; /* light red for disabled */
-            color: #ccc; /* grey text for disabled */
-            pointer-events: none; /* prevent click */
-        }
-
+        background-color: #F9D6D6;
+        /* light red for disabled */
+        color: #ccc;
+        /* grey text for disabled */
+        pointer-events: none;
+        /* prevent click */
+    }
 </style>
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">@lang('payroll::modules.payroll.updateRequest')</h5>
@@ -19,52 +21,59 @@
         <div class="form-body">
             <div class="row">
                 <div class="col-lg-8">
-                    <x-employee :user="$overtimeRequest->user"/>
+                    <x-employee :user="$overtimeRequest->user" />
                     <input type="hidden" value="{{ $overtimeRequest->user->id }}" name="user_id" id="user_id">
                 </div>
             </div>
 
-                <div class="pt-20 pr-20 row">
-                    <div class="col-lg-3">
-                        <x-forms.text class="date-picker" :fieldLabel="__('app.date')" fieldName="date"
-                            fieldId="dateField" :fieldPlaceholder="__('app.date')" fieldValue="{{ $overtimeRequest->date->format(company()->date_format) }}"
-                            fieldRequired="true" />
-                    </div>
-
-                    <div class="col-md-3 col-lg-3" id="set-time-estimate-fields">
-                        <div class="form-group mt-5">
-                            <input type="number" min="0" class="w-25 border rounded p-2 height-35 f-14"
-                                   name="overtime_hours" value="{{ $overtimeRequest->hours }}">
-                            @lang('app.hrs')
-                            &nbsp;&nbsp;
-                            <input type="number" min="0" name="minutes"
-                                   value="{{ $overtimeRequest->minutes }}"
-                                   class="w-25 height-35 f-14 border rounded p-2">
-                            @lang('app.mins')
-                        </div>
-                    </div>
-
-                    <div class="col-lg-4">
-                        <div class="my-3 form-group">
-                            <x-forms.text :fieldLabel="__('app.reason')" fieldName="overtime_reasons"
-                                fieldId="overtime_reasons" :fieldPlaceholder="__('app.reason')" fieldValue="{{ $overtimeRequest->overtime_reason }}"
-                                fieldRequired="false" />
-                        </div>
-                    </div>
-
-
+            <div class="pt-20 pr-20 row">
+                <div class="col-lg-3">
+                    <x-forms.text class="date-picker" :fieldLabel="__('app.date')" fieldName="date" fieldId="dateField"
+                        :fieldPlaceholder="__('app.date')" fieldValue="{{ $overtimeRequest->date->format(company()->date_format) }}"
+                        fieldRequired="true" />
                 </div>
 
-                <div id="insertBefore"></div>
+                <div class="col-md-3 col-lg-3" id="set-time-estimate-fields">
+                    <div class="form-group mt-5">
+                        <input type="number" min="0" class="w-25 border rounded p-2 height-35 f-14"
+                            name="overtime_hours" value="{{ $overtimeRequest->hours }}">
+                        @lang('app.hrs')
+                        &nbsp;&nbsp;
+                        <input type="number" min="0" name="minutes" value="{{ $overtimeRequest->minutes }}"
+                            class="w-25 height-35 f-14 border rounded p-2">
+                        @lang('app.mins')
+                    </div>
+                </div>
 
-                <!--  ADD ITEM START-->
+                <div class="col-lg-4">
+                    <div class="my-3 form-group">
+                        <x-forms.text :fieldLabel="__('app.reason')" fieldName="overtime_reasons" fieldId="overtime_reasons"
+                            :fieldPlaceholder="__('app.reason')" fieldValue="{{ $overtimeRequest->overtime_reason }}"
+                            fieldRequired="false" />
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="my-3 form-group">
+                        <x-forms.radio :fieldLabel="__('app.normalOT')" fieldName="overtimeRate" fieldId="overtimeType1" fieldValue="1" fieldRequired="true" :checked="$overtimeRequest->overtime_rate == 1" />
+
+                        <x-forms.radio :fieldLabel="__('app.offDayHolidayOT')" fieldName="overtimeRate" fieldId="overtimeType2" fieldValue="2" fieldRequired="true" :checked="$overtimeRequest->overtime_rate == 2" />
+                    </div>
+                </div>
+
+
+            </div>
+
+            <div id="insertBefore"></div>
+
+            <!--  ADD ITEM START-->
 
             <input type="hidden" name="start_date" id="start_date" value="">
             <input type="hidden" name="end_date" id="end_date" value="">
 
         </div>
     </x-form>
-    </div>
+</div>
 </div>
 <div class="modal-footer">
     <x-forms.button-cancel data-dismiss="modal" class="border-0 mr-3">@lang('app.close')</x-forms.button-cancel>
@@ -74,7 +83,6 @@
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 
 <script>
-
     var applyDate = "{{ $policyData['applyDate']->format('Y-m-d') }}";
     var lastDate = "{{ $policyData['currentMonthDate']->format('Y-m-d') }}";
 
@@ -89,7 +97,7 @@
     });
 
     // save request
-    $('#save-request').click(function (e) {
+    $('#save-request').click(function(e) {
         e.preventDefault();
 
         var url = "{{ route('overtime-requests.update', $overtimeRequest->id) }}";
@@ -102,7 +110,7 @@
             disableButton: true,
             buttonSelector: "#save-request",
             data: $('#overtimeHoursUpdateForm').serialize(),
-            success: function (response) {
+            success: function(response) {
                 if (response.status == "success") {
                     $(MODAL_LG).modal('hide');
                 }
@@ -110,6 +118,4 @@
             }
         })
     });
-
-
 </script>

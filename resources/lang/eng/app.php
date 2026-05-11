@@ -524,6 +524,8 @@ return array(
     'progress' => 'Progress',
     'required' => 'is required',
     'reason' => 'Reason',
+    'normalOT' => 'Normal OT (1x)',
+    'offDayHolidayOT' => 'Off Day/Holiday OT (2x)',
     'yes' => 'Yes',
     'ok' => 'OK',
     'no' => 'No',

@@ -153,23 +153,16 @@ class OvertimeRequestExport implements FromCollection, ShouldAutoSize, WithStyle
 
         $amount = $row->amount;
 
-        if ($row->holiday_date || $row->employee_shift_id == 1) {
-            // $amount = $hourlyRate * 2;
-            $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
-        } elseif ($row->policy->payCode->fixed == 1) {
-            $calculation = '( ' . $hourlyRate . ' ( *' . $row->fixed_amount . ' * ' . $minutes . ')';
-        } else {
-            $calculation = '( ' . $hourlyRate . ' ( *' . $row->policy->payCode->time . ' ' . __('payroll::app.times') . ') * ' . $minutes . ')';
-        }
+        // if ($row->holiday_date || $row->employee_shift_id == 1) {
+        //     // $amount = $hourlyRate * 2;
+        //     $calculation = '( ' . $hourlyRate . ' ( * 2 ' . __('payroll::app.times') . ') * ' . $minutes . ')';
+        // }
 
-        // dd([
-        //     $row->name,
-        //     $row->created_at->format(company()->date_format) ?? '--',
-        //     $row->date->format(company()->date_format) ?? '--',
-        //     $hours . ' ' . $minutes,
-        //     $row->overtime_reason,
-        //     $currencySymbol . ' ' . $amount . ' ' . $calculation
-        // ]);
+        if ($row->policy->payCode->fixed == 1) {
+            $calculation = '( ' . $hourlyRate . ' ( ' . $row->overtime_rate . ' * ' . $row->fixed_amount . ' * ' . $minutes . ')';
+        } else {
+            $calculation = '( ' . $hourlyRate . ' ( ' . $row->overtime_rate . ' * ' . $row->policy->payCode->time . ' ' . __('payroll::app.times') . ') * ' . $minutes . ')';
+        }
 
 
         return [
