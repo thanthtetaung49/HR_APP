@@ -492,7 +492,7 @@ class PayrollController extends AccountBaseController
                 ->values(); // Getting Holiday Data
 
             $eveningShiftPresentCount = $this->countEveningShiftPresentByUser($startDate, $endDate, $userId); // Getting Attendance Data
-            $gazattedPresentCount = $this->countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData);
+            $gazattedPresentCount = $this->gazattedDayPresentByUser($startDate, $endDate, $userId, $holidayData);
 
             // dd($gazattedPresentCount);
 
@@ -1438,7 +1438,7 @@ class PayrollController extends AccountBaseController
     //     return $offDayHolidayOvertimeAmount;
     // }
 
-    public function countHolidayPresentByUser($startDate, $endDate, $userId, $holidayData)
+    public function gazattedDayPresentByUser($startDate, $endDate, $userId, $holidayData)
     {
         // dd($holidayData);
         $presentCount = Attendance::select(
@@ -1449,7 +1449,7 @@ class PayrollController extends AccountBaseController
             ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
             ->where('attendances.half_day', 'no')
             ->where('attendances.user_id', $userId)
-            ->where('attendances.employee_shift_id', '<>', 1) // employee_shift_id 1 must not be offDay
+            // ->where('attendances.employee_shift_id', '<>', 1) // employee_shift_id 1 must not be offDay
             ->groupBy(DB::raw('DATE(attendances.clock_in_time), attendances.user_id'))
             ->havingRaw('SUM(TIMESTAMPDIFF(SECOND, attendances.clock_in_time, attendances.clock_out_time)) >= ?', [
                 8 * 60 * 60
