@@ -45,7 +45,7 @@
                         </div>
                         <div>
                             @if ($role->name == 'admin')
-                                <span class="text-lightest">@lang('messages.adminPermissionsCantChange')</span>
+                                <span class="text-lightest">@lang('messages.adminPermissionsCantChange') </span>
                             @else
                                 <x-forms.button-secondary class="view-permission" data-role-id="{{ $role->id }}" icon="key">
                                     @lang('modules.permission.permissions')

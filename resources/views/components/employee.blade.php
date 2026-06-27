@@ -13,7 +13,6 @@
 
 
 <div class="media align-items-center mw-250">
-
     @if (!is_null($user))
         <a href="{{ isset($disabledLink) ? 'javascript:;' : route('employees.show', [$user->id]) }}"
            class="position-relative {{ isset($disabledLink) ? 'disabled-link' : '' }}">

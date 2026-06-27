@@ -151,6 +151,9 @@
                     <x-sub-menu-item :link="route('criteria.index')" :text="__('app.menu.exitsReason')" />
                     <x-sub-menu-item :link="route('criteria-reports.index')" :text="__('app.menu.criteriaReport')" />
                     <x-sub-menu-item :link="route('turn-over-reports.index')" :text="__('app.menu.turnOverReport')" />
+                @endcan
+
+                @can('bankReportPermission', App\Models\User::class)
                     <x-sub-menu-item :link="route('bank-reports.index')" :text="__('app.menu.bankReport')" />
                 @endcan
 

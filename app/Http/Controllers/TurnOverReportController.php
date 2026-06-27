@@ -39,6 +39,8 @@ class TurnOverReportController extends AccountBaseController
         $this->employeeTotal = $this->employeeTotal();
         $this->locations = Location::get();
 
+        // dd($this->turnOverReports()->toArray());
+
         return view('turn-over-reports.index', $this->data);
     }
 
@@ -142,40 +144,54 @@ class TurnOverReportController extends AccountBaseController
 
     public function turnOverReports($year = null, $locationId = null)
     {
+        $year = $year ?? now()->year;
+
+        // dd($year, $locationId);
+
         $turnOverReports = EmployeeDetails::select(
             DB::raw(
-                '
-                MONTH(employee_details.notice_period_end_date) as month',
-                'CASE WHEN employee_details.notice_period_end_date IS NOT NULL THEN MONTH(employee_details.notice_period_end_date) ELSE MONTH(employee_details.probation_end_date) END as month'
+                DB::raw('MONTH(employee_details.last_date) AS month'),
             ),
             DB::raw('COUNT(*) as total'),
-            DB::raw('CAST(SUM(CASE WHEN employee_details.notice_period_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED) as resigned_total'),
-            DB::raw('CAST(SUM(CASE WHEN employee_details.probation_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED) as probation_total'),
-            DB::raw('CAST(SUM(CASE WHEN employee_details.notice_period_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED) - CAST(SUM(CASE WHEN employee_details.probation_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED) as permanent_total'),
+            DB::raw('CAST(
+                SUM(CASE WHEN employee_details.last_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED
+            ) as resigned_total'),
+            DB::raw('CAST(
+                SUM(CASE WHEN employee_details.last_date IS NOT NULL AND
+                    employee_details.probation_end_date IS NOT NULL AND
+                    employee_details.last_date <= employee_details.probation_end_date
+                    THEN 1 ELSE 0 END) AS SIGNED ) as probation_total'),
+             DB::raw('CAST(
+                SUM(CASE WHEN employee_details.last_date IS NOT NULL AND
+                    employee_details.probation_end_date IS NOT NULL AND
+                    employee_details.last_date > employee_details.probation_end_date
+                    THEN 1 ELSE 0 END) AS SIGNED ) as permanent_total'),
+            // DB::raw('ABS(CAST(SUM(CASE WHEN employee_details.notice_period_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED) - CAST(SUM(CASE WHEN employee_details.probation_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED)) as permanent_total'),
             'teams.department_type',
             'locations.id as location_id',
-            'locations.location_name as location_name'
+            'locations.location_name as location_name',
+            'employee_details.last_date as last_date',
+            'employee_details.probation_end_date as probation_end_date'
         )
+            ->leftJoin('users', 'users.id', '=', 'employee_details.user_id')
             ->leftJoin('teams', 'teams.id', '=', 'employee_details.department_id')
             ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
-            ->where(function ($query) {
-                $query->whereNotNull('employee_details.notice_period_end_date')
-                    ->orWhereNotNull('employee_details.probation_end_date');
-            })
-            ->whereYear('employee_details.created_at', now()->year)
+            // ->where('users.name', 'Htoo Htoo Hlaing')
+            ->whereNotNull('employee_details.last_date')
+            ->whereNotNull('employee_details.probation_end_date')
             ->when($year, function ($query) use ($year) {
-                $query->whereYear('employee_details.created_at', $year);
+                $query->whereRaw('YEAR(employee_details.last_date) = ?', [$year]);
             })
             ->when($locationId, function ($query) use ($locationId) {
                 $query->where('locations.id', '=', $locationId);
             })
             ->groupBy(
-                DB::raw('MONTH(COALESCE(employee_details.notice_period_end_date, employee_details.probation_end_date))'),
+                DB::raw('MONTH(employee_details.last_date)'),
                 'teams.department_type'
             )
             ->get();
 
-        // dd($locationId, $turnOverReports->toArray());
+        // dd($year, $locationId, $turnOverReports->toArray());
 
         return $turnOverReports;
     }

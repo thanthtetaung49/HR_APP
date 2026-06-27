@@ -67,6 +67,9 @@ class EmployeeSalaryDataTable extends BaseDataTable
                     return $row->group_name ?? '--';
                 }
             )
+            ->addColumn('rank', function ($row) {
+                return __('payroll::modules.payroll.rank') . ' - ' . $row->rank_id;
+            })
             ->addColumn('salary_cycle', function ($row) {
                 $details = '<select name="cycle"  data-user-id="' . $row->id . '"  class="form-control select-picker salary-cycle">';
                 $selected = '';
@@ -147,6 +150,18 @@ class EmployeeSalaryDataTable extends BaseDataTable
             Role::findOrFail($request->role);
         }
 
+        $isAdmin = false;
+        $isHRManager = false;
+
+        if (in_array('admin', user_roles())) {
+            $isAdmin = true;
+        }
+
+        if (in_array('hr-manager', user_roles())) {
+            $isHRManager = true;
+        }
+
+
         $this->cycles = PayrollCycle::all();
         $this->currency = PayrollSetting::with('currency')->first();
         $users = User::join('role_user', 'role_user.user_id', '=', 'users.id')
@@ -158,8 +173,11 @@ class EmployeeSalaryDataTable extends BaseDataTable
             ->leftJoin('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
             ->leftJoin('payroll_cycles', 'payroll_cycles.id', '=', 'employee_payroll_cycles.payroll_cycle_id')
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_groups.group_name', 'employee_payroll_cycles.payroll_cycle_id', 'employee_monthly_salaries.allow_generate_payroll', 'payroll_cycles.cycle')
-            ->where('roles.name', '<>', 'client');
+            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_groups.group_name', 'employee_payroll_cycles.payroll_cycle_id', 'employee_monthly_salaries.allow_generate_payroll', 'payroll_cycles.cycle', 'designations.rank_id')
+            ->where('roles.name', '<>', 'client')
+            ->when($isHRManager && !$isAdmin, function ($query) {
+                $query->where('designations.rank_id', '<=', 4);
+            });
 
         $location = $request->location;
 
@@ -187,6 +205,10 @@ class EmployeeSalaryDataTable extends BaseDataTable
                 $query->where('users.name', 'like', '%' . request('searchText') . '%')
                     ->orWhere('users.email', 'like', '%' . request('searchText') . '%');
             });
+        }
+
+        if ($request->rankId != '') {
+            $users = $users->where('designations.rank_id', $request->rankId);
         }
 
         return $users->groupBy('users.id');
@@ -224,6 +246,11 @@ class EmployeeSalaryDataTable extends BaseDataTable
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false],
             __('app.name') => ['data' => 'name', 'name' => 'name', 'exportable' => false, 'title' => __('app.name')],
             __('app.employee') => ['data' => 'user_name', 'name' => 'name', 'visible' => false, 'title' => __('app.employee')],
+             __('payroll::modules.payroll.rank') => [
+                'data' => 'rank',
+                'name' => 'rank_id',
+                'title' => __('payroll::modules.payroll.rank')
+            ],
             __('payroll::modules.payroll.salaryCycle') => ['data' => 'salary_cycle_export', 'name' => 'salary_cycle', 'visible' => false, 'title' => __('payroll::modules.payroll.salaryCycle')],
             __('app.employee') . '  ' . __('payroll::modules.payroll.salaryCycle') => ['data' => 'salary_cycle', 'name' => 'salary_cycle', 'exportable' => false, 'title' => __('app.employee') . '  ' . __('payroll::modules.payroll.salaryCycle')],
             __('payroll::modules.payroll.salaryGroup') => ['data' => 'group_name', 'name' => 'group_name', 'title' => __('payroll::modules.payroll.salaryGroup')],

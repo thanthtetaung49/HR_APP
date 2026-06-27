@@ -32,6 +32,9 @@ class BankReportDataTable extends BaseDataTable
             ->editColumn('net_salary', function ($user) {
                 return $user->net_salary ? round($user->net_salary, 0) : 0;
             })
+            ->editColumn('notice_period_end_date', function ($user) {
+                return $user->notice_period_end_date ? $user->notice_period_end_date : '-';
+            })
             ->editColumn('nrc', function ($user) {
                 $employee = EmployeeDetails::where('user_id', $user->id)->first();
 
@@ -47,7 +50,6 @@ class BankReportDataTable extends BaseDataTable
                         if ($field->type == 'text' && $field->name == 'nrc-1') {
 
                             $nrc = $employeeDetail->custom_fields_data['field_' . $field->id];
-
                         }
                     }
                 }
@@ -67,7 +69,7 @@ class BankReportDataTable extends BaseDataTable
         $month = request()->month;
         $year = request()->year;
 
-        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month')
+        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', 'employee_details.notice_period_end_date as notice_period_end_date')
             ->leftJoin('salary_slips', 'salary_slips.user_id', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
@@ -118,6 +120,7 @@ class BankReportDataTable extends BaseDataTable
             __('app.menu.employees') => ['data' => 'name', 'name' => 'name', 'title' => __('app.menu.employees')],
             __('app.menu.nrc') => ['data' => 'nrc', 'name' => 'nrc', 'title' => __('app.menu.nrc')],
             __('app.menu.bankaccountNumber') => ['data' => 'bank_account_number', 'name' => 'bank_account_number', 'title' => __('app.menu.bankaccountNumber')],
+            __('app.onNoticePeriod') => ['data' => 'notice_period_end_date', 'name' => 'notice_period_end_date', 'title' => __('app.onNoticePeriod')],
             __('app.menu.amount') => ['data' => 'net_salary', 'name' => 'net_salary', 'title' => __('app.menu.amount')],
         ];
     }

@@ -45,6 +45,7 @@ return array(
         'markApprovedLeavesPaid' => 'Mark Approved Leaves as Paid',
         'initialSalary' => 'Initial Month Salary',
         'netSalary' => 'Net Salary',
+        'rank' => 'Rank',
         'increment' => 'Increment',
         'decrement' => 'Decrement',
         'salaryHistory' => 'Salary History',

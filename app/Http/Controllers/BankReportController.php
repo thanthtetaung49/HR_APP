@@ -31,6 +31,7 @@ class BankReportController extends AccountBaseController
     public function index(BankReportDataTable $dataTable)
     {
         $this->authorize('viewAny', User::class);
+        $this->authorize('bankReportPermission', User::class);
 
         $this->locations = Location::get();
         $this->months = $this->months();

@@ -45,6 +45,35 @@
         </div>
         <!-- DESIGNATION END -->
 
+        <div class="select-box d-flex py-2 px-lg-3 px-md-3 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center"> @lang('payroll::modules.payroll.rank')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="rankId" id="rankId">
+                    <option value=''>---</option>
+                    @if ($isHRManager)
+                        <option value="1">Rank 1</option>
+                        <option value="2">Rank 2</option>
+                        <option value="3">Rank 3</option>
+                        <option value="4">Rank 4</option>
+                        <option value="5">Rank 5</option>
+                    @endif
+
+                    @if ($isAdmin)
+                        <option value="1">Rank 1</option>
+                        <option value="2">Rank 2</option>
+                        <option value="3">Rank 3</option>
+                        <option value="4">Rank 4</option>
+                        <option value="5">Rank 5</option>
+                        <option value="6">Rank 6</option>
+                        <option value="7">Rank 7</option>
+                        <option value="8">Rank 8</option>
+                        <option value="9">Rank 9</option>
+                        <option value="10">Rank 10</option>
+                    @endif
+                </select>
+            </div>
+        </div>
+
 
         <!-- SEARCH BY TASK START -->
         <div class="task-search d-flex  py-1 px-lg-3 px-0 border-right-grey align-items-center">
@@ -105,13 +134,13 @@
             const department = $('#department').val();
             // const designation = $("#designation").val();
             const searchText = $('#search-text-field').val();
+            var rankId = $('#rankId').val();
 
             data['designation'] = designation;
             data['location'] = location;
             data['department'] = department;
             data['searchText'] = searchText;
-
-            console.log(location);
+            data['rankId'] = rankId;
         });
 
         const showTable = () => {
@@ -119,7 +148,6 @@
         }
 
         $("#locationSearch").on('change', function() {
-            console.log('hello');
             let location_id = $(this).val();
             let designation_id = $("#designation").val();
             let department_id = $("#department").val();
@@ -211,7 +239,7 @@
             showTable();
         });
 
-        $('#locationSearch, #designation, #department, #search-text-field').on('change keyup',
+        $('#locationSearch, #designation, #department, #search-text-field, #rankId').on('change keyup',
             function() {
                 if ($('#designation').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
@@ -220,6 +248,8 @@
                 } else if ($('#department').val() !== "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#search-text-field').val() != "") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($('#rankId').val() != "") {
                     $('#reset-filters').removeClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');

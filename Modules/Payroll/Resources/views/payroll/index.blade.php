@@ -41,6 +41,36 @@
                 </select>
             </div>
         </div>
+
+        <div class="select-box d-flex py-2 px-lg-3 px-md-3 px-0 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">  @lang('payroll::modules.payroll.rank')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="rankId" id="rankId">
+                    <option value=''>---</option>
+                    @if ($isHRManager || $isHROfficer)
+                        <option value="1">Rank 1</option>
+                        <option value="2">Rank 2</option>
+                        <option value="3">Rank 3</option>
+                        <option value="4">Rank 4</option>
+                    @endif
+
+                    @if ($isAdmin)
+                        <option value="1">Rank 1</option>
+                        <option value="2">Rank 2</option>
+                        <option value="3">Rank 3</option>
+                        <option value="4">Rank 4</option>
+                        <option value="5">Rank 5</option>
+                        <option value="6">Rank 6</option>
+                        <option value="7">Rank 7</option>
+                        <option value="8">Rank 8</option>
+                        <option value="9">Rank 9</option>
+                        <option value="10">Rank 10</option>
+                    @endif
+                </select>
+            </div>
+        </div>
+
+
         <!-- SEARCH BY TASK START -->
         <div class="task-search d-flex  py-1 px-lg-3 px-0 border-right-grey align-items-center">
             <form class="w-100 mr-1 mr-lg-0 mr-md-1 ml-md-1 ml-0 ml-lg-0">
@@ -77,7 +107,8 @@
     <!-- CONTENT WRAPPER START -->
     <div class="content-wrapper">
 
-        @if ($addPayrollPermission == 'all' || $addPayrollPermission == 'added')
+        {{-- @if ($addPayrollPermission == 'all' || $addPayrollPermission == 'added') --}}
+        @can('generatePayroll', App\Models\User::class)
             <div class="card bg-white border-0 b-shadow-4">
                 <div class="card-header bg-white border-bottom-grey  justify-content-between p-20">
                     <div class="row">
@@ -106,13 +137,13 @@
                                     fieldName="selectAllEmployee" />
                             </div>
 
-                            @php
+                            {{-- @php
                                 $roles = $user->roles;
 
                                 $isAdmin = $roles->contains(function ($role) {
                                     return $role->name === 'admin';
                                 });
-                            @endphp
+                            @endphp --}}
 
                             <div class="col-md-4 mb-4">
                                 <x-forms.label class="mt-3" fieldId="rank_id" :fieldLabel="__('app.menu.rank')" fieldName="rank">
@@ -121,12 +152,20 @@
                                     <select class="form-control select-picker" name="rank_id" id="rank_id"
                                         data-live-search="true">
                                         <option value="">---</option>
-                                        <option value="1">Rank 1</option>
-                                        <option value="2">Rank 2</option>
-                                        <option value="3">Rank 3</option>
-                                        <option value="4">Rank 4</option>
-                                        <option value="5">Rank 5</option>
+
+                                        @if ($isHRManager || $isHROfficer)
+                                            <option value="1">Rank 1</option>
+                                            <option value="2">Rank 2</option>
+                                            <option value="3">Rank 3</option>
+                                            <option value="4">Rank 4</option>
+                                        @endif
+
                                         @if ($isAdmin)
+                                            <option value="1">Rank 1</option>
+                                            <option value="2">Rank 2</option>
+                                            <option value="3">Rank 3</option>
+                                            <option value="4">Rank 4</option>
+                                            <option value="5">Rank 5</option>
                                             <option value="6">Rank 6</option>
                                             <option value="7">Rank 7</option>
                                             <option value="8">Rank 8</option>
@@ -137,7 +176,7 @@
                                 </x-forms.input-group>
                             </div>
 
-                            <div class="col-md-4">
+                            {{-- <div class="col-md-4">
                                 <x-forms.label class="my-3" fieldId="selectEmployee" :popover="__('payroll::messages.payrollEmployees')" :fieldLabel="__('modules.employees.title')">
                                 </x-forms.label>
                                 <select class="form-control multiple-users" multiple name="employee_id[]"
@@ -146,14 +185,21 @@
                                         <x-user-option :user="$item" :pill="true" />
                                     @endforeach
                                 </select>
+                            </div> --}}
 
+
+                            <div class="col-md-4">
+                                <x-forms.label class="my-3" fieldId="selectEmployee" :popover="__('payroll::messages.payrollEmployees')"
+                                    :fieldLabel="__('modules.employees.title')">
+                                </x-forms.label>
+                                <select class="form-control multiple-users" multiple name="employee_id[]"
+                                    id="selectEmployee" data-live-search="true" data-size="8">
+                                    @foreach ($employees as $item)
+                                        <x-user-option :user="$item" :pill="true" />
+                                    @endforeach
+                                </select>
                             </div>
 
-                            {{-- <div class="col-4 mb-4 useAttendanceBox" style="display: none">
-                                <x-forms.checkbox fieldId="mark_absent_unpaid"
-                                                  :fieldLabel="__('payroll::modules.payroll.markAbsentUnpaid')"
-                                                  fieldName="mark_absent_unpaid"/>
-                            </div> --}}
                             <div class="w-100 border-top-grey d-flex justify-content-end px-4 py-3">
                                 <x-forms.button-primary id="generate-payslip" icon="paper-plane">@lang('payroll::modules.payroll.generate')
                                 </x-forms.button-primary>
@@ -162,7 +208,7 @@
                     </x-form>
                 </div>
             </div>
-        @endif
+        @endcan
 
         <div class="d-flex mt-4 justify-content-end action-bar">
             @if (canDataTableExport())
@@ -235,7 +281,7 @@
             });
         });
 
-        function getEmployee(cycle, type, id) {
+        function getEmployee(cycle, type, id, selectAll = false) {
             if (type == 'payrollCycle' || id == null || id == '' || id == undefined) {
                 var url = "{{ route('payroll.get-employee', [':cycleId']) }}";
             } else {
@@ -252,25 +298,29 @@
                 blockUI: true,
                 data: $('#save-attendance-data-form').serialize(),
                 success: function(response) {
+                    console.log(response);
                     if (response.status == 'success') {
                         $('#selectEmployee').html(response.data);
+
+                        if (selectAll) {
+                            $('#selectEmployee option').prop('selected', true);
+                        } else {
+                            $('#selectEmployee option').prop('selected', false);
+                        }
+
                         $('#selectEmployee').selectpicker('refresh');
                     }
                 }
             });
         }
 
-        $('#selectEmployee').selectpicker();
+        // $('#selectEmployee').selectpicker();
 
         $("#selectAllEmployee").change(function() {
-            let selectedValues = $(this).prop('checked');
-            if (selectedValues) {
-                $("#selectEmployee").find("option").prop("selected", true);
-            } else {
-                $("#selectEmployee").find("option").prop("selected", false);
-            }
-            $("#selectEmployee").selectpicker('refresh');
-        })
+            let isChecked = $(this).prop('checked');
+
+            getEmployee(cycle, 'payrollCycle', null, isChecked);
+        });
 
         $('#useAttendance').change(function() {
             if ($('#useAttendance').prop('checked')) {
@@ -288,17 +338,20 @@
             var year = $('#year').val();
             var cycle = $('#payrollCycle').val();
             var searchText = $('#search-text-field').val();
+            var rankId = $('#rankId').val();
+
             data['month'] = month;
             data['year'] = year;
             data['searchText'] = searchText;
             data['cycle'] = cycle;
+            data['rankId'] = rankId;
         });
 
         const showTable = () => {
             window.LaravelDataTables["payroll-table"].draw(true);
         }
 
-        $('#month, #year, #search-text-field').on('change keyup',
+        $('#month, #year, #search-text-field, #rankId').on('change keyup',
 
             function() {
                 if ($('#month').val() != "all") {
@@ -311,6 +364,9 @@
                     $('#reset-filters').removeClass('d-none');
                     showTable();
                 } else if ($('#payrollCycle').val() != "") {
+                    $('#reset-filters').removeClass('d-none');
+                    showTable();
+                } else if ($('#rank_id').val() != "") {
                     $('#reset-filters').removeClass('d-none');
                     showTable();
                 } else {
@@ -619,12 +675,14 @@
                 var month = $('#month').val();
                 var searchText = $('#search-text-field').val();
 
-                var url = "{{ route('payroll.export_pay_roll', [':year', ':payrollCycle', ':month', ':searchText']) }}";
+                var url =
+                    "{{ route('payroll.export_pay_roll', [':year', ':payrollCycle', ':month', ':searchText']) }}";
 
                 console.log(url);
 
 
-                url = url.replace(':year', year).replace(':payrollCycle', payrollCycle).replace(':month', month).replace(':searchText', searchText);
+                url = url.replace(':year', year).replace(':payrollCycle', payrollCycle).replace(':month', month)
+                    .replace(':searchText', searchText);
                 window.location.href = url;
             });
         @endif

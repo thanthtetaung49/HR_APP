@@ -51,7 +51,7 @@
                     @if ($moduleData->custom_permissions_count > 0 && in_array($moduleData->module_name,$employeeModules))
                         <a href="javascript:;" data-module-id="{{ $moduleData->id }}" data-role-id="{{ $role->id }}"
                             class="text-dark-grey show-custom-permission dropdown-toggle">
-                            @lang('app.more') <i class="fa fa-chevron-down"></i>
+                            @lang('app.more')   <i class="fa fa-chevron-down"></i>
                         </a>
                     @else
                         &nbsp;

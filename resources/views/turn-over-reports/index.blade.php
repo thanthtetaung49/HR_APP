@@ -96,7 +96,7 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th colspan="6">
+                            <th colspan="7">
                                 <h3>Turnover Report
                                     <span id="locationTitle">(All Location)</span>
                                 </h3>
@@ -565,7 +565,7 @@
                     <table class="table table-bordered">
                         <thead>
                             <tr>
-                            <th colspan="6">
+                            <th colspan="7">
                                 <h3>Turnover Report
                                     <span id="locationTitle">(${locationName})</span>
                                 </h3>

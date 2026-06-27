@@ -55,20 +55,34 @@ class PayrollController extends AccountBaseController
 
     public function index(PayrollDataTable $dataTable)
     {
+        // dd(user()->permission('add_payroll'));
         $viewPermission = user()->permission('view_payroll');
+        // dd($viewPermission);
+        // $this->authorize('viewPayroll', User::class);
 
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->departments = Team::all();
         $this->designations = Designation::all();
         $this->payrollCycles = PayrollCycle::all();
+        $this->isAdmin = false;
+        $this->isHRManager = false;
+        $this->isHROfficer = false;
 
         $now = now();
         $this->year = $now->format('Y');
         $this->month = $now->format('m');
 
-        if (!in_array('admin', user_roles())) {
-            $this->month = 'all';
+        if (in_array('admin', user_roles())) {
+            $this->isAdmin = true;
+        }
+
+        if (in_array('hr-manager', user_roles())) {
+            $this->isHRManager = true;
+        }
+
+        if (in_array('hr-officer', user_roles())) {
+            $this->isHROfficer = true;
         }
 
         $this->teams = Team::all();
@@ -77,8 +91,16 @@ class PayrollController extends AccountBaseController
 
         $this->employees = User::join('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
+            ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
+            ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
             ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle->id)
-            ->select('users.*')->get();
+            ->select('users.*', 'employee_details.rank')
+            ->where('users.status', 'active')
+            ->when(($this->isHRManager || $this->isHROfficer) && !$this->isAdmin, function ($query) {
+                $query->whereNotNull('designations.rank_id')
+                    ->where('designations.rank_id', '<=', 4);
+            })
+            ->get();
 
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
 
@@ -471,6 +493,8 @@ class PayrollController extends AccountBaseController
                 ->where('attendances.half_day', 'no')
                 ->first();
 
+            // dd($attendanceLateInMonth);
+
             $attLateAfter = $attendanceLateInMonth->lateCount;
             $attLateBetween = $attendanceLateInMonth->lateBetweenCount;
             $attBreakTimeAfter = $attendanceLateInMonth->breakTimeLateCount;
@@ -528,17 +552,20 @@ class PayrollController extends AccountBaseController
                     ->whereBetween('overtime_requests.date', [$startDate, $endDate]);
 
                 $overtimeAmount = (clone $employeeOverTime)
-                    ->where(function ($query) {
-                        $query->whereRaw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) <> ?', [1])
-                            ->whereNull('holidays.date');
-                    })
+                    // ->where(function ($query) {
+                    //     $query->whereRaw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) <> ?', [1])
+                    //         ->whereNull('holidays.date');
+                    // })
+                    ->where('overtime_rate', 1)
                     ->sum('overtime_requests.amount');
 
-                $offDayHolidayOvertimeAmount = (clone $employeeOverTime)->where(function ($query) {
-                   $query->whereRaw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) = ?', [1])
-                        ->whereNotNull('employee_shift_schedules.employee_shift_id')
-                        ->orWhereNotNull('holidays.date');
-                })
+                $offDayHolidayOvertimeAmount = (clone $employeeOverTime)
+                    // ->where(function ($query) {
+                    // $query->whereRaw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) = ?', [1])
+                    //         ->whereNotNull('employee_shift_schedules.employee_shift_id')
+                    //         ->orWhereNotNull('holidays.date');
+                    // })
+                    ->where('overtime_rate', 2)
                     ->sum('overtime_requests.amount');
 
                 $detuction = Detection::where('user_id', $userId)->first();
@@ -596,7 +623,7 @@ class PayrollController extends AccountBaseController
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
-                    $otherAllowance = $daysDifference * $perDayOtherAllowance;
+                    // $otherAllowance = $daysDifference * $perDayOtherAllowance;
                     $depositRefund = $daysDifference * $perDayDepositRefund;
                 }
 
@@ -608,7 +635,7 @@ class PayrollController extends AccountBaseController
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
-                    $otherAllowance = $daysDifference * $perDayOtherAllowance;
+                    // $otherAllowance = $daysDifference * $perDayOtherAllowance;
                     $depositRefund = $daysDifference * $perDayDepositRefund;
                 }
 
@@ -832,6 +859,7 @@ class PayrollController extends AccountBaseController
             $data['salary_payment_method_id'] = null;
             $data['paid_on'] = null;
         }
+
 
         if ($request->add_expenses == 'yes') {
             $expense = new Expense();
@@ -1508,7 +1536,25 @@ class PayrollController extends AccountBaseController
 
     public function byRank(Request $request)
     {
-        $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id');
+        $isAdmin = false;
+        $isHRManager = false;
+
+        if (in_array('admin', user_roles())) {
+            $isAdmin = true;
+        }
+
+        if (in_array('hr-manager', user_roles())) {
+            $isHRManager = true;
+        }
+
+        $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
+            ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
+            ->where('users.status', 'active')
+            ->when(($isHRManager) && !$isAdmin, function ($query) {
+                $query->whereNotNull('designations.rank_id')
+                    ->where('designations.rank_id', '<=', 4);
+            });
 
         $payrollCycle = $request->cycleId;
         $rankId = $request->rankId;

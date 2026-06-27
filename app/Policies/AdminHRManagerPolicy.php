@@ -31,6 +31,79 @@ class AdminHRManagerPolicy
         return $permission;
     }
 
+    public function bankReportPermission (User $user): bool
+    {
+        $roles = $user->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $permission = false;
+
+        if ($isAdmin) {
+            $permission = true;
+        }
+
+        return $permission;
+    }
+
+
+    public function generatePayroll(User $user): bool
+    {
+        $roles = $user->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
+
+        $permission = false;
+
+        if ($isAdmin || $isHRmanager) {
+             $permission = true;
+        }
+
+        return $permission;
+    }
+
+
+    public function viewPayroll(User $user): bool
+    {
+        $roles = $user->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
+
+        $isHROfficer = $roles->contains(function ($role) {
+            return $role->name === 'hr-officer';
+        });
+
+        $isEmployee = $roles->contains(function ($role) {
+            return $role->name === 'employee';
+        });
+
+        $permission = false;
+
+        if ($isAdmin || $isHRmanager || $isHROfficer || $isEmployee) {
+             $permission = true;
+        }
+
+        return $permission;
+    }
+
+
+
+
+
     /**
      * Determine whether the user can view the model.
      */

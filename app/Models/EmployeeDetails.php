@@ -113,7 +113,9 @@ class EmployeeDetails extends BaseModel
             return null;
         }
 
-        $dob = Carbon::parse(now($this->company->timezone)->year . '-' . $this->date_of_birth->month . '-' . $this->date_of_birth->day);
+        $timezone = $this->company?->timezone ?? config('app.timezone');
+
+        $dob = Carbon::parse(now($timezone)->year . '-' . $this->date_of_birth->month . '-' . $this->date_of_birth->day);
 
         if ($dob->isPast()) {
             $dob->addYear();

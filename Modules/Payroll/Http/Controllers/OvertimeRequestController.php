@@ -331,7 +331,7 @@ class OvertimeRequestController extends AccountBaseController
     public function edit($id)
     {
         $viewPermission = user()->permission('manage_employee_salary');
-        abort_403(!in_array($viewPermission, ['all', 'added']));
+        abort_403(!in_array($viewPermission, ['all', 'added', 'none']));
 
         $this->overtimeRequest = OvertimeRequest::find($id);
 

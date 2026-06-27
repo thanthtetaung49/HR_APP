@@ -46,7 +46,7 @@ class OvertimeRequestDataTable extends BaseDataTable
                     $status = __('app.accepted');
                 }
 
-                if ($row->status == 'pending' && (user()->hasRole('admin') || in_array($this->roleId, $allowRoles) || $reportingTo == user()->id)) {
+                if ($row->status == 'pending' && (user()->hasRole('admin') || user()->hasRole('hr-officer') || user()->hasRole('hr-manager') || in_array($this->roleId, $allowRoles) || $reportingTo == user()->id)) {
                     $action .= '<button type="button" id="edit"  data-request-id="' . $row->id . '" data-type="edit" class="btn-primary btn-sm rounded f-14 p-2 editRequest mr-1"> <i class="fa fa-edit "></i> </button>';
                     $action .= '<button type="button" id="reject"  data-request-id="' . $row->id . '" data-type="reject" class="btn-danger btn-sm rounded f-14 p-2 acceptButton"> <i class="fa fa-times mr-1"></i> ' . __('app.reject') . '</button>';
 
@@ -142,9 +142,10 @@ class OvertimeRequestDataTable extends BaseDataTable
                 $join->on('employee_shift_schedules.user_id', '=', 'users.id')
                     ->whereRaw('employee_shift_schedules.date = overtime_requests.date');
             })
-            ->leftJoin('holidays', 'holidays.date', '=', 'overtime_requests.date');
+            ->leftJoin('holidays', 'holidays.date', '=', 'overtime_requests.date')
+            ->where('users.status', 'active');
 
-        if (!in_array('admin', user_roles())) {
+        if (!in_array('admin', user_roles()) && !in_array('hr-officer', user_roles()) && !in_array('hr-manager', user_roles())) {
             $overtimeRequest = $overtimeRequest->where(function ($query) use ($roleId) {
                 $query->where('overtime_requests.user_id', user()->id)
                     ->orWhereHas('policy', function ($query) use ($roleId) {

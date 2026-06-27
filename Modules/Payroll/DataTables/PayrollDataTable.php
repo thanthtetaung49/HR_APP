@@ -34,7 +34,6 @@ class PayrollDataTable extends BaseDataTable
      */
     public function dataTable($query)
     {
-        // dd($query);
         return datatables()
             ->eloquent($query)
             ->addColumn('check', function ($row) {
@@ -44,34 +43,30 @@ class PayrollDataTable extends BaseDataTable
                 return Carbon::parse($row->year . '-' . $row->month . '-01')->translatedFormat('F Y');
             })
             ->editColumn('name', function ($row) {
-
                 return view('components.employee', [
                     'user' => $row
                 ]);
             })
+            ->addColumn('rank', function ($row) {
+                return __('payroll::modules.payroll.rank') . ' - ' . $row->rank_id;
+            })
             ->editColumn('net_salary', function ($row) {
                 return currency_format($row->net_salary, $row->currency_id);
-
             })
             ->editColumn('gross_salary', function ($row) {
                 return currency_format($row->gross_salary, $row->currency_id);
-
             })
             ->editColumn('total_detections', function ($row) {
                 return currency_format($row->total_deductions, $row->currency_id);
-
             })
             ->editColumn('salary_status', function ($row) {
                 if ($row->salary_status == 'generated') {
                     return '<span class="badge badge-success bg-dark">' . __('payroll::modules.payroll.generated') . '</span>';
-                }
-                elseif ($row->salary_status == 'review') {
+                } elseif ($row->salary_status == 'review') {
                     return '<span class="badge badge-success bg-blue">' . __('payroll::modules.payroll.review') . '</span>';
-                }
-                elseif ($row->salary_status == 'locked') {
+                } elseif ($row->salary_status == 'locked') {
                     return '<span class="badge badge-success bg-red">' . __('payroll::modules.payroll.locked') . '</span>';
-                }
-                elseif ($row->salary_status == 'paid') {
+                } elseif ($row->salary_status == 'paid') {
                     return '<span class="badge badge-success bg-light-green">' . __('payroll::modules.payroll.paid') . '</span>';
                 }
 
@@ -93,8 +88,7 @@ class PayrollDataTable extends BaseDataTable
             ->editColumn('paid_on', function ($row) {
                 if (!is_null($row->paid_on)) {
                     return Carbon::parse($row->paid_on)->translatedFormat($this->company->date_format);
-                }
-                else {
+                } else {
                     return '--';
                 }
             })
@@ -142,8 +136,14 @@ class PayrollDataTable extends BaseDataTable
     public function query(User $model)
     {
         $request = $this->request();
+
+        // dd($request->all());
+
         $startDate = null;
         $endDate = null;
+
+        $isAdmin = false;
+        $isHRManager = false;
 
         if (!is_null($request->month) && $request->month != 'null' && $request->month != '') {
             $month = explode(' ', $request->month);
@@ -154,6 +154,16 @@ class PayrollDataTable extends BaseDataTable
             $endDate = CarbonImmutable::parse($month[1])->setDay(25);
         }
 
+
+
+        if (in_array('admin', user_roles())) {
+            $isAdmin = true;
+        }
+
+        if (in_array('hr-manager', user_roles())) {
+            $isHRManager = true;
+        }
+
         $users = User::withoutGlobalScope(ActiveScope::class)
             ->join('role_user', 'role_user.user_id', '=', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
@@ -162,11 +172,30 @@ class PayrollDataTable extends BaseDataTable
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
             ->join('payroll_cycles', 'payroll_cycles.id', '=', 'employee_payroll_cycles.payroll_cycle_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to', 'salary_slips.total_deductions')
+            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to', 'salary_slips.total_deductions', 'designations.rank_id')
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $request->cycle)
-            ->where('salary_slips.year', $request->year);
+            ->where('salary_slips.year', $request->year)
+            ->where('users.status', 'active')
+            ->when(!in_array('admin', user_roles()) && !in_array('hr-manager', user_roles()) , function ($query) {
+                $query
+                    ->where('salary_slips.status', '<>', 'generated');
+            })
+            ->when(($isHRManager) && !$isAdmin, function ($query) {
+                $query->where(function ($q) {
+                    $q->where('users.id', user()->id)
+                        ->orWhere(function ($q) {
+                            $q->whereNotNull('designations.rank_id')
+                                ->where('designations.rank_id', '<=', 4);
+                        });
+                });
+            });
 
+
+
+        // dd(!in_array('admin', user_roles()) && !in_array('hr-manager', user_roles()));
+
+        // dd($users->get()->toArray(), $this->viewPayrollPermission);
 
         if (!is_null($startDate) && !is_null($endDate)) {
             $users = $users->whereRaw('Date(salary_slips.salary_from) = ?', [$startDate]);
@@ -184,6 +213,8 @@ class PayrollDataTable extends BaseDataTable
             });
         }
 
+        // dd($this->viewPayrollPermission, $users->count(), $users->toSql(), $users->getBindings());
+
         if ($request->searchText != '') {
             $users = $users->where(function ($query) {
                 $query->where('users.name', 'like', '%' . request('searchText') . '%')
@@ -191,11 +222,27 @@ class PayrollDataTable extends BaseDataTable
             });
         }
 
+        if ($request->rankId != '') {
+            $users = $users->where('designations.rank_id', $request->rankId);
+        }
 
         $users->groupBy('users.id');
+
+        // dd([
+        //     'roles' => user_roles(),
+        //     'isAdmin' => $isAdmin,
+        //     'isHRManager' => $isHRManager,
+        //     'isHROfficer' => $isHROfficer,
+        //     'viewPermission' => $this->viewPayrollPermission,
+        //     'request' => $request->all(),
+        //     'count' => $users->count(),
+        //     'sql' => $users->toSql(),
+        //     'bindings' => $users->getBindings(),
+        // ]);
+
         $this->currency = PayrollSetting::with('currency')->first();
 
-        return $users->orderBy('users.id', 'asc');
+        return $users;
     }
 
     /**
@@ -232,14 +279,55 @@ class PayrollDataTable extends BaseDataTable
                 'orderable' => false,
                 'searchable' => false
             ],
-            '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false],
-            __('app.name') => ['data' => 'name', 'name' => 'name', 'visible' => ($this->viewPayrollPermission == 'all'), 'title' => __('app.name')],
-            __('payroll::modules.payroll.netSalary') => ['data' => 'net_salary', 'name' => 'net_salary', 'title' => __('payroll::modules.payroll.netSalary')],
-            __('payroll::modules.payroll.earning') => ['data' => 'gross_salary', 'name' => 'gross_salary', 'title' => __('payroll::modules.payroll.earning')],
-            __('payroll::modules.payroll.totalDeductions') => ['data' => 'total_detections', 'name' => 'total_detections', 'title' => __('payroll::modules.payroll.totalDeductions')],
-            __('payroll::modules.payroll.duration') => ['data' => 'salary_from', 'name' => 'salary_from', 'title' => __('payroll::modules.payroll.duration')],
-            __('modules.payments.paidOn') => ['data' => 'paid_on', 'name' => 'paid_on', 'title' => __('modules.payments.paidOn')],
-            __('app.status') => ['data' => 'salary_status', 'name' => 'salary_status', 'title' => __('app.status')],
+
+            __('app.name') => [
+                'data' => 'name',
+                'name' => 'users.name',
+                'title' => __('app.name')
+            ],
+
+            __('payroll::modules.payroll.rank') => [
+                'data' => 'rank',
+                'name' => 'designations.rank_id',
+                'title' => __('payroll::modules.payroll.rank')
+            ],
+
+            __('payroll::modules.payroll.netSalary') => [
+                'data' => 'net_salary',
+                'name' => 'salary_slips.net_salary',
+                'title' => __('payroll::modules.payroll.netSalary')
+            ],
+
+            __('payroll::modules.payroll.earning') => [
+                'data' => 'gross_salary',
+                'name' => 'salary_slips.gross_salary',
+                'title' => __('payroll::modules.payroll.earning')
+            ],
+
+            __('payroll::modules.payroll.totalDeductions') => [
+                'data' => 'total_detections',
+                'name' => 'salary_slips.total_deductions',
+                'title' => __('payroll::modules.payroll.totalDeductions')
+            ],
+
+            __('payroll::modules.payroll.duration') => [
+                'data' => 'salary_from',
+                'name' => 'salary_slips.salary_from',
+                'title' => __('payroll::modules.payroll.duration')
+            ],
+
+            __('modules.payments.paidOn') => [
+                'data' => 'paid_on',
+                'name' => 'salary_slips.paid_on',
+                'title' => __('modules.payments.paidOn')
+            ],
+
+            __('app.status') => [
+                'data' => 'salary_status',
+                'name' => 'salary_slips.status',
+                'title' => __('app.status')
+            ],
+
             Column::computed('action', __('app.action'))
                 ->exportable(false)
                 ->printable(false)
@@ -248,5 +336,4 @@ class PayrollDataTable extends BaseDataTable
                 ->addClass('text-right pr-20')
         ];
     }
-
 }

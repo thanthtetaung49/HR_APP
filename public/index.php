@@ -3,6 +3,8 @@
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 
+$starttime = microtime(true);
+
 if(!file_exists('../.env')){
     $GLOBALS["error_type"] = "env-missing";
     include('error_install.php');
@@ -65,3 +67,10 @@ $response = tap($kernel->handle(
 ))->send();
 
 $kernel->terminate($request, $response);
+
+register_shutdown_function(function () use ($starttime) {
+    $endtime = microtime(true);
+    $duration = $endtime - $starttime;
+    logger()->info('Page Load: '.round((microtime(true) - $starttime) * 1000).' ms');
+    error_log("Request duration: " . $duration . " seconds");
+});

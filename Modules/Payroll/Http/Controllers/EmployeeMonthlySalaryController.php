@@ -62,6 +62,17 @@ class EmployeeMonthlySalaryController extends AccountBaseController
             $this->locations = Location::all();
         }
 
+        $this->isAdmin = false;
+        $this->isHRManager = false;
+
+        if (in_array('admin', user_roles())) {
+            $this->isAdmin = true;
+        }
+
+        if (in_array('hr-manager', user_roles())) {
+            $this->isHRManager = true;
+        }
+
         return $dataTable->render('payroll::employee-salary.index', $this->data);
     }
 
@@ -340,14 +351,6 @@ class EmployeeMonthlySalaryController extends AccountBaseController
         $salary->date = Carbon::parse($request->date)->timezone($this->company->timezone)->toDateString();
 
         $salary->save();
-
-        // $salary = EmployeeMonthlySalary::findOrFail($id);
-        // $salary->user_id = $request->user_id;
-        // $salary->annual_salary = $request->annual_salary;
-        // $salary->amount = $request->annual_salary / 12;
-        // $salary->type = $request->type;
-        // $salary->date = now()->timezone($this->company->timezone)->toDateString();
-        // $salary->save();
 
         return Reply::success(__('messages.recordSaved'));
     }
