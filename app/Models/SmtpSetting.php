@@ -50,7 +50,7 @@ class SmtpSetting extends BaseModel
     protected $appends = ['set_smtp_message'];
 
     protected $casts = [
-        'mail_password' => 'encrypted'
+        // 'mail_password' => 'encrypted'
     ];
 
     public function verifySmtp()
@@ -68,12 +68,18 @@ class SmtpSetting extends BaseModel
             $transport = new EsmtpTransport($this->mail_host, $this->mail_port, $tls);
             $transport->setUsername($this->mail_username);
             $transport->setPassword($this->mail_password);
+
+            // $transport = new EsmtpTransport('sandbox.smtp.mailtrap.io', 2525,  false);
+            // $transport->setUsername('f097ff409e4703');
+            // $transport->setPassword('5417c8aa76ca4f');
             $transport->start();
 
             if ($this->verified == 0) {
                 $this->verified = 1;
                 $this->save();
             }
+
+            // dd('test');
 
             return [
                 'success' => true,

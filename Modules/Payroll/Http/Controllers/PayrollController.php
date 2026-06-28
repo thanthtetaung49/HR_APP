@@ -904,10 +904,10 @@ class PayrollController extends AccountBaseController
                 $salary->save();
             }
 
-            if ($request->status != 'generated') {
-                $notifyUser = User::find($salary->user_id);
-                $notifyUser->notify(new SalaryStatusEmail($salary));
-            }
+            // if ($request->status != 'generated') {
+            //     $notifyUser = User::find($salary->user_id);
+            //     $notifyUser->notify(new SalaryStatusEmail($salary));
+            // }
         }
 
         return Reply::dataOnly(['status' => 'success']);
