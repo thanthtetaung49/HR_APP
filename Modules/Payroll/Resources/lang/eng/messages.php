@@ -32,4 +32,11 @@ return [
     'confirmRemovePolicy' => 'Confirm Remove',
     'policyRemoveConfirm' => 'This Employees overtime policy will removed!',
     'recordUpdated' => 'Record updated successfully',
+    'preApproveOvertime' => 'Pre-approve Overtime',
+    'preApproved' => 'Pre-Approved',
+    'confirmPreApproveOvertime' => 'Do you want to pre-approve this overtime request?',
+    'overtimePreApproved' => 'The overtime request has been pre-approved.',
+    'overtimeAlreadyPreApproved' => 'This overtime request has already been pre-approved.',
+    'onlyPendingOvertimePreApprove' => 'Only a pending overtime request can be pre-approved.',
+    'onlyPendingOvertimeAction' => 'Only a pending overtime request can be accepted or rejected.',
 ];

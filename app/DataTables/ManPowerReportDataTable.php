@@ -312,7 +312,9 @@ class ManPowerReportDataTable extends BaseDataTable
                 'man_power_reports.man_power_basic_salary',
                 'man_power_reports.quarter',
                 'man_power_reports.position_id',
-            ]);
+            ])
+            ->orderBy('man_power_reports.budget_year', 'desc')
+            ->orderBy('man_power_reports.created_at', 'desc');
 
         if (request()->teamId != 'all' && request()->teamId != null) {
             $model->where('man_power_reports.team_id', request()->teamId);

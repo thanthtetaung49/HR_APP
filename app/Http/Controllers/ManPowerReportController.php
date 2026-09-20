@@ -37,6 +37,7 @@ class ManPowerReportController extends AccountBaseController
         $this->reports = ManPowerReport::get();
         $this->data['departments'] = Team::get();
         $this->data['locations'] = Location::get();
+
         $this->data['budgetYears'] = ManPowerReport::select('budget_year')
             ->distinct()
             ->orderBy('budget_year', 'desc')
@@ -100,6 +101,7 @@ class ManPowerReportController extends AccountBaseController
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $man_power_setup = $request->man_power_setup;
         $man_power_basic_salary = $request->man_power_basic_salary;
         $team_id = $request->team_id;

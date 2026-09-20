@@ -268,6 +268,8 @@ class EmployeesDataTable extends BaseDataTable
     {
         $request = $this->request();
 
+        // dd($request->all());
+
         $userRoles = '';
 
         if ($request->role != 'all' && $request->role != '') {
@@ -325,25 +327,30 @@ class EmployeesDataTable extends BaseDataTable
                 $query->where('name', 'employee');
             });
 
-        // dd($users->get()->toArray());
+        // dd($users->where('users.id', "510")->get()->toArray());
+
+        $expireDate = now()->toDateString();
 
         if ($request->status != 'all' && $request->status != '' && $request->EmployeeType == null) {
             if ($request->status == 'active') {
-                // Check if the inactive_date is today or in the past
-                $expireDate = now()->toDateString();
-                $users = $users->where('users.status', 'active');
 
-                $users = $users->where(function ($query) use ($expireDate) {
-                    $query->orWhereNull('users.inactive_date') // Consider users with null inactive_date
-                        ->orWhere('users.inactive_date', '>', $expireDate); // Or users with inactive_date in the future
-                });
+                $users = $users->where('users.status', 'active')
+                    ->where(function ($query) use ($expireDate) {
+                        $query->orWhereNull('users.inactive_date') // Consider users with null inactive_date
+                            ->orWhere('users.inactive_date', '>', $expireDate); // Or users with inactive_date in the future
+                    });
+
+
             } elseif ($request->status == 'deactive') {
-                // Check if the inactive_date is in the past
-                $expireDate = now()->toDateString();
-                $users = $users->where('users.status', 'deactive')
-                    ->orWhere('users.inactive_date', '<=', $expireDate);
+                // Check if the inactive_date is in the pa
+                $users = $users->where(function ($query) use ($expireDate) {
+                    $query->where('users.status', 'deactive')
+                        ->orWhereDate('users.inactive_date', '<=', $expireDate);
+                });
             }
         }
+
+        // dd($users->get()->toArray());
 
         if ($request->EmployeeType === 'ex_employee') {
 
@@ -368,6 +375,8 @@ class EmployeesDataTable extends BaseDataTable
         if ($request->employee != 'all' && $request->employee != '') {
             $users = $users->where('users.id', $request->employee);
         }
+
+        // dd($request->employee, $users->get()->toArray());
 
         if ($request->designation != 'all' && $request->designation != '') {
             $users = $users->where('employee_details.designation_id', $request->designation);

@@ -106,6 +106,7 @@ return array(
         'declineLetter' => 'Offer letter has been declined by',
         'skillSet' => 'Skill Set',
         'noEndDate' => 'No End Date',
+        'vacancy' => 'Vacancy Count',
         'subCategory' => 'Sub Category',
         'remoteJob' => 'Is this a remote Job?',
         'discloseSalary' => 'Disclose salary on career site',
@@ -117,6 +118,7 @@ return array(
     ),
     'jobApplication' => array(
         'fullName' => 'full name',
+        'fatherName' => 'Father Name',
         'status' => 'Status',
         'scheduleInterview' => 'Schedule Interview',
         'archiveApplication' => 'Archive Application',

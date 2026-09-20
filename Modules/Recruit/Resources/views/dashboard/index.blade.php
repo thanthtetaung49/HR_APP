@@ -57,6 +57,19 @@
     <div class="content-wrapper">
         <div class="row row-cols-lg-4 my-3">
 
+            @foreach([
+                ['Active Vacancies', $activeVacancies],
+                ['CV Form', $cvForm],
+                ['CV Screening', $cvScreening],
+                ['Interviewed', $interviewed],
+                ['Offer Accepted', $offerAccepted],
+            ] as [$metricLabel, $metricValue])
+            {{-- @dd($metricLabel, $metricValue) --}}
+                <div class="col mb-4">
+                    <x-cards.widget :title="$metricLabel" :value="$metricValue" icon="ticket-alt" />
+                </div>
+            @endforeach
+
             <div class="col mb-4">
                 <a href="{{ route('jobs.index') }}" data-status="closed" class="widget-filter-status">
                     <x-cards.widget :title="__('recruit::app.dashboard.totalOpenings')"

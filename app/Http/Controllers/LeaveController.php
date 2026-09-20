@@ -417,6 +417,8 @@ class LeaveController extends AccountBaseController
         $this->pageTitle = $this->leave->user->name;
         $this->reportingPermission = LeaveSetting::value('manager_permission');
 
+        // dd($this->reportingPermission);
+
         if (request()->ajax()) {
             $html = view('leaves.ajax.show', $this->data)->render();
 

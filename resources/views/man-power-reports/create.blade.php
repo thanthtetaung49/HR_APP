@@ -31,12 +31,9 @@
 
                             <x-forms.input-group>
                                 <select class="form-control select-picker mt" name="quarter" id="quarter"
-                                    data-live-search="true">
+                                    @readonly(true) data-live-search="true">
                                     <option value="">--</option>
-                                    <option value="1" selected>Q1 (Jan to Dec)</option>
-                                    <option value="2">Q2 (Apr to Dec)</option>
-                                    <option value="3">Q3 (Jul to Dec)</option>
-                                    <option value="4">Q4 (Oct to Dec)</option>
+                                    <option value="1" selected>(Apr to Mar)</option>
                                 </select>
                             </x-forms.input-group>
 

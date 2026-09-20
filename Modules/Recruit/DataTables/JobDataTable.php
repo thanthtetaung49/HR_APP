@@ -234,7 +234,7 @@ class JobDataTable extends BaseDataTable
             $jobs = $jobs->where('recruit_jobs.department_id', $this->request()->department_id);
         }
 
-        return $jobs;
+        return $jobs->orderBy('recruit_jobs.id', 'desc');
     }
 
     /**

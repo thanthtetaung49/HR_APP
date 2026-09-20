@@ -73,6 +73,10 @@ class PayrollController extends AccountBaseController
         $this->year = $now->format('Y');
         $this->month = $now->format('m');
 
+        $startDate = Carbon::now()->subMonth()->setDay(26);
+
+        // dd($startDate);
+
         if (in_array('admin', user_roles())) {
             $this->isAdmin = true;
         }
@@ -94,13 +98,25 @@ class PayrollController extends AccountBaseController
             ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
             ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle->id)
-            ->select('users.*', 'employee_details.rank')
+            ->select('users.*', 'employee_details.rank', 'employee_details.last_date')
             ->where('users.status', 'active')
+            // ->where('users.id', 459)
+            // ->where(function ($query) use ($startDate) {
+            //     $query
+            //         ->whereNull('employee_details.last_date')
+            //         ->orWhereDate(
+            //             'employee_details.last_date',
+            //             '>=',
+            //             $startDate->format('Y-m-d')
+            //         );
+            // })
             ->when(($this->isHRManager || $this->isHROfficer) && !$this->isAdmin, function ($query) {
                 $query->whereNotNull('designations.rank_id')
                     ->where('designations.rank_id', '<=', 4);
             })
             ->get();
+
+        // dd($this->employees);
 
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
 
@@ -266,6 +282,9 @@ class PayrollController extends AccountBaseController
     public function update(Request $request, $id)
     {
         $salarySlip = SalarySlip::findOrFail($id);
+        if (in_array($salarySlip->status, ['paid', 'locked'], true)) {
+            return Reply::error('Paid or locked payroll records are read-only.');
+        }
         $userAllowance = Allowance::findOrFail($request->allowanceId);
         $userDetection = Detection::where('user_id', $userAllowance->user_id)->first();
 
@@ -341,6 +360,10 @@ class PayrollController extends AccountBaseController
     {
         $this->salarySlip = SalarySlip::with('user', 'user.employeeDetail', 'salary_group', 'salary_payment_method')->findOrFail($id);
 
+        if (in_array($this->salarySlip->status, ['paid', 'locked'], true)) {
+            return Reply::error('Paid or locked payroll records cannot be deleted.');
+        }
+
         $editPermission = user()->permission('delete_payroll');
 
         abort_403(!($editPermission == 'all'
@@ -375,6 +398,7 @@ class PayrollController extends AccountBaseController
             $users = User::with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
                 ->join('employee_monthly_salaries', 'employee_monthly_salaries.user_id', '=', 'users.id')
+                ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle)
                 ->where('employee_monthly_salaries.allow_generate_payroll', 'yes')
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id');
@@ -385,7 +409,7 @@ class PayrollController extends AccountBaseController
                 $users = $users->whereIn('users.id', $request->employee_id);
             }
 
-            $users = $users->get();
+            // $users = $users->get();
         } else if ($request->rank_id) {
             $users = User::with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
@@ -394,7 +418,7 @@ class PayrollController extends AccountBaseController
                 ->where('employee_monthly_salaries.allow_generate_payroll', 'yes')
                 ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
-                ->where('employee_details.rank', $request->rank_id)->get();
+                ->where('employee_details.rank', $request->rank_id);
         } else {
             $users = User::with('employeeDetail')
                 ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
@@ -411,9 +435,26 @@ class PayrollController extends AccountBaseController
                     $query->whereDate('employee_details.last_date', '>', $startDate->format('Y-m-d'))
                         ->orWhereNull('employee_details.last_date');
                 })
-                ->groupBy('users.id')
-                ->get();
+                ->groupBy('users.id');
         }
+
+        $users = $users->where(function ($query) use ($startDate) {
+            $query
+                ->whereNull('employee_details.last_date')
+                ->orWhereDate(
+                    'employee_details.last_date',
+                    '>=',
+                    $startDate->format('Y-m-d')
+                );
+        })->get();
+
+        $protectedUserIds = SalarySlip::where('payroll_cycle_id', $payrollCycle)
+            ->whereDate('salary_from', $startDate->toDateString())
+            ->whereDate('salary_to', $endDate->toDateString())
+            ->whereIn('status', ['paid', 'locked'])
+            ->pluck('user_id')->all();
+
+        $users = $users->reject(fn($user) => in_array($user->id, $protectedUserIds, true));
 
         foreach ($users as $user) {
             $userId = $user->id;
@@ -520,7 +561,10 @@ class PayrollController extends AccountBaseController
 
             // dd($gazattedPresentCount);
 
+            // dd($endDate, $joiningDate);
+
             if ($endDate->greaterThan($joiningDate)) {
+
                 $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
 
                 $allowance = Allowance::where('user_id', $userId)->first();
@@ -647,7 +691,12 @@ class PayrollController extends AccountBaseController
                     }
                 }
 
-                $gazattedAllowance = $gazattedPresentCount * 3000;
+                $payrollSetting = PayrollSetting::first();
+
+                $gazattedAllowance = $gazattedPresentCount * (int) $payrollSetting->gazatted_allowance_rate;
+
+                // dd($gazattedAllowance, $gazattedPresentCount, (int) $payrollSetting->gazatted_allowance_rate);
+
                 $eveningShiftAllowance = $eveningShiftPresentCount * 500;
 
                 $totalBetweenLateCount = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3));
@@ -904,10 +953,10 @@ class PayrollController extends AccountBaseController
                 $salary->save();
             }
 
-            // if ($request->status != 'generated') {
-            //     $notifyUser = User::find($salary->user_id);
-            //     $notifyUser->notify(new SalaryStatusEmail($salary));
-            // }
+            if ($request->status != 'generated') {
+                $notifyUser = User::find($salary->user_id);
+                $notifyUser->notify(new SalaryStatusEmail($salary));
+            }
         }
 
         return Reply::dataOnly(['status' => 'success']);
@@ -1534,10 +1583,15 @@ class PayrollController extends AccountBaseController
         return Reply::dataOnly(['status' => 'success', 'data' => $options]);
     }
 
-    public function byRank(Request $request)
+    public function getEmployee(Request $request)
     {
         $isAdmin = false;
         $isHRManager = false;
+
+        $payrollCycle = PayrollCycle::where('cycle', 'monthly')->first();
+
+        $payrollCycle = $request->cycleId;
+        $rankId = $request->rankId;
 
         if (in_array('admin', user_roles())) {
             $isAdmin = true;
@@ -1556,8 +1610,6 @@ class PayrollController extends AccountBaseController
                     ->where('designations.rank_id', '<=', 4);
             });
 
-        $payrollCycle = $request->cycleId;
-        $rankId = $request->rankId;
 
         if ($rankId != "all" && $rankId != '') {
             $designations = Designation::where('rank_id', $request->rankId)->get();
@@ -1572,15 +1624,64 @@ class PayrollController extends AccountBaseController
                 ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle);
         }
 
-        $users = $users->select('users.*')->get();
+        $users = $users->select('users.*', 'employee_details.rank', 'employee_details.last_date')->get();
 
         $options = '';
 
         foreach ($users as $item) {
-            $options .= '<option  data-content="<div class=\'d-inline-block mr-1\'><img class=\'taskEmployeeImg rounded-circle\' src=' . $item->image_url . ' ></div>  ' . $item->name . '" value="' . $item->id . '"> ' . $item->name . ' </option>';
+            $employeeId = (int) $item->id;
+            $employeeName = e($item->name);
+            $imageUrl = e($item->image_url);
+
+            $lastDateBadge = '';
+            $plainOptionText = $employeeName;
+
+            if (!empty($item->last_date)) {
+                $formattedLastDate = e(
+                    \Carbon\Carbon::parse(
+                        $item->last_date
+                    )->format('d M Y')
+                );
+
+                $lastDateBadge =
+                    "<span class='badge badge-warning ml-2'>
+                Last date: {$formattedLastDate}
+            </span>";
+
+                $plainOptionText .=
+                    " — Last date: {$formattedLastDate}";
+            }
+
+            $dataContent =
+                "<div class='d-inline-flex align-items-center'>
+            <div class='d-inline-block mr-2'>
+                <img
+                    class='taskEmployeeImg rounded-circle'
+                    src='{$imageUrl}'
+                    alt=''
+                >
+            </div>
+
+            <span>{$employeeName}</span>
+
+            {$lastDateBadge}
+        </div>";
+
+            $options .=
+                '<option
+            value="' . $employeeId . '"
+            data-content="' . trim($dataContent) . '"
+        >'
+                . $plainOptionText .
+                '</option>';
         }
 
-        return Reply::dataOnly(['status' => 'success', 'data' => $options]);
+        return Reply::successWithData(
+            'Employee data retrieved successfully.',
+            [
+                'data' => $options,
+            ]
+        );
     }
 
     public function employeeData($startDate = null, $endDate = null, $userId = null)

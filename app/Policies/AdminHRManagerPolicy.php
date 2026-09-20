@@ -48,6 +48,27 @@ class AdminHRManagerPolicy
         return $permission;
     }
 
+    public function lateReportPermission (User $user): bool
+    {
+        $roles = $user->roles;
+
+        $isAdmin = $roles->contains(function ($role) {
+            return $role->name === 'admin';
+        });
+
+        $isHRmanager = $roles->contains(function ($role) {
+            return $role->name === 'hr-manager';
+        });
+
+        $permission = false;
+
+        if ($isAdmin || $isHRmanager) {
+            $permission = true;
+        }
+
+        return $permission;
+    }
+
 
     public function generatePayroll(User $user): bool
     {

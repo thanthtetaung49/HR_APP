@@ -98,9 +98,9 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             ->join('leave_types', 'leave_types.id','leaves.leave_type_id')
             ->join('users', 'leaves.user_id', 'users.id')
             ->join('employee_details', 'employee_details.user_id', 'users.id')
-            ->selectRaw('leaves.*, leave_types.color, leave_types.type_name, ( select count("lvs.id") from leaves as lvs where lvs.unique_id = leaves.unique_id and lvs.duration = \'multiple\') as count_multiple_leaves',
-            )
-            ->groupByRaw('ifnull(leaves.unique_id, leaves.id)');
+            ->selectRaw('leaves.*, leave_types.color, leave_types.type_name')
+            ->orderBy('leaves.leave_date')
+            ->orderBy('leaves.user_id');
 
         if($this->exportAll == false){
             if (!is_null($this->startdate)) {
@@ -154,45 +154,10 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             $leavedata[$employee_index]['employee_name'] = $leavesList->user->id;
             $leavedata[$employee_index]['id'] = $leavesList->user->name;
 
-            if($leavesList->duration == 'multiple'){
-
-                $leaves = Leave::where('unique_id', $leavesList->unique_id)->get();
-
-                $leaveDatesComments = [];
-                $leaveStatusComments = [];
-                foreach ($leaves as $leave) {
-                    $leaveDatesComments[] = $leave->leave_date->format('d-m-Y') .' ('.Carbon::parse($leave->leave_date)->translatedFormat('l').')';
-                    $leaveStatusComments[] = $leave->leave_date->format('d-m-Y') . ' : ' . ucfirst($leave->status);
-                }
-                $leaveDatesString = implode(', ', $leaveDatesComments);
-                $leaveStatusString = implode(', ', $leaveStatusComments);
-
-                $leavedata[$employee_index]['leave_date'] = [
-                    'data' => $leavesList->leave_date->format('d-m-Y') .' ('.Carbon::parse($leave->leave_date)->translatedFormat('l').')',
-                    'comments' => [
-                        $leaveDatesString
-                    ]
-                ];
-
-                if($leavesList->count_multiple_leaves != 0){
-                    $data = ' ' . $leavesList->count_multiple_leaves .' '.__('app.leave');
-                    $leavedata[$employee_index]['duration'] = ucfirst($leavesList->duration) . $data;
-                }
-                $leavedata[$employee_index]['status'] = [
-                    'data' => 'View Status',
-                    'comments' => [
-                        'status' => $leaveStatusString,
-                    ]
-
-                ];
-                $leavedata[$employee_index]['leave_type'] = $leavesList->type->type_name;
-            }else{
-
-                $leavedata[$employee_index]['leave_date'] = $leavesList->leave_date->format('d-m-Y') .' ('.Carbon::parse($leavesList->leave_date)->translatedFormat('l').')';
-                $leavedata[$employee_index]['duration'] = ucfirst($leavesList->duration);
-                $leavedata[$employee_index]['leave_status'] = ucfirst($leavesList->status);
-                $leavedata[$employee_index]['leave_type'] = $leavesList->type->type_name;
-            }
+            $leavedata[$employee_index]['leave_date'] = $leavesList->leave_date->format('d-m-Y') .' ('.Carbon::parse($leavesList->leave_date)->translatedFormat('l').')';
+            $leavedata[$employee_index]['duration'] = ucfirst($leavesList->duration);
+            $leavedata[$employee_index]['leave_status'] = ucfirst($leavesList->status);
+            $leavedata[$employee_index]['leave_type'] = $leavesList->type->type_name;
 
             $leavedata[$employee_index]['paid'] = $leavesList->type->paid == 1 ? __('app.paid') : __('app.unpaid');
 

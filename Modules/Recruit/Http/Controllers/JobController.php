@@ -7,6 +7,10 @@ use App\Http\Controllers\AccountBaseController;
 use App\Models\CompanyAddress;
 use App\Models\Currency;
 use App\Models\EmployeeDetails;
+use App\Models\ManPowerReport;
+use App\Models\Location;
+use App\Models\Designation;
+use App\Models\ManagementRank;
 use App\Models\Team;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -34,9 +38,126 @@ use Modules\Recruit\Entities\RecruitSetting;
 use Modules\Recruit\Entities\RecruitSkill;
 use Modules\Recruit\Entities\RecruitWorkExperience;
 use Modules\Recruit\Http\Requests\StoreJobRequest;
+use Modules\Recruit\Services\VacancyCapacityService;
 
 class JobController extends AccountBaseController
 {
+
+    public function departmentsByLocation(Location $location)
+    {
+        return response()->json(['data' => Team::where('location_id', $location->id)->orderBy('team_name')->get(['id', 'team_name'])]);
+    }
+
+    public function designationsByDepartment(Team $department)
+    {
+        $ids = array_values(array_filter(json_decode($department->designation_ids ?: '[]', true) ?: []));
+
+        return response()->json(['data' => Designation::whereIn('id', $ids)->orderBy('name')->get(['id', 'name', 'rank_id'])]);
+    }
+
+    // public function rankByDesignation(Designation $designation)
+    // {
+    //     return response()->json(['rank' => $designation->rank_id]);
+    // }
+
+    public function rankByDesignation(Designation $designation)
+    {
+        $rankId = (string) $designation->rank_id;
+
+        $managementRank = ManagementRank::all()
+            ->first(function ($item) use ($rankId) {
+
+                $rankIds = is_array($item->rank)
+                    ? $item->rank
+                    : json_decode($item->rank ?: '[]', true);
+
+                if (!is_array($rankIds)) {
+                    return false;
+                }
+
+                return in_array(
+                    $rankId,
+                    array_map('strval', $rankIds),
+                    true
+                );
+            });
+
+        // dd($designation->rank_id, $managementRank);
+
+        return response()->json([
+            'rank' => $designation->rank_id,
+            'management_rank' => $managementRank ? [
+                'id' => $managementRank->id,
+                'name' => $managementRank->name,
+            ] : null,
+        ]);
+    }
+
+    public function availableVancancy(Request $request)
+    {
+        $currentQuarter = (int) ceil(now()->month / 3);
+
+        $manPowerReport = ManPowerReport::query()
+            ->where('status', 'approved')
+            ->where('budget_year', now()->year)
+            // ->where('quarter', 1)
+            ->where('team_id', $request->department_id)
+            ->where('position_id', $request->designation_id)
+            ->whereHas('teams', function ($query) use ($request) {
+                $query->where(
+                    'location_id',
+                    $request->location_id
+                );
+            })
+            ->first();
+
+        // dd($manPowerReport, $request->department_id, $request->designation_id, $request->location_id);
+
+        if (!$manPowerReport) {
+            return response()->json([
+                'status' => 'error',
+                'message' =>
+                'No approved manpower report was found.',
+                'vacancy' => 0,
+            ], 422);
+        }
+
+        $actualEmployees = EmployeeDetails::query()
+            ->join(
+                'users',
+                'employee_details.user_id',
+                '=',
+                'users.id'
+            )
+            ->where(
+                'employee_details.department_id',
+                $manPowerReport->team_id
+            )
+            ->where(
+                'employee_details.designation_id',
+                $manPowerReport->position_id
+            )
+            ->where('users.status', 'active')
+            ->whereNull('employee_details.last_date')
+            ->distinct()
+            ->count('employee_details.id');
+
+        $vacancy = max(
+            0,
+            (int) $manPowerReport->man_power_setup
+                - $actualEmployees
+        );
+
+        // dd($vacancy, $manPowerReport->man_power_setup, $actualEmployees);
+
+        return response()->json([
+            'status' => 'success',
+            'vacancy' => $vacancy,
+            'approved_manpower' =>
+            (int) $manPowerReport->man_power_setup,
+            'actual_employees' => $actualEmployees,
+        ]);
+    }
 
     public function __construct()
     {
@@ -55,6 +176,8 @@ class JobController extends AccountBaseController
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
 
         $this->departments = Team::all();
+        $this->hrLocations = Location::orderBy('location_name')->get();
+        $this->designations = Designation::orderBy('name')->get();
         $this->employees = Recruiter::with('user:id,name,image')
             ->where('status', '=', 'enabled')
             ->get();
@@ -64,6 +187,7 @@ class JobController extends AccountBaseController
 
     public function create()
     {
+
         $this->pageTitle = __('recruit::modules.job.addJob');
 
         $addPermission = user()->permission('add_job');
@@ -73,7 +197,12 @@ class JobController extends AccountBaseController
         $this->jobSkills = RecruitJobSkill::where('recruit_job_id', request()['duplicate_job'])->get()->pluck('recruit_skill_id')->toArray();
         $this->jobLocation = RecruitJobAddress::where('recruit_job_id', request()['duplicate_job'])->get()->pluck('company_address_id')->toArray();
 
+        $this->hrLocations = Location::orderBy('location_name')->get();
+        // dd($this->hrLocations);
         $this->departments = Team::all();
+        $this->designations = Designation::orderBy('name')->get();
+        $this->managementRanks = ManagementRank::all();
+
         $this->workExperience = RecruitWorkExperience::all();
         $this->jobTypes = RecruitJobType::all();
         $this->skills = RecruitSkill::all();
@@ -85,6 +214,8 @@ class JobController extends AccountBaseController
         $this->currencies = Currency::all();
         $this->Subcategories = RecruitJobSubCategory::all();
         $this->questions = RecruitCustomQuestion::where('status', 'enable')->where('category', 'job_application')->get();
+        $this->manPowerReports = ManPowerReport::with(['teams', 'designation'])
+            ->where('status', 'approved')->where('budget_year', now()->year)->get();
 
         if (request()->ajax()) {
             $html = view('recruit::jobs.ajax.create', $this->data)->render();
@@ -94,18 +225,37 @@ class JobController extends AccountBaseController
 
         $this->view = 'recruit::jobs.ajax.create';
 
+
         return view('recruit::jobs.create', $this->data);
     }
 
     public function show($id)
     {
-        $this->job = RecruitJob::with('team', 'files', 'employee', 'jobType', 'category', 'subcategory')->withTrashed()->find($id);
+        $this->job = RecruitJob::with([
+            'team',
+            'files',
+            'employee',
+            'jobType',
+            'category',
+            'subcategory',
+            'hrLocation',
+            'designation',
+            'workExperience',
+            'currency',
+            'address',
+            'stages',
+            'question',
+            'skills.skill',
+            'manPowerReport',
+        ])
+            ->withTrashed()
+            ->findOrFail($id);
+
         $this->pageTitle = ucwords($this->job->title);
 
         if ($this->job->currency_id != null) {
             $this->currencySymbol = Currency::where('id', '=', $this->job->currency_id)->first();
-        }
-        else {
+        } else {
             $this->currencySymbol = null;
         }
 
@@ -122,20 +272,20 @@ class JobController extends AccountBaseController
         $this->activeTab = $tab ?: 'profile';
 
         switch ($tab) {
-        case 'interview':
-            return $this->interview($id);
-        case 'candidate':
-            return $this->candidate($id);
-        case 'offerletter':
-            return $this->jobOffer($id);
-        case 'history':
-            return $this->history($id);
-        default:
-            $this->view = 'recruit::jobs.ajax.profile';
-            break;
+            case 'interview':
+                return $this->interview($id);
+            case 'candidate':
+                return $this->candidate($id);
+            case 'offerletter':
+                return $this->jobOffer($id);
+            case 'history':
+                return $this->history($id);
+            default:
+                $this->view = 'recruit::jobs.ajax.profile';
+                break;
         }
 
-        $this->openingsCount = $this->job->total_positions;
+        $this->openingsCount = $this->job->vacancy_count;
 
         $this->inProgressCount = RecruitJobApplication::where('recruit_job_id', $this->job->id)->whereHas('job', function ($q) {
             $q->where('status', '=', 'open')
@@ -144,7 +294,8 @@ class JobController extends AccountBaseController
                         return $query
                             ->where('recruit_application_status_id', '!=', 4)
                             ->where('recruit_application_status_id', '!=', 5);
-                    });
+                    }
+                );
         })->count();
 
         $this->scheduledCount = RecruitJobApplication::where('recruit_job_id', $this->job->id)
@@ -152,6 +303,8 @@ class JobController extends AccountBaseController
             ->count();
         $this->offerReleasedCount = RecruitJobOfferLetter::where('recruit_job_id', $this->job->id)->count();
         $this->applicationStatus = $this->applicationChartData($this->job);
+
+        // dd($this->view);
 
         if (request()->ajax()) {
             $html = view($this->view, $this->data)->render();
@@ -249,14 +402,24 @@ class JobController extends AccountBaseController
         abort_403(!in_array($addPermission, ['all', 'added']));
 
         $endDate = !$request->has('without_end_date') ? Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d') : null;
+        // $manPowerReport = ManPowerReport::findOrFail($request->man_power_report_id);
+        // app(VacancyCapacityService::class)->validate($manPowerReport, (int) $request->total_positions);
 
         $job = new RecruitJob;
         $job->title = $request->title;
         $job->slug = Str::slug($request->title, '-');
-        $job->job_description = $request->job_description == '<p><br></p>' ? null : $request->job_description;
-        $job->total_positions = $request->total_positions;
-        $job->remaining_openings = $request->total_positions;
+        $job->job_description = null;
+        $job->total_positions = $request->vacancy_count;
+        $job->remaining_openings = $request->vacancy_count;
+        // $job->man_power_report_id = $manPowerReport->id;
+        $job->vacancy_count = $request->vacancy_count;
         $job->department_id = $request->department_id;
+        $job->designation_id = $request->designation_id;
+        $job->hr_location_id = $request->hr_location_id;
+
+        $job->rank_level = $request->rank_level;
+        $job->management_rank_level = $request->management_rank_id;
+
         $job->recruit_job_type_id = $request->job_type_id;
         $job->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
         $job->end_date = $endDate;
@@ -266,16 +429,16 @@ class JobController extends AccountBaseController
         $job->currency_id = $request->currency_id;
         $job->meta_details = [
             'title' => $request->meta_title ?: $request->title,
-            'description' => $request->meta_description ?: strip_tags(Str::substr(html_entity_decode($request->job_description), 0, 150)),
+            'description' => $request->meta_description ?: '',
         ];
 
         $job->recruiter_id = $request->recruiter;
         $job->recruit_work_experience_id = $request->work_experience;
-        $job->pay_type = $request->paytype;
-        $job->start_amount = $request->start_amount;
-        $job->end_amount = $request->end_amount;
-        $job->pay_according = $request->pay_according;
-        $job->disclose_salary = $request->disclose_salary ?: 'no';
+        $job->pay_type = 'Exact Amount';
+        $job->start_amount = 0;
+        $job->end_amount = null;
+        $job->pay_according = 'month';
+        $job->disclose_salary = 'yes';
         $job->remote_job = $request->remote_job ?: 'no';
         $job->is_photo_require = $request->is_photo_require ?: '0';
         $job->is_resume_require = $request->is_resume_require ?: '0';
@@ -347,11 +510,15 @@ class JobController extends AccountBaseController
         $this->skills = RecruitSkill::all();
         $this->jobTypes = RecruitJobType::all();
         $this->departments = Team::all();
+        $this->hrLocations = Location::orderBy('location_name')->get();
+        $this->designations = Designation::orderBy('name')->get();
         $this->stages = RecruitInterviewStage::all();
         $this->jobInterviews = JobInterviewStage::where('recruit_job_id', $id)->get()->pluck('recruit_interview_stage_id')->toArray();
         $this->categories = RecruitJobCategory::all();
         $this->currencies = Currency::all();
         $this->questions = RecruitCustomQuestion::where('status', 'enable')->where('category', 'job_application')->get();
+        $this->manPowerReports = ManPowerReport::with(['teams', 'designation'])
+            ->where('status', 'approved')->where('budget_year', now()->year)->get();
         $this->allQuestions = RecruitJobQuestion::where('recruit_job_id', $id)->get();
         $this->selectedQuestions = $this->allQuestions->pluck('recruit_custom_question_id')->toArray();
         $this->subcategories = !is_null($this->job->recruit_job_sub_category_id) ? RecruitJobSubCategory::where('id', $this->job->recruit_job_sub_category_id)->get() : [];
@@ -378,19 +545,30 @@ class JobController extends AccountBaseController
             || $job->added_by == user()->id));
 
         $endDate = !$request->has('without_end_date') ? Carbon::createFromFormat($this->company->date_format, $request->end_date)->format('Y-m-d') : null;
+        // $manPowerReport = ManPowerReport::findOrFail($request->man_power_report_id);
+        // app(VacancyCapacityService::class)->validate($manPowerReport, (int) $request->total_positions, $job);
 
         $job->title = $request->title;
         $job->slug = Str::slug($request->title, '-');
-        $job->job_description = $request->job_description == '<p><br></p>' ? null : $request->job_description;
-        $job->total_positions = $request->total_positions;
-        $job->remaining_openings = $request->total_positions;
+        $job->job_description = null;
+        $job->total_positions = $request->vacancy_count;
+        $job->remaining_openings = $request->vacancy_count;
+        // $job->man_power_report_id = $manPowerReport->id;
+
+        $job->vacancy_count = $request->vacancy_count;
         $job->department_id = $request->department_id;
+        $job->designation_id = $request->designation_id;
+        $job->hr_location_id = $request->hr_location_id;
+
+        $job->rank_level = $request->rank_level;
+        $job->management_rank_level = $request->management_rank_id;
+
         $job->start_date = Carbon::createFromFormat($this->company->date_format, $request->start_date)->format('Y-m-d');
         $job->end_date = $endDate;
         $job->status = $request->status;
         $job->meta_details = [
             'title' => $request->meta_title ?: $job->title,
-            'description' => $request->meta_description ?: strip_tags(Str::substr(html_entity_decode($job->job_description), 0, 150)),
+            'description' => $request->meta_description ?: '',
         ];
         $job->recruiter_id = $request->recruiter;
         $job->currency_id = $request->currency_id;
@@ -398,11 +576,11 @@ class JobController extends AccountBaseController
         $job->recruit_job_sub_category_id = $request->sub_category_id;
         $job->recruit_job_type_id = $request->job_type_id;
         $job->recruit_work_experience_id = $request->work_experience;
-        $job->pay_type = $request->paytype;
-        $job->start_amount = $request->start_amount;
-        $job->end_amount = $request->end_amount;
-        $job->pay_according = $request->pay_according;
-        $job->disclose_salary = $request->disclose_salary ?: 'no';
+        $job->pay_type = 'Exact Amount';
+        $job->start_amount = 0;
+        $job->end_amount = null;
+        $job->pay_according = 'month';
+        $job->disclose_salary = 'yes';
         $job->remote_job = $request->remote_job ?: 'no';
         $job->is_photo_require = $request->is_photo_require ?: '0';
         $job->is_resume_require = $request->is_resume_require ?: '0';
@@ -465,16 +643,16 @@ class JobController extends AccountBaseController
     public function applyQuickAction(Request $request)
     {
         switch ($request->action_type) {
-        case 'delete':
-            $this->deleteRecords($request);
+            case 'delete':
+                $this->deleteRecords($request);
 
-            return Reply::success(__('messages.deleteSuccess'));
-        case 'change-status':
-            $this->changeStatus($request);
+                return Reply::success(__('messages.deleteSuccess'));
+            case 'change-status':
+                $this->changeStatus($request);
 
-            return Reply::success(__('messages.updateSuccess'));
-        default:
-            return Reply::error(__('messages.selectAction'));
+                return Reply::success(__('messages.updateSuccess'));
+            default:
+                return Reply::error(__('messages.selectAction'));
         }
     }
 
@@ -523,5 +701,4 @@ class JobController extends AccountBaseController
 
         return Reply::dataOnly(['status' => 'success', 'stages' => $data]);
     }
-
 }

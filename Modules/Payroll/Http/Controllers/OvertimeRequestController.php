@@ -19,6 +19,7 @@ use Modules\Payroll\DataTables\OvertimeRequestDataTable;
 use Modules\Payroll\Entities\OvertimePolicy;
 use Modules\Payroll\Entities\OvertimePolicyEmployee;
 use Modules\Payroll\Entities\OvertimeRequest;
+use Modules\Payroll\Entities\OvertimeSetting;
 use Modules\Payroll\Entities\PayrollSetting;
 use Modules\Payroll\Http\Requests\OvertimeRequest\StoreRequest;
 use Modules\Payroll\Http\Requests\OvertimeRequest\UpdateRequest;
@@ -316,7 +317,9 @@ class OvertimeRequestController extends AccountBaseController
 
         $this->roleId = OvertimeRequestDataTable::getUserSecondRole();
         $this->allowRoles = $this->overtimeRequest->policy->allow_roles;
-        $this->reportingTo = user()->employeeDetails->reporting_to;
+        $this->reportingTo = optional($this->employee->employeeDetail)->reporting_to;
+
+        $this->managerPermission = OvertimeSetting::current()->manager_permission;
 
         $this->userWiseTotalHours = $this->calculateTotalHours($this->employee->id, $this->overtimeRequest->start_date->format('Y-m-d'), $this->overtimeRequest->end_date->format('Y-m-d'));
 
@@ -519,20 +522,111 @@ class OvertimeRequestController extends AccountBaseController
         return $formattedResults;
     }
 
-    public function changeStatus(Request $request)
-    {
-        $overtimeRequest = OvertimeRequest::find($request->request_id);
-        $overtimeRequest->status = $request->status;
-        $overtimeRequest->action_by = user()->id;
+    public function preApprove(
+        Request $request,
+        $id
+    ) {
+        $overtimeSetting = OvertimeSetting::current();
+
+        abort_403($overtimeSetting->manager_permission !== 'pre-approve');
+
+        $overtimeRequest = OvertimeRequest::with(['user.employeeDetail'])->findOrFail($id);
+
+        if (
+            $overtimeRequest->status !== 'pending'
+        ) {
+            return Reply::error(
+                __('payroll::messages.onlyPendingOvertimePreApprove')
+            );
+        }
+
+        $reportingManagerId = optional(
+            optional($overtimeRequest->user)->employeeDetail
+        )->reporting_to;
+
+        abort_403((int) $reportingManagerId !== (int) user()->id);
+        abort_403((int) $overtimeRequest->user_id === (int) user()->id);
+
+        if (
+            $overtimeRequest->manager_status_permission === 'pre-approve'
+        ) {
+            return Reply::error(__('payroll::messages.overtimeAlreadyPreApproved'));
+        }
+
+        $overtimeRequest->manager_status_permission = 'pre-approve';
+
         $overtimeRequest->save();
 
-        return Reply::success(__('messages.updateSuccess'));
+        return Reply::success(__('payroll::messages.overtimePreApproved'));
+    }
+
+
+    public function changeStatus(Request $request)
+    {
+        $validated = $request->validate([
+            'request_id' => ['required', 'integer', 'exists:overtime_requests,id',],
+            'status' => ['required', 'in:accept,reject'],
+        ]);
+
+        $overtimeRequest = OvertimeRequest::with(['user.employeeDetail', 'policy',])->findOrFail($validated['request_id']);
+
+        return $this->updateRequestStatus($overtimeRequest, $validated['status']);
     }
 
     public function acceptRequest(Request $request, $id)
     {
-        $status = $request->type ? $request->type : 'accept';
-        $overtimeRequest = OvertimeRequest::find($id);
+        $validated = $request->validate([
+            'type' => [
+                'required',
+                'in:accept,reject',
+            ],
+        ]);
+
+        $overtimeRequest = OvertimeRequest::with(['user.employeeDetail', 'policy'])->findOrFail($id);
+
+        return $this->updateRequestStatus($overtimeRequest, $validated['type']);
+    }
+
+    private function updateRequestStatus(OvertimeRequest $overtimeRequest, string $status)
+    {
+        if (
+            $overtimeRequest->status !== 'pending'
+        ) {
+            return Reply::error(__('payroll::messages.onlyPendingOvertimeAction'));
+        }
+
+        $roleId = OvertimeRequestDataTable::getUserSecondRole();
+        $allowRoles = $overtimeRequest->policy->allow_roles ?? [];
+        $isAdminOrHr = user()->hasRole('admin') || user()->hasRole('hr-officer') || user()->hasRole('hr-manager');
+        $isAllowedRole = in_array($roleId, $allowRoles);
+
+        $reportingManagerId = optional(
+            optional($overtimeRequest->user)->employeeDetail
+        )->reporting_to;
+
+        $isReportingManager =
+            (int) $reportingManagerId ===
+            (int) user()->id &&
+            (int) $overtimeRequest->user_id !==
+            (int) user()->id;
+
+        $managerPermission = OvertimeSetting::current()->manager_permission;
+        $canPerformFinalAction = $isAdminOrHr || $isAllowedRole;
+
+        if (
+            $isReportingManager && $managerPermission === 'approved'
+        ) {
+            $canPerformFinalAction = true;
+        }
+
+        if (
+            $isReportingManager && $managerPermission === 'pre-approve' && $status === 'reject'
+        ) {
+            $canPerformFinalAction = true;
+        }
+
+        abort_403(!$canPerformFinalAction);
+
         $overtimeRequest->status = $status;
         $overtimeRequest->action_by = user()->id;
         $overtimeRequest->save();

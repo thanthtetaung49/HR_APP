@@ -2,6 +2,8 @@
 
 return array(
     'payroll' => array(
+        'lateDetectionRate' => 'Late Detection Rate',
+        'gazattedAllowanceRate' => 'Gazatted Allowance Rate',
         'selectAllEmployee' => 'Select All Employee',
         'offDayHolidaySalary' => 'Day Off OT',
         'totalNonWorkingDaySalary' => 'Total Non Working Day Salary',
@@ -118,6 +120,7 @@ return array(
         'totalMonthlyIncrement' => 'Gross Monthly Increment',
         'extraPay' => '(Annual CTC - Sum of all other components)',
         'payrollCurrencySetting' => 'Payroll Currency Setting',
+        'payrollRateSetting' => 'Payroll Rate Setting',
         'choosePayrollCurrency' => 'Choose Payroll Currency',
         'basic_percent' => 'Basic Percent',
         'fixedAllowanceError' => 'Please check calculation',

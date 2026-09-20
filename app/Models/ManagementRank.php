@@ -10,4 +10,8 @@ class ManagementRank extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+     protected $casts = [
+        'rank_ids' => 'array',
+    ];
 }

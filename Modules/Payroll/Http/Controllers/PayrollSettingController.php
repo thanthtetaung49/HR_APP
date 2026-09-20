@@ -93,6 +93,12 @@ class PayrollSettingController extends AccountBaseController
             $this->view = 'payroll::payroll-setting.ajax.payroll-currency-setting';
             break;
 
+        case 'payroll-rate-setting':
+            $this->payrollSetting = PayrollSetting::first();
+
+            $this->view = 'payroll::payroll-setting.ajax.payroll-rate-setting';
+            break;
+
         default:
             $this->salaryComponentPermission = user()->permission('manage_salary_component');
             abort_403($this->salaryComponentPermission !== 'all');

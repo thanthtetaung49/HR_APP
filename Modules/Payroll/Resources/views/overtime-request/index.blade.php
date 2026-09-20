@@ -2,6 +2,60 @@
 
 @push('datatable-styles')
     @include('sections.datatable_css')
+
+    {{-- overtime-action-ui: keep status and approval controls tidy without changing their behaviour --}}
+    <style>
+        #overtime-request th:last-child,
+        #overtime-request td:last-child {
+            width: 250px;
+            min-width: 250px;
+            padding-right: 24px !important;
+            box-sizing: border-box;
+            white-space: normal;
+            vertical-align: middle;
+        }
+
+        #overtime-request td:last-child p {
+            max-width: 100%;
+            margin-right: 0;
+            overflow-wrap: anywhere;
+        }
+
+        #overtime-request td:last-child .btn-sm {
+            display: inline-flex;
+            min-height: 34px;
+            margin: 4px 4px 0 0 !important;
+            padding: 6px 10px !important;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            line-height: 1.2;
+            white-space: nowrap;
+            border: 0;
+            box-shadow: none;
+        }
+
+        #overtime-request td:last-child .editRequest {
+            width: 34px;
+            padding-right: 6px !important;
+            padding-left: 6px !important;
+        }
+
+        #overtime-request td:last-child .badge {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 5px 8px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 767.98px) {
+            #overtime-request th:last-child,
+            #overtime-request td:last-child {
+                width: 210px;
+                min-width: 210px;
+            }
+        }
+    </style>
 @endpush
 
 @section('filter-section')
@@ -329,10 +383,12 @@
 
 
 
-        /* delete overtime request */
-        $('#overtime-request').on('click', '.acceptButton', function() {
-            var id = $(this).data('request-id');
-            var type = $(this).data('type');
+        /* Accept or reject overtime request */
+        $('#overtime-request')
+            .off('click.overtimeAction', '.acceptButton')
+            .on('click.overtimeAction', '.acceptButton', function() {
+                const id = $(this).data('request-id');
+                const type = $(this).data('type');
 
             var butonText = "@lang('payroll::messages.confirmAccept')";
             if (type != 'accept') {
@@ -358,15 +414,19 @@
             }).then((result) => {
                 if (result.isConfirmed) {
 
-                    var url = "{{ route('overtime-request-accept', ':id') }}?type=" + type;
+                    let url = "{{ route('overtime-request-accept', ':id') }}";
                     url = url.replace(':id', id);
 
                     $.easyAjax({
-                        type: 'GET',
+                        type: 'POST',
                         url: url,
                         blockUI: true,
+                        data: {
+                            type: type,
+                            _token: "{{ csrf_token() }}"
+                        },
                         success: function(response) {
-                            if (response.status == "success") {
+                            if (response.status === "success") {
                                 showTable();
                             }
                         }
@@ -492,5 +552,60 @@
                 window.location.href = baseUrl + '?' + queryString;
             });
         @endif
+
+        $('#overtime-request').off('click.overtimePreApprove','.preApproveButton')
+            .on('click.overtimePreApprove','.preApproveButton', function() {
+                    const requestId = $(this).data('request-id');
+
+                    Swal.fire({
+                        title: "@lang('messages.sweetAlertTitle')",
+                        text: "{{ __('payroll::messages.confirmPreApproveOvertime') }}",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        focusConfirm: false,
+                        confirmButtonText: "{{ __('payroll::messages.preApproveOvertime') }}" ,
+                        cancelButtonText: "@lang('app.cancel')",
+                        customClass: {
+                            confirmButton: 'btn btn-primary mr-3',
+                            cancelButton: 'btn btn-secondary'
+                        },
+                        showClass: {
+                            popup: 'swal2-noanimation',
+                            backdrop: 'swal2-noanimation'
+                        },
+                        buttonsStyling: false
+                    }).then(function(result) {
+                        if (!result.isConfirmed) {
+                            return;
+                        }
+
+                        let url ="{{ route('overtime-request-pre-approve', ':id') }}";
+
+                        url = url.replace(
+                            ':id',
+                            requestId
+                        );
+
+                        $.easyAjax({
+                            type: 'POST',
+                            url: url,
+                            blockUI: true,
+                            data: {
+                                _token: "{{ csrf_token() }}"
+                            },
+                            success: function(
+                                response
+                            ) {
+                                if (
+                                    response.status ===
+                                    'success'
+                                ) {
+                                    showTable();
+                                }
+                            }
+                        });
+                    });
+                }
+            );
     </script>
 @endpush

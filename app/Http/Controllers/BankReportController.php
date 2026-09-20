@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Location;
-use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use App\DataTables\BankReportDataTable;
 use App\Exports\BankReportExport;
@@ -30,7 +29,7 @@ class BankReportController extends AccountBaseController
      */
     public function index(BankReportDataTable $dataTable)
     {
-        $this->authorize('viewAny', User::class);
+        // $this->authorize('viewAny', User::class);
         $this->authorize('bankReportPermission', User::class);
 
         $this->locations = Location::get();

@@ -89,7 +89,7 @@ class JobApplicationsObserver
         }
         catch(\Exception $e)
         {
-            dd($e->getMessage());
+            report($e);
         }
     }
 

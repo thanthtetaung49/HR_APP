@@ -1,31 +1,33 @@
 @php
-$editAttendancePermission = user()->permission('add_attendance');
-$deleteAttendancePermission = user()->permission('delete_attendance');
+    $editAttendancePermission = user()->permission('add_attendance');
+    $deleteAttendancePermission = user()->permission('delete_attendance');
 @endphp
 <div class="modal-header">
     <h5 class="modal-title" id="modelHeading">
         @if ($type == 'edit')
             @lang('app.attendanceDetails')
         @else
-        @lang('modules.attendance.markAttendance')
+            @lang('modules.attendance.markAttendance')
         @endif
     </h5>
-    <button type="button"  class="close" data-dismiss="modal" aria-label="Close"><span
-        aria-hidden="true">×</span></button>
-    </div>
-    <div class="modal-body">
-        <div class="row">
-            <div class="col-md-12 mb-4">
-                <x-employee :user="$attendanceUser" />
-            </div>
+    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
+</div>
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <x-employee :user="$attendanceUser" />
         </div>
-        <div class="row">
-            <div class="col-sm-12">
-                <h5 class="f-w-500 f-15 d-flex justify-content-between">{{ __('app.date').' - '.\Carbon\Carbon::parse($date)->translatedFormat(company()->date_format) }}
-                    @if ($attendanceSettings->shift_name != 'Day Off')
-                    <span class="badge badge-info ml-2" style="background-color: {{ $attendanceSettings->color }}">{{ $attendanceSettings->shift_name }}</span>
-                    @else
-                    <span class="badge badge-secondary ml-2">{{ __('modules.attendance.' . str($attendanceSettings->shift_name)->camel()) }}</span>
+    </div>
+    <div class="row">
+        <div class="col-sm-12">
+            <h5 class="f-w-500 f-15 d-flex justify-content-between">
+                {{ __('app.date') . ' - ' . \Carbon\Carbon::parse($date)->translatedFormat(company()->date_format) }}
+                @if ($attendanceSettings->shift_name != 'Day Off')
+                    <span class="badge badge-info ml-2"
+                        style="background-color: {{ $attendanceSettings->color }}">{{ $attendanceSettings->shift_name }}</span>
+                @else
+                    <span
+                        class="badge badge-secondary ml-2">{{ __('modules.attendance.' . str($attendanceSettings->shift_name)->camel()) }}</span>
                 @endif
             </h5>
 
@@ -39,57 +41,72 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
                     <div class="row">
 
-                        <div class="col-lg-4 col-md-6">
+                        <div class="col-lg-3 col-md-6">
                             <div class="bootstrap-timepicker timepicker">
-                                <x-forms.text class="a-timepicker" :fieldLabel="__('modules.attendance.clock_in')"
-                                    :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_in_time"
-                                    fieldId="clock-in-time" fieldRequired="true"
-                                    :fieldValue="(!is_null($row->clock_in_time)) ? \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $row->clock_in_time)->translatedFormat(company()->time_format) : ''" />
+                                <x-forms.text class="a-timepicker" :fieldLabel="__('modules.attendance.clock_in')" :fieldPlaceholder="__('placeholders.hours')"
+                                    fieldName="clock_in_time" fieldId="clock-in-time" fieldRequired="true"
+                                    :fieldValue="!is_null($row->clock_in_time)
+                                        ? \Carbon\Carbon::createFromFormat(
+                                            'Y-m-d H:i:s',
+                                            $row->clock_in_time,
+                                        )->translatedFormat(company()->time_format)
+                                        : ''" />
                             </div>
                         </div>
 
                         <div class="col-lg-3 col-md-6">
-                            <x-forms.text class="a-timepicker" :fieldLabel="__('modules.attendance.clock_in_ip')"
-                                :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_in_ip"
-                                fieldId="clock-in-ip" :fieldValue="$row->clock_in_ip ?? request()->ip()" />
+                            <x-forms.text class="a-timepicker" :fieldLabel="__('modules.attendance.clock_in_ip')" :fieldPlaceholder="__('placeholders.hours')"
+                                fieldName="clock_in_ip" fieldId="clock-in-ip" :fieldValue="$row->clock_in_ip ?? request()->ip()" />
                         </div>
 
-                        @if ($row->total_clock_in == 0)
-                            <div class="col-lg-4 col-md-6">
-                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->late == 'yes' && $row->number_of_rows == 1)"
-                                    :fieldLabel="__('modules.attendance.late')" fieldName="late" fieldId="lateday" />
+                        @if ($row->total_clock_in == 0 && $row->number_of_rows == 1)
+                            <div class="col-lg-3 col-md-6">
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="$row->late == 'yes' && $row->number_of_rows == 1" :fieldLabel="__('modules.attendance.late')"
+                                    :fieldName="'late'" :fieldId="'late'" />
                             </div>
-                        @elseif ($row->late == 'yes' && $row->number_of_rows == 1)
-                            <div class="col-lg-2 col-md-6 mt-5">
+
+                            <div class="col-lg-3 col-md-6">
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="$row->late_between == 'yes' && $row->number_of_rows == 1"
+                                    :fieldLabel="__('modules.attendance.lateBetween')" :fieldName="'lateBetween'" :fieldId="'lateBetween'" />
+                            </div>
+                        @endif
+
+                        @if ($row->late == 'yes' && $row->number_of_rows == 1)
+                            <div class="col-lg-3 col-md-6 mt-5">
                                 <span class="badge badge-secondary">@lang('modules.attendance.late')</span>
+                            </div>
+                        @endif
+
+                        @if ($row->late_between == 'yes' && $row->number_of_rows == 1)
+                            <div class="col-lg-3 col-md-6 mt-5">
+                                <span class="badge badge-secondary">@lang('modules.attendance.lateBetween')</span>
                             </div>
                         @endif
 
                     </div>
 
                     <div class="row">
-
-                        <div class="col-lg-4 col-md-6">
+                        <div class="col-lg-3 col-md-6">
                             <div class="bootstrap-timepicker timepicker">
-                                <x-forms.text :fieldLabel="__('modules.attendance.clock_out')"
-                                    :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_out_time"
-                                    fieldId="clock-out"
-                                    :fieldValue="(!is_null($row->clock_out_time)) ? \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $row->clock_out_time)->translatedFormat(company()->time_format) : ''" />
+                                <x-forms.text :fieldLabel="__('modules.attendance.clock_out')" :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_out_time"
+                                    fieldId="clock-out" :fieldValue="!is_null($row->clock_out_time)
+                                        ? \Carbon\Carbon::createFromFormat(
+                                            'Y-m-d H:i:s',
+                                            $row->clock_out_time,
+                                        )->translatedFormat(company()->time_format)
+                                        : ''" />
                             </div>
                         </div>
 
                         <div class="col-lg-3 col-md-4">
-                            <x-forms.text :fieldLabel="__('modules.attendance.clock_out_ip')"
-                                :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_out_ip"
-                                :fieldId="'clock-out-ip-'.$row->id"
-                                :fieldValue="$row->clock_out_ip ?? request()->ip()" />
+                            <x-forms.text :fieldLabel="__('modules.attendance.clock_out_ip')" :fieldPlaceholder="__('placeholders.hours')" fieldName="clock_out_ip"
+                                :fieldId="'clock-out-ip-' . $row->id" :fieldValue="$row->clock_out_ip ?? request()->ip()" />
                         </div>
 
                         @if ($row->total_clock_in == 0)
                             <div class="col-lg-2 col-md-6">
-                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->half_day == 'yes')"
-                                    :fieldLabel="__('modules.attendance.halfDay')" fieldName="halfday"
-                                    fieldId="halfday" />
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="$row->half_day == 'yes'"
+                                    :fieldLabel="__('modules.attendance.halfDay')" fieldName="halfday" fieldId="halfday" />
                             </div>
                         @elseif ($row->half_day == 'yes')
                             <div class="col-lg-2 col-md-6 mt-5">
@@ -99,16 +116,18 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
                     </div>
                     <div class="row">
-                        <div class="col-lg-4 col-md-6 col-xl-4" id="half_day_section" style="display: none;">
+                        <div class="col-lg-3 col-md-6 col-xl-4" id="half_day_section" style="display: none;">
                             <div class="form-group my-3">
                                 <x-forms.label fieldId="duration" :fieldLabel="__('modules.leaves.selectDuration')">
                                 </x-forms.label>
                                 <div class="d-flex">
-                                    <x-forms.radio fieldId="first_half_day_yes" :fieldLabel="__('modules.leaves.firstHalf')" fieldName="half_day_duration"
-                                        fieldValue="first_half" :checked="$row->half_day_type == 'first_half'"  checked="true">
+                                    <x-forms.radio fieldId="first_half_day_yes" :fieldLabel="__('modules.leaves.firstHalf')"
+                                        fieldName="half_day_duration" fieldValue="first_half" :checked="$row->half_day_type == 'first_half'"
+                                        checked="true">
                                     </x-forms.radio>
-                                    <x-forms.radio fieldId="first_half_day_no" :fieldLabel="__('modules.leaves.secondHalf')" fieldValue="second_half"
-                                        fieldName="half_day_duration" :checked="$row->half_day_type == 'second_half'"></x-forms.radio>
+                                    <x-forms.radio fieldId="first_half_day_no" :fieldLabel="__('modules.leaves.secondHalf')"
+                                        fieldValue="second_half" fieldName="half_day_duration"
+                                        :checked="$row->half_day_type == 'second_half'"></x-forms.radio>
                                 </div>
                             </div>
                         </div>
@@ -116,42 +135,47 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
 
                     <div class="row">
 
-                        <div class="col-lg-4 col-md-6">
-                            <x-forms.select fieldId="location" :fieldLabel="__('app.location')" fieldName="location"
-                            search="true">
+                        <div class="col-lg-3 col-md-6">
+                            <x-forms.select fieldId="location" :fieldLabel="__('app.location')" fieldName="location" search="true">
                                 @foreach ($location as $locations)
-                                    <option @if (($row->location_id == $locations->id) || (is_null($row->location_id) && $locations->is_default == 1)) selected @endif value="{{ $locations->id }}">
+                                    <option @if ($row->location_id == $locations->id || (is_null($row->location_id) && $locations->is_default == 1)) selected @endif
+                                        value="{{ $locations->id }}">
                                         {{ $locations->location }}</option>
                                 @endforeach
                             </x-forms.select>
                         </div>
 
-                        <div class="col-lg-4 col-md-6">
-                            <x-forms.select fieldId="work_from_type" :fieldLabel="__('modules.attendance.working_from')" fieldName="work_from_type" fieldRequired="true"
-                            search="true" >
-                                <option @if ($row->work_from_type == 'office') selected @endif value="office">@lang('modules.attendance.office')</option>
-                                <option @if ($row->work_from_type == 'home') selected @endif value="home">@lang('modules.attendance.home')</option>
-                                <option @if ($row->work_from_type == 'other') selected @endif value="other">@lang('modules.attendance.other')</option>
+                        <div class="col-lg-3 col-md-6">
+                            <x-forms.select fieldId="work_from_type" :fieldLabel="__('modules.attendance.working_from')" fieldName="work_from_type"
+                                fieldRequired="true" search="true">
+                                <option @if ($row->work_from_type == 'office') selected @endif value="office">
+                                    @lang('modules.attendance.office')</option>
+                                <option @if ($row->work_from_type == 'home') selected @endif value="home">
+                                    @lang('modules.attendance.home')</option>
+                                <option @if ($row->work_from_type == 'other') selected @endif value="other">
+                                    @lang('modules.attendance.other')</option>
                             </x-forms.select>
                         </div>
 
-                        @if ($row->total_clock_in == 0)
-                            <div class="col-lg-2 col-md-6">
-                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="($row->break_time_late == 'yes')"
-                                    :fieldLabel="__('modules.attendance.breakTime')" fieldName="breakTime"
-                                    fieldId="breakTime" />
+                        @if ($row->total_clock_in == 0 && $row->number_of_rows == 2)
+                            <div class="col-lg-3 col-md-6">
+                                <x-forms.toggle-switch class="mr-0 mr-lg-2 mr-md-2" :checked="$row->break_time_late == 'yes'"
+                                    :fieldLabel="__('modules.attendance.breakTime')" fieldName="breakTime" fieldId="breakTime" />
                             </div>
-                        @elseif ($row->break_time_late == 'yes' && $row->number_of_rows == 2)
-                            <div class="col-lg-2 col-md-6 mt-5">
-                                <span class="badge badge-secondary">@lang('app.breakTime')</span>
-                            </div>
+                            @if ($row->break_time_late == 'yes')
+                                <div class="col-lg-2 col-md-6 mt-5">
+                                    <span class="badge badge-secondary">@lang('app.breakTime')</span>
+                                </div>
+                            @endif
                         @endif
 
                     </div>
 
                     <div class="row">
-                        <div class="col-lg-4 col-md-6"  id="otherPlace" @if ($row->work_from_type != 'other') style="display:none" @endif >
-                            <x-forms.text fieldId="working_from" :fieldLabel="__('modules.attendance.otherPlace')" fieldName="working_from" fieldRequired="true" :fieldValue="$row->working_from" >
+                        <div class="col-lg-4 col-md-6" id="otherPlace"
+                            @if ($row->work_from_type != 'other') style="display:none" @endif>
+                            <x-forms.text fieldId="working_from" :fieldLabel="__('modules.attendance.otherPlace')" fieldName="working_from"
+                                fieldRequired="true" :fieldValue="$row->working_from">
                             </x-forms.text>
                         </div>
                     </div>
@@ -189,21 +213,21 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
         });
 
         $('#clock-in-time').timepicker({
-            @if(company()->time_format == 'H:i')
-            showMeridian: false,
+            @if (company()->time_format == 'H:i')
+                showMeridian: false,
             @endif
             minuteStep: 1
         });
         $('#clock-out').timepicker({
-            @if(company()->time_format == 'H:i')
-            showMeridian: false,
+            @if (company()->time_format == 'H:i')
+                showMeridian: false,
             @endif
             minuteStep: 1,
             defaultTime: false
         });
 
-        $('#work_from_type').change(function(){
-            ($(this).val() == 'other') ? $('#otherPlace').show() : $('#otherPlace').hide();
+        $('#work_from_type').change(function() {
+            ($(this).val() == 'other') ? $('#otherPlace').show(): $('#otherPlace').hide();
         });
 
         const saveAttendanceForm = (url) => {
@@ -216,26 +240,26 @@ $deleteAttendancePermission = user()->permission('delete_attendance');
                 buttonSelector: "#save-attendance",
                 data: $('#attendance-container').serialize(),
                 data: $('#attendance-container').serialize(),
-                success: function (response) {
-                    if(response.status == 'success'){
+                success: function(response) {
+                    if (response.status == 'success') {
                         showTable();
-                        $("[data-dismiss=modal]").trigger({ type: "click" });
+                        $("[data-dismiss=modal]").trigger({
+                            type: "click"
+                        });
 
                     }
                 }
             })
         }
 
-        $('#save-attendance').click(function () {
-            @if($type == 'edit')
-                var url = "{{route('attendances.update', $row->id)}}";
+        $('#save-attendance').click(function() {
+            @if ($type == 'edit')
+                var url = "{{ route('attendances.update', $row->id) }}";
                 saveAttendanceForm(url);
             @else
-                var url = "{{route('attendances.store')}}";
+                var url = "{{ route('attendances.store') }}";
                 saveAttendanceForm(url);
             @endif
         });
     });
-
-
 </script>

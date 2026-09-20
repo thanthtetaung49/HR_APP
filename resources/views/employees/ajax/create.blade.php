@@ -135,8 +135,8 @@
                                     data-iso="{{ $item->iso }}"
                                     data-content="<span class='flag-icon flag-icon-{{ strtolower($item->iso) }} flag-icon-squared'></span> {{ $item->nicename }}"
                                     value="{{ $item->id }}" @if ($item->id == 146)
-                                        selected
-                                    @endif>{{ $item->nicename }}</option>
+                                    selected
+                            @endif>{{ $item->nicename }}</option>
                             @endforeach
                         </x-forms.select>
                     </div>
@@ -150,9 +150,8 @@
                                 @foreach ($countries as $item)
                                     <option data-tokens="{{ $item->name }}" data-country-iso="{{ $item->iso }}"
                                         data-content="{{ $item->flagSpanCountryCode() }}"
-                                        value="{{ $item->phonecode }}" @if ($item->id == 146)
-                                            selected
-                                        @endif>{{ $item->phonecode }}
+                                        value="{{ $item->phonecode }}"
+                                        @if ($item->id == 146) selected @endif>{{ $item->phonecode }}
                                     </option>
                                 @endforeach
                             </x-forms.select>
@@ -708,32 +707,32 @@
         });
     @endif
 
-     $('#criteria_id').on('change', function() {
-            const criteriaId = $(this).val();
+    $('#criteria_id').on('change', function() {
+        const criteriaId = $(this).val();
 
-            const data = {
-                criteriaId: criteriaId
-            }
+        const data = {
+            criteriaId: criteriaId
+        }
 
-            $.ajax({
-                type: "GET",
-                url: "{{ route('filterExistReason') }}",
-                data: data,
-                dataType: "json",
-                success: function(response) {
-                    const subCriterias = response.subCriterias;
-                    let options = '<option value="">--</option>';
+        $.ajax({
+            type: "GET",
+            url: "{{ route('filterExistReason') }}",
+            data: data,
+            dataType: "json",
+            success: function(response) {
+                const subCriterias = response.subCriterias;
+                let options = '<option value="">--</option>';
 
-                    if (subCriterias) {
-                        subCriterias.forEach(element => {
-                            options +=
-                                `<option value="${element.id}">${element.sub_criteria}</option>`
-                        });
-                    }
-
-                    $('#sub_criteria_id').html(options);
-                    $('#sub_criteria_id').selectpicker('refresh');
+                if (subCriterias) {
+                    subCriterias.forEach(element => {
+                        options +=
+                            `<option value="${element.id}">${element.sub_criteria}</option>`
+                    });
                 }
-            });
-        })
+
+                $('#sub_criteria_id').html(options);
+                $('#sub_criteria_id').selectpicker('refresh');
+            }
+        });
+    })
 </script>

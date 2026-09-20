@@ -34,7 +34,7 @@ class StoreQuickApplication extends CoreRequest
         $data = [
             'job_id' => 'required',
             'full_name' => 'required',
-            'location_id' => 'required',
+            // 'location_id' => 'required',
         ];
 
         if (in_array('email', $this->formFields)) {

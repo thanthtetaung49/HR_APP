@@ -11,6 +11,9 @@ use Modules\Recruit\Entities\RecruitInterviewSchedule;
 use Modules\Recruit\Entities\RecruitJob;
 use Modules\Recruit\Entities\RecruitJobApplication;
 use Modules\Recruit\Entities\RecruitSetting;
+use Modules\Recruit\Services\RecruitmentAnalyticsService;
+use Modules\Recruit\Exports\RecruitmentAnalyticsExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends AccountBaseController
 {
@@ -28,14 +31,51 @@ class ReportController extends AccountBaseController
     public function index()
     {
         $viewPermission = user()->permission('view_report');
-        abort_403(! in_array($viewPermission, ['all']));
+        abort_403(!in_array($viewPermission, ['all']));
 
-        $this->jobApplication = RecruitJobApplication::count();
-        $this->job = RecruitJob::count();
-        $this->candidatesHired = RecruitJobApplication::join('recruit_application_status', 'recruit_application_status.id', '=', 'recruit_job_applications.recruit_application_status_id')
-            ->where('recruit_application_status.status', 'hired')
+        $from = request('startDate')
+            ? Carbon::createFromFormat(
+                $this->company->date_format,
+                request('startDate')
+            )->startOfDay()
+            : now($this->company->timezone)->startOfMonth();
+
+        $to = request('endDate')
+            ? Carbon::createFromFormat(
+                $this->company->date_format,
+                request('endDate')
+            )->endOfDay()
+            : now($this->company->timezone)->endOfDay();
+
+        $this->jobApplication = RecruitJobApplication::whereBetween(
+            'created_at',
+            [$from, $to]
+        )->count();
+
+        $this->job = RecruitJob::whereBetween(
+            'created_at',
+            [$from, $to]
+        )->count();
+
+        $this->candidatesHired = RecruitJobApplication::whereBetween(
+            'created_at',
+            [$from, $to]
+        )
+            ->where('overall_status', 'hired')
             ->count();
-        $this->interviewScheduled = RecruitInterviewSchedule::count();
+
+        $this->interviewScheduled = RecruitInterviewSchedule::whereBetween(
+            'created_at',
+            [$from, $to]
+        )->count();
+
+        $analytics = app(RecruitmentAnalyticsService::class);
+
+        $this->summaryReport = $analytics->dashboardSummary($from, $to);
+        $this->sourceReport = $analytics->sourceEffectiveness($from, $to);
+        $this->positionReport = $analytics->positionAnalysis($from, $to);
+        $this->rejectionReport = $analytics->rejectionAnalysis($from, $to);
+        $this->joinReport = $analytics->joinAnalysis($from, $to);
 
         return view('recruit::report.index', $this->data);
     }
@@ -62,10 +102,9 @@ class ReportController extends AccountBaseController
         $this->job = RecruitJob::where(DB::raw('DATE(`created_at`)'), '>=', $fromDate)
             ->where(DB::raw('DATE(`created_at`)'), '<=', $toDate)->count();
 
-        $this->candidatesHired = RecruitJobApplication::join('recruit_application_status', 'recruit_application_status.id', '=', 'recruit_job_applications.recruit_application_status_id')
-            ->where(DB::raw('DATE(recruit_job_applications.created_at)'), '>=', $fromDate)
+        $this->candidatesHired = RecruitJobApplication::where(DB::raw('DATE(recruit_job_applications.created_at)'), '>=', $fromDate)
             ->where(DB::raw('DATE(recruit_job_applications.created_at)'), '<=', $toDate)
-            ->where('recruit_application_status.status', 'hired')
+            ->where('overall_status', 'hired')
             ->count();
 
         $this->interviewScheduled = RecruitInterviewSchedule::where(DB::raw('DATE(`created_at`)'), '>=', $fromDate)
@@ -81,5 +120,14 @@ class ReportController extends AccountBaseController
         $html = view('recruit::report.chart', $this->data)->render();
 
         return Reply::dataOnly(['status' => 'success', 'html' => $html, 'jobApp' => $this->jobApplication, 'jobPosted' => $this->job, 'candidateHired' => $this->candidatesHired, 'interview' => $this->interviewScheduled, 'title' => $this->pageTitle]);
+    }
+
+    public function exportAnalytics(Request $request)
+    {
+        abort_403(user()->permission('view_report') !== 'all');
+        $from = $request->startDate ? Carbon::createFromFormat($this->company->date_format, $request->startDate) : now()->startOfYear();
+        $to = $request->endDate ? Carbon::createFromFormat($this->company->date_format, $request->endDate) : now()->endOfMonth();
+
+        return Excel::download(new RecruitmentAnalyticsExport($from, $to), 'Recruitment_Analytics_' . $to->format('Ym') . '.xlsx');
     }
 }

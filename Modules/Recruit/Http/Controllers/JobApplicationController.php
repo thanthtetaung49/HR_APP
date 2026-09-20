@@ -6,6 +6,7 @@ use App\Models\Team;
 use App\Helper\Files;
 use App\Helper\Reply;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\CompanyAddress;
 use Modules\Recruit\Entities\RecruitJob;
 use Modules\Recruit\Entities\RecruitSkill;
@@ -13,6 +14,8 @@ use Modules\Recruit\Entities\RecruitSetting;
 use App\Http\Controllers\AccountBaseController;
 use Modules\Recruit\Imports\JobApplicationImport;
 use App\Models\Currency;
+use App\Models\Designation;
+use App\Models\ManagementRank;
 use App\Traits\ImportExcel;
 use Carbon\Carbon;
 use Modules\Recruit\Entities\ApplicationSource;
@@ -35,6 +38,8 @@ use Modules\Recruit\Http\Requests\JobApplication\UpdateJobApplication;
 use Modules\Recruit\Jobs\ImportJobApplicationJob;
 use PhpParser\Node\Expr\Empty_;
 use Modules\Recruit\Entities\RecruitApplicationStatusCategory;
+use Modules\Recruit\Entities\RecruitApplicantBlacklist;
+use Modules\Recruit\Services\ApplicantWorkflowService;
 
 class JobApplicationController extends AccountBaseController
 {
@@ -63,6 +68,10 @@ class JobApplicationController extends AccountBaseController
         $this->jobLocations = RecruitJobAddress::with('location')->where('recruit_job_id', request()->id)->get();
         $this->jobApp = RecruitJob::where('id', request()->id)->first();
 
+        // $designation = Designation::findOrFail($request->designation_id);
+        // $this->job->designation_id = $designation->id;
+        // $this->job->rank_level = $designation->rank_id;
+
         $this->locations = CompanyAddress::all();
         $this->currentLocations = RecruitJobApplication::select('current_location')->where('current_location', '!=', null)->distinct()->get();
 
@@ -77,7 +86,6 @@ class JobApplicationController extends AccountBaseController
                     $this->formSettings->push($form);
                 }
             }
-
         }
 
         $this->formFields = $this->formSettings->pluck('name')->toArray();
@@ -105,11 +113,11 @@ class JobApplicationController extends AccountBaseController
         $this->jobApp = RecruitJob::where('id', request()->id)->first();
         $this->statusId = request()->column_id;
 
-        if (request()->ajax()) {
-            $html = view('recruit::job-applications.ajax.create', $this->data)->render();
+        // if (request()->ajax()) {
+        //     $html = view('recruit::job-applications.ajax.create', $this->data)->render();
 
-            return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
-        }
+        //     return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
+        // }
 
         $this->view = 'recruit::job-applications.ajax.create';
 
@@ -126,60 +134,68 @@ class JobApplicationController extends AccountBaseController
         $addPermission = user()->permission('add_job_application');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
-        $jobApp = new RecruitJobApplication();
-        $jobApp->recruit_job_id = $request->job_id;
-        $jobApp->full_name = $request->full_name;
-        $jobApp->email = $this->emailValidation($request);
-        $jobApp->phone = $request->phone;
+        $existApplicant = RecruitJobApplication::where('recruit_job_id', $request->job_id)
+            ->where(function ($query) use ($request) {
+                $query->where('email', $request->email)
+                    ->orWhere('nrc', $request->nrc);
+            })
+            ->first();
 
-        if ($request->has('gender')) {
-            $jobApp->gender = $request->gender;
+        if ($existApplicant) {
+            return Reply::dataOnly([
+                'status' => 'success',
+                'applicationExists' => true,
+                'message' => 'You have already applied for this job with the provided email or NRC.',
+                'redirectUrl' => route('job-applications.index'),
+            ]);
         }
 
-        if ($request->has('current_ctc')) {
-            $jobApp->current_ctc = $request->current_ctc;
-            $jobApp->currenct_ctc_rate = $request->currenct_ctc_rate;
+        [$jobApp, $blacklistMatch] = DB::transaction(function () use ($request) {
+            $job = RecruitJob::findOrFail($request->job_id);
+            $jobApp = new RecruitJobApplication();
+
+            $this->fillApplicantFields($jobApp, $request, $job);
+            $this->storeApplicantPhoto(
+                $jobApp,
+                $request
+            );
+
+            $jobApp->location_id = 1;
+            $jobApp->application_sources = 'addedByUser';
+            $jobApp->column_priority = 0;
+            $jobApp->send_email = $request->boolean('send_email');
+
+            $workflow = app(ApplicantWorkflowService::class);
+            $blacklistMatch = $workflow->findBlacklistMatch($jobApp);
+
+            if ($blacklistMatch) {
+                return [null, $blacklistMatch];
+            }
+
+            $workflow->validateTransition($jobApp);
+
+            $jobApp->save();
+
+            $this->storeResume($jobApp, $request);
+            $this->syncApplicantBlacklist($jobApp, $request);
+            $workflow->createEmployeeForHiredApplicant($jobApp);
+
+
+            return [$jobApp, null];
+        });
+
+        // dd($blacklistMatch);
+
+        if ($blacklistMatch) {
+            return Reply::dataOnly([
+                'status' => 'success',
+                'blacklistMatch' => true,
+                'message' => 'This applicant is already blacklisted.',
+                'blacklistReason' => $blacklistMatch->reason,
+                'redirectUrl' => route('job-applications.index'),
+            ]);
         }
 
-        if ($request->has('expected_ctc')) {
-            $jobApp->expected_ctc = $request->expected_ctc;
-            $jobApp->expected_ctc_rate = $request->expected_ctc_rate;
-        }
-
-        if ($request->date_of_birth != null && $request->has('date_of_birth')) {
-            $date_of_birth = Carbon::createFromFormat($this->company->date_format, $request->date_of_birth)->format('Y-m-d');
-            $jobApp->date_of_birth = $date_of_birth;
-        }
-
-        $jobApp->application_source_id = $request->source;
-        $jobApp->cover_letter = $request->cover_letter;
-        $jobApp->location_id = $request->location_id;
-        $jobApp->total_experience = $request->total_experience;
-        $jobApp->current_location = $request->current_location;
-        $jobApp->notice_period = $request->notice_period;
-        $jobApp->recruit_application_status_id = $request->status_id;
-        $jobApp->application_sources = 'addedByUser';
-        $jobApp->column_priority = 0;
-        $jobApp->send_email = $request->send_email ?? 0;
-
-
-        if ($request->hasFile('photo')) {
-            Files::deleteFile($jobApp->photo, 'avatar');
-            $jobApp->photo = Files::uploadLocalOrS3($request->photo, 'avatar', 300);
-        }
-
-        $jobApp->save();
-
-        if (request()->hasFile('resume')) {
-            $file = new RecruitApplicationFile();
-            $file->recruit_job_application_id = $jobApp->id;
-            Files::deleteFile($jobApp->resume, 'application-files/');
-            $filename = Files::uploadLocalOrS3(request()->resume, 'application-files/' . $jobApp->id);
-            $file->filename = request()->resume->getClientOriginalName();
-            $file->hashname = $filename;
-            $file->size = request()->resume->getSize();
-            $file->save();
-        }
 
         if (request()->add_more == 'true') {
             $html = $this->create();
@@ -187,13 +203,16 @@ class JobApplicationController extends AccountBaseController
             return Reply::successWithData(__('recruit::messages.applicationAdded'), ['html' => $html, 'add_more' => true]);
         }
 
-        $redirectUrl = urldecode($request->redirect_url);
+        $redirectUrl = $request->filled('redirect_url')
+            ? urldecode($request->redirect_url)
+            : route('job-applications.index');
 
-        if ($redirectUrl == '') {
-            $redirectUrl = route('job-applications.index');
-        }
-
-        return Reply::dataOnly(['redirectUrl' => $redirectUrl, 'application_id' => $jobApp->id]);
+        return Reply::dataOnly([
+            'redirectUrl' => $redirectUrl,
+            'application_id' => $jobApp->id,
+            'blacklistMatch' => (bool) $blacklistMatch,
+            'message' => __('recruit::messages.applicationAdded'),
+        ]);
     }
 
     /**
@@ -204,7 +223,7 @@ class JobApplicationController extends AccountBaseController
     public function show($id)
     {
         $interviewer = [];
-        $this->application = RecruitJobApplication::with('job', 'applicationStatus', 'location', 'source', 'comments', 'comments.user', 'files')->find($id);
+        $this->application = RecruitJobApplication::with('job', 'applicationStatus', 'location', 'source', 'comments', 'comments.user', 'files')->findOrFail($id);
         $scheduleData = RecruitInterviewSchedule::with('employees')->where('recruit_job_application_id', $id)->first();
 
         $this->currencySymbol = Currency::where('id', '=', $this->application->job->currency_id)->first();
@@ -236,38 +255,38 @@ class JobApplicationController extends AccountBaseController
         $tab = request('view');
 
         switch ($tab) {
-        case 'applicant_notes':
-            $this->tab = 'recruit::job-applications.notes.notes';
-            break;
-        case 'skill':
-            $this->tab = 'recruit::job-applications.ajax.skill';
-            break;
-        case 'custom':
-            $this->tab = 'recruit::job-applications.ajax.custom-question';
-            break;
-        case 'follow-up':
-            $this->tab = 'recruit::job-applications.ajax.follow-up';
-            break;
-        case 'resume':
-            $this->tab = 'recruit::job-applications.ajax.resume';
-            break;
+            case 'applicant_notes':
+                $this->tab = 'recruit::job-applications.notes.notes';
+                break;
+            case 'skill':
+                $this->tab = 'recruit::job-applications.ajax.skill';
+                break;
+            case 'custom':
+                $this->tab = 'recruit::job-applications.ajax.custom-question';
+                break;
+            case 'follow-up':
+                $this->tab = 'recruit::job-applications.ajax.follow-up';
+                break;
+            case 'resume':
+                $this->tab = 'recruit::job-applications.ajax.resume';
+                break;
 
-        default:
-            $this->editInterviewSchedulePermission = user()->permission('edit_interview_schedule');
-            $this->deleteInterviewSchedulePermission = user()->permission('delete_interview_schedule');
-            $this->viewInterviewSchedulePermission = user()->permission('view_interview_schedule');
-            $this->reschedulePermission = user()->permission('reschedule_interview');
-            $this->applicationStatuses = ['pending', 'hired', 'canceled','completed','rejected'];
+            default:
+                $this->editInterviewSchedulePermission = user()->permission('edit_interview_schedule');
+                $this->deleteInterviewSchedulePermission = user()->permission('delete_interview_schedule');
+                $this->viewInterviewSchedulePermission = user()->permission('view_interview_schedule');
+                $this->reschedulePermission = user()->permission('reschedule_interview');
+                $this->applicationStatuses = ['pending', 'hired', 'canceled', 'completed', 'rejected'];
 
-            $this->interviewSchedule = RecruitInterviewSchedule::with(['employeesData', 'employeesData.user'])
-                ->select('recruit_interview_schedules.id', 'recruit_interview_schedules.recruit_job_application_id', 'recruit_interview_schedules.interview_type', 'recruit_interview_schedules.recruit_interview_stage_id', 'recruit_interview_employees.user_id as employee_id', 'recruit_interview_employees.user_accept_status', 'recruit_interview_employees.id as emp_id', 'recruit_job_applications.full_name', 'recruit_interview_schedules.status', 'recruit_interview_schedules.schedule_date', 'recruit_interview_stages.name')
-                ->where('recruit_job_application_id', $id)
-                ->leftjoin('recruit_job_applications', 'recruit_job_applications.id', 'recruit_interview_schedules.recruit_job_application_id')
-                ->leftjoin('recruit_interview_stages', 'recruit_interview_stages.id', 'recruit_interview_schedules.recruit_interview_stage_id')
-                ->leftjoin('recruit_interview_employees', 'recruit_interview_employees.recruit_interview_schedule_id', 'recruit_interview_schedules.id')
-                ->groupBy('recruit_interview_schedules.id')->get();
-            $this->tab = 'recruit::job-applications.ajax.interview-schedule';
-            break;
+                $this->interviewSchedule = RecruitInterviewSchedule::with(['employeesData', 'employeesData.user'])
+                    ->select('recruit_interview_schedules.id', 'recruit_interview_schedules.recruit_job_application_id', 'recruit_interview_schedules.interview_type', 'recruit_interview_schedules.recruit_interview_stage_id', 'recruit_interview_employees.user_id as employee_id', 'recruit_interview_employees.user_accept_status', 'recruit_interview_employees.id as emp_id', 'recruit_job_applications.full_name', 'recruit_interview_schedules.status', 'recruit_interview_schedules.schedule_date', 'recruit_interview_stages.name')
+                    ->where('recruit_job_application_id', $id)
+                    ->leftjoin('recruit_job_applications', 'recruit_job_applications.id', 'recruit_interview_schedules.recruit_job_application_id')
+                    ->leftjoin('recruit_interview_stages', 'recruit_interview_stages.id', 'recruit_interview_schedules.recruit_interview_stage_id')
+                    ->leftjoin('recruit_interview_employees', 'recruit_interview_employees.recruit_interview_schedule_id', 'recruit_interview_schedules.id')
+                    ->groupBy('recruit_interview_schedules.id')->get();
+                $this->tab = 'recruit::job-applications.ajax.interview-schedule';
+                break;
         }
 
         if (request()->ajax()) {
@@ -294,15 +313,21 @@ class JobApplicationController extends AccountBaseController
      */
     public function edit($id)
     {
-        $this->jobApplication = RecruitJobApplication::findOrFail($id);
+        $this->jobApplication = RecruitJobApplication::with('job')->findOrFail($id);
         $this->jobId = null;
-        $this->job = RecruitJob::where('id', $this->jobApplication->recruit_job_id)->get();
-        $this->currency = $this->job ? Currency::where('id', '=', $this->jobApplication->job->currency_id)->first() : null;
+        $this->job = $this->jobApplication->job;
+        $this->management_rank_level = $this->jobApplication->job->management_rank_level;
+        $this->rank_level = $this->jobApplication->job->rank_level;
+
+        $this->managementRanks = ManagementRank::all();
+        $this->currency = $this->job && $this->job->currency_id
+            ? Currency::find($this->job->currency_id)
+            : null;
         $this->editPermission = user()->permission('edit_job_application');
         abort_403(!($this->editPermission == 'all'
             || ($this->editPermission == 'added' && $this->jobApplication->added_by == user()->id)
-            || ($this->editPermission == 'owned' && user()->id == $this->job->recruiter_id)
-            || ($this->editPermission == 'both' && user()->id == $this->job->recruiter_id)
+            || ($this->editPermission == 'owned' && user()->id == $this->job?->recruiter_id)
+            || ($this->editPermission == 'both' && user()->id == $this->job?->recruiter_id)
             || $this->jobApplication->added_by == user()->id));
 
         $this->jobApplictionFile = RecruitApplicationFile::where('recruit_job_application_id', $id)->first();
@@ -310,6 +335,7 @@ class JobApplicationController extends AccountBaseController
         $this->applicationSources = ApplicationSource::where('company_id', company()->id)->get();
         $this->locations = CompanyAddress::all();
         $this->applicationStatus = RecruitApplicationStatus::select('id', 'status', 'position', 'color')->orderBy('position')->get();
+        $this->statusId = $this->jobApplication->recruit_application_status_id;
 
         if (request()->ajax()) {
             $html = view('recruit::job-applications.ajax.edit', $this->data)->render();
@@ -338,72 +364,285 @@ class JobApplicationController extends AccountBaseController
             || ($this->editPermission == 'owned' && user()->id == $jobApp->job->recruiter_id)
             || ($this->editPermission == 'both' && user()->id == $jobApp->job->recruiter_id)
             || $jobApp->added_by == user()->id));
-        $status = $jobApp->status_id;
-        $statusId = $request->status_id;
-        $jobApp->recruit_job_id = $request->job_id;
-        $jobApp->full_name = $request->full_name;
-        $jobApp->email = $request->email;
-        $jobApp->phone = $request->phone;
-        $jobApp->location_id = $request->location_id;
-        $jobApp->total_experience = $request->total_experience;
-        $jobApp->current_location = $request->current_location;
-        $jobApp->notice_period = $request->notice_period;
 
-        if ($request->has('gender')) {
-            $jobApp->gender = $request->gender;
-        }
+        $oldStatusId = $jobApp->recruit_application_status_id;
 
-        if ($request->has('current_ctc')) {
-            $jobApp->current_ctc = $request->current_ctc;
-            $jobApp->currenct_ctc_rate = $request->currenct_ctc_rate;        }
+        $blacklistMatch = DB::transaction(function () use ($jobApp, $request) {
+            $job = RecruitJob::findOrFail($request->job_id);
 
-        if ($request->has('expected_ctc')) {
-            $jobApp->expected_ctc = $request->expected_ctc;
-            $jobApp->expected_ctc_rate = $request->expected_ctc_rate;        }
+            $this->fillApplicantFields($jobApp, $request, $job);
+            $jobApp->send_email = $request->boolean('send_email');
 
-        if ($request->date_of_birth != null) {
-            if ($request->has('date_of_birth')) {
-                $date_of_birth = Carbon::createFromFormat($this->company->date_format, $request->date_of_birth)->format('Y-m-d');
-                $jobApp->date_of_birth = $date_of_birth;
-            }
-        }
+            $workflow = app(ApplicantWorkflowService::class);
+            $blacklistMatch = $workflow->applyBlacklistDecision($jobApp);
+            $workflow->validateTransition($jobApp);
 
-        $jobApp->recruit_application_status_id = $request->status_id;
-        $jobApp->application_source_id = $request->source;
-        $jobApp->cover_letter = $request->cover_letter;
+            $jobApp->save();
 
-        if ($request->photo_delete == 'yes') {
-            Files::deleteFile($jobApp->photo, 'avatar');
-            $jobApp->photo = null;
-        }
+            $this->storeResume($jobApp, $request);
+            $this->syncApplicantBlacklist($jobApp, $request);
+            $workflow->createEmployeeForHiredApplicant($jobApp);
 
-        if ($request->hasFile('photo')) {
-            Files::deleteFile($jobApp->photo, 'avatar');
-            $jobApp->photo = Files::uploadLocalOrS3($request->photo, 'avatar', 300);
-        }
+            return $blacklistMatch;
+        });
 
-        $jobApp->save();
+        $newStatusId = $jobApp->recruit_application_status_id;
 
-        if (request()->hasFile('resume')) {
-            $file = RecruitApplicationFile::where('recruit_job_application_id', $jobApp->id)->first() ?? new RecruitApplicationFile;
-            $file->recruit_job_application_id ? Files::deleteFile($file->recruit_job_application_id, 'application-files/' . $jobApp->id) : '';
-            $file->recruit_job_application_id = $jobApp->id;
-            $filename = Files::uploadLocalOrS3(request()->resume, 'application-files/' . $jobApp->id);
-            $file->filename = request()->resume->getClientOriginalName();
-            $file->hashname = $filename;
-            $file->size = request()->resume->getSize();
-            $file->save();
-        }
-
-        if ($status != $statusId) {
-            $send = $this->statusForMailSend($statusId);
+        if ($oldStatusId != $newStatusId) {
+            $send = $this->statusForMailSend($newStatusId);
 
             if ($send == true) {
                 event(new JobApplicationStatusChangeEvent($jobApp));
             }
         }
 
-        return Reply::successWithData(__('recruit::modules.message.updateSuccess'), ['redirectUrl' => route('job-applications.index'), 'application_id' => $jobApp->id]);
+        return Reply::successWithData(
+            $blacklistMatch ? 'Blacklist match found. Applicant was automatically rejected.' : __('recruit::modules.message.updateSuccess'),
+            ['redirectUrl' => route('job-applications.index'), 'application_id' => $jobApp->id, 'blacklistMatch' => (bool) $blacklistMatch]
+        );
+    }
+
+    private function fillApplicantFields(
+        RecruitJobApplication $jobApp,
+        Request $request,
+        RecruitJob $job
+    ): void {
+        // dd($request->blacklist, $request->blacklist_reason);
+        $jobApp->recruit_job_id = $job->id;
+        $jobApp->unsetRelation('job');
+
+        $jobApp->full_name = trim($request->full_name);
+        $jobApp->father_name = trim($request->father_name);
+        $jobApp->email = $request->filled('email')
+            ? strtolower(trim($request->email))
+            : null;
+
+        $jobApp->phone = $request->phone;
+        $jobApp->gender = $request->gender;
+        $jobApp->current_location = $request->current_location;
+        $jobApp->total_experience = $request->total_experience;
+        $jobApp->notice_period = $request->notice_period;
+
+        $jobApp->recruit_application_status_id =
+            $request->status_id;
+
+        $jobApp->application_source_id =
+            $request->source;
+
+        $jobApp->cover_letter =
+            $request->cover_letter;
+
+        $jobApp->date_of_birth = $request->filled('date_of_birth')
+            ? Carbon::createFromFormat(
+                $this->company->date_format,
+                $request->date_of_birth
+            )->format('Y-m-d')
+            : null;
+
+        $jobApp->rank_level = $job->rank_level;
+        $jobApp->management_rank_level = $job->management_rank_level;
+        $jobApp->marital_status =
+            $request->marital_status;
+
+        $jobApp->nrc = $request->filled('nrc')
+            ? trim($request->nrc)
+            : null;
+
+        $jobApp->education =
+            $request->education;
+
+        $jobApp->certifications_qualifications =
+            $request->certifications_qualifications;
+
+        $jobApp->work_experience_details =
+            $this->cleanWorkExperience(
+                $request->input('work_experience_details', [])
+            );
+
+        // dd($jobApp->work_experience_details);
+
+        $jobApp->last_salary_minimum =
+            $request->filled('last_salary_minimum')
+            ? $request->last_salary_minimum
+            : null;
+
+        $jobApp->expected_salary_minimum =
+            $request->filled('expected_salary_minimum')
+            ? $request->expected_salary_minimum
+            : null;
+
+        $jobApp->selection_phase = $request->input(
+            'selection_phase',
+            'cv_screening'
+        );
+
+        $jobApp->overall_status = $request->input(
+            'overall_status',
+            'not_started'
+        );
+
+        $jobApp->keep_cv_reason =
+            $request->overall_status === 'keep_cv'
+            ? $request->keep_cv_reason
+            : null;
+
+        $jobApp->rejection_reason =
+            $request->overall_status === 'rejected'
+            ? $request->rejection_reason
+            : null;
+
+        $jobApp->rejection_reason_details =
+            $request->overall_status === 'rejected'
+            ? $request->rejection_reason_details
+            : null;
+
+        $jobApp->job_offer_decision =
+            $request->job_offer_decision ?: null;
+
+        $jobApp->job_offer_decision_reason =
+            $request->job_offer_decision === 'declined'
+            ? $request->job_offer_decision_reason
+            : null;
+
+        $jobApp->is_blacklisted = $request->blacklist ;
+        $jobApp->blacklist_reason = $request->blacklist_reason ;
+    }
+
+    private function cleanWorkExperience(array $rows): array
+    {
+        return array_values(
+            array_filter(
+                array_map(function ($row) {
+                    if (!is_array($row)) {
+                        return null;
+                    }
+
+                    $cleanRow = [
+                        'company' => trim(
+                            (string) ($row['company'] ?? '')
+                        ),
+
+                        'position' => trim(
+                            (string) ($row['position'] ?? '')
+                        ),
+
+                        'years' => trim(
+                            (string) ($row['years'] ?? '')
+                        )
+                    ];
+
+                    $hasValue = array_filter(
+                        $cleanRow,
+                        fn($value) =>
+                        $value !== null &&
+                            $value !== ''
+                    );
+
+                    return $hasValue ? $cleanRow : null;
+                }, $rows)
+            )
+        );
+    }
+
+    private function storeApplicantPhoto(
+        RecruitJobApplication $jobApp,
+        Request $request
+    ): void {
+        if (!$request->hasFile('photo')) {
+            return;
+        }
+
+        if ($jobApp->photo) {
+            Files::deleteFile(
+                $jobApp->photo,
+                'avatar'
+            );
+        }
+
+        $jobApp->photo = Files::uploadLocalOrS3(
+            $request->file('photo'),
+            'avatar',
+            300
+        );
+    }
+
+    private function syncApplicantBlacklist(
+        RecruitJobApplication $jobApp,
+        Request $request
+    ): void {
+        $sourceBlacklist = RecruitApplicantBlacklist::where('company_id', company()->id)
+            ->where('source_application_id', $jobApp->id);
+
+        if (!$request->boolean('blacklist')) {
+            $sourceBlacklist->delete();
+            $jobApp->is_blacklisted = false;
+            $jobApp->blacklist_reason = null;
+
+            return;
+        }
+
+        RecruitApplicantBlacklist::updateOrCreate(
+            [
+                'company_id' => company()->id,
+                'source_application_id' => $jobApp->id,
+            ],
+            [
+                'full_name' => $jobApp->full_name,
+                'email' => $jobApp->email,
+                'phone' => $jobApp->phone,
+                'nrc' => $jobApp->nrc,
+                'reason' => $request->blacklist_reason,
+                'added_by' => user()->id,
+            ]
+        );
+    }
+
+    private function storeResume(
+        RecruitJobApplication $jobApp,
+        Request $request
+    ): void {
+        if (!$request->hasFile('resume')) {
+            return;
+        }
+
+        $uploadedResume = $request->file('resume');
+        $file = RecruitApplicationFile::where(
+            'recruit_job_application_id',
+            $jobApp->id
+        )->first();
+
+        if ($file && $file->hashname) {
+            Files::deleteFile(
+                $file->hashname,
+                'application-files/' . $jobApp->id
+            );
+        }
+
+        $file ??= new RecruitApplicationFile();
+        $file->recruit_job_application_id = $jobApp->id;
+        $file->filename = $uploadedResume->getClientOriginalName();
+        $file->hashname = Files::uploadLocalOrS3(
+            $uploadedResume,
+            'application-files/' . $jobApp->id
+        );
+        $file->size = $uploadedResume->getSize();
+        $file->save();
+    }
+
+    private function deleteApplicantFiles(RecruitJobApplication $jobApp): void
+    {
+        $jobApp->loadMissing('files');
+
+        foreach ($jobApp->files as $file) {
+            if ($file->hashname) {
+                Files::deleteFile(
+                    $file->hashname,
+                    'application-files/' . $jobApp->id
+                );
+            }
+
+            $file->delete();
+        }
     }
 
     /**
@@ -422,7 +661,15 @@ class JobApplicationController extends AccountBaseController
             || ($this->deletePermission == 'both' && user()->id == $jobApp->job->recruiter_id)
             || $jobApp->added_by == user()->id));
 
-        RecruitJobApplication::withTrashed()->find($id)->forceDelete();
+        DB::transaction(function () use ($jobApp) {
+            $this->deleteApplicantFiles($jobApp);
+
+            RecruitApplicantBlacklist::where('company_id', company()->id)
+                ->where('source_application_id', $jobApp->id)
+                ->delete();
+
+            $jobApp->forceDelete();
+        });
 
         return Reply::successWithData(__('recruit::modules.message.deleteSuccess'), ['redirectUrl' => route('job-applications.index')]);
     }
@@ -430,16 +677,16 @@ class JobApplicationController extends AccountBaseController
     public function applyQuickAction(Request $request)
     {
         switch ($request->action_type) {
-        case 'delete':
-            $this->deleteRecords($request);
+            case 'delete':
+                $this->deleteRecords($request);
 
-            return Reply::success(__('messages.deleteSuccess'));
-        case 'change-status':
-            $this->changeStatus($request);
+                return Reply::success(__('messages.deleteSuccess'));
+            case 'change-status':
+                $this->changeStatus($request);
 
-            return Reply::success(__('messages.updateSuccess'));
-        default:
-            return Reply::error(__('messages.selectAction'));
+                return Reply::success(__('messages.updateSuccess'));
+            default:
+                return Reply::error(__('messages.selectAction'));
         }
     }
 
@@ -447,7 +694,22 @@ class JobApplicationController extends AccountBaseController
     {
         abort_403(user()->permission('delete_job_application') != 'all');
 
-        RecruitJobApplication::withTrashed()->whereIn('id', explode(',', $request->row_ids))->forceDelete();
+        $ids = array_values(array_filter(
+            explode(',', $request->row_ids),
+            fn($id) => ctype_digit((string) $id)
+        ));
+
+        DB::transaction(function () use ($ids) {
+            RecruitJobApplication::whereIn('id', $ids)->get()->each(function ($jobApp) {
+                $this->deleteApplicantFiles($jobApp);
+
+                RecruitApplicantBlacklist::where('company_id', company()->id)
+                    ->where('source_application_id', $jobApp->id)
+                    ->delete();
+
+                $jobApp->forceDelete();
+            });
+        });
 
         return true;
     }
@@ -468,7 +730,7 @@ class JobApplicationController extends AccountBaseController
         $status = RecruitApplicationStatus::with('category')->where('id', $statusId)->first();
         $send = $this->statusForMailSend($statusId);
 
-        foreach($item as $id){
+        foreach ($item as $id) {
             $mail = RecruitJobApplication::findOrFail($id);
 
             $mail->recruit_application_status_id = $request->status;
@@ -483,6 +745,28 @@ class JobApplicationController extends AccountBaseController
         return Reply::dataOnly(['status' => 'success', 'status' => $status, 'interviewPermission' => $interviewPermission, 'offerLetterPermission' => $offerLetterPermission]);
     }
 
+    public function updateWorkflow(Request $request, $id)
+    {
+        abort_403(user()->permission('edit_job_application') == 'none');
+
+        $validated = $request->validate([
+            'selection_phase' => 'nullable|in:cv_screening,first_interview,second_interview,job_offer,hiring',
+            'overall_status' =>   'nullable|in:not_started,in_progress,keep_cv,rejected,passed,hired',
+            'rejection_reason' => 'required_if:overall_status,rejected|nullable|string',
+        ]);
+
+        $applicant = RecruitJobApplication::with('job')->findOrFail($id);
+        $applicant->forceFill(array_filter($validated, fn($value) => $value !== null));
+
+        $workflow = app(ApplicantWorkflowService::class);
+        $workflow->applyBlacklistDecision($applicant);
+        $workflow->validateTransition($applicant);
+        $applicant->save();
+        $workflow->createEmployeeForHiredApplicant($applicant);
+
+        return Reply::success('Applicant workflow updated.');
+    }
+
     public function statusForMailSend($id)
     {
         $settings = RecruitSetting::first();
@@ -495,15 +779,31 @@ class JobApplicationController extends AccountBaseController
         }
     }
 
-    public function getLocation(Request $request)
+    public function getRankLevel(Request $request)
     {
         $this->data = RecruitJob::with('address')->findOrFail($request->job_id);
-        $this->locations = RecruitJobAddress::with('location')->where('recruit_job_id', $request->job_id)->get();
-        $view = view('recruit::job-applications.location', $this->data)->render();
-        $job = RecruitJob::findOrFail($request->job_id);
-        $currencySymbol = $job->currency_id ? Currency::where('id', '=', $job->currency_id)->first() : company()->currency;
+        $designationId = $this->data->designation_id;
 
-        return Reply::dataOnly(['status' => 'success', 'locations' => $view, 'job' => $job, 'id' => $request->job_id, 'currencySymbol' => $currencySymbol]);
+        if (!$designationId) {
+            return Reply::dataOnly(['status' => 'error', 'message' => 'Designation not found']);
+        }
+
+        $designation = Designation::where('id', $designationId)->first();
+        $rankLevel = $designation?->rank_id;
+
+        // dd($this->data->rank_level, $this->data->management_rank_level);
+        $managementRank  = ManagementRank::where('id', $this->data->management_rank_level)->first();
+        // dd($managementRank);
+
+        $managementName = '';
+        $managementId = '';
+
+        if (!empty($managementRank)) {
+            $managementName = $managementRank->name;
+            $managementId = $managementRank->id;
+        }
+
+        return Reply::dataOnly(['status' => 'success', 'name' => $managementName, 'id' => $managementId, 'rankLevel' => $rankLevel, 'designationId' => $designationId]);
     }
 
     public function emailValidation($request)
@@ -519,12 +819,10 @@ class JobApplicationController extends AccountBaseController
                 $this->validate($request, [
                     'email' => 'unique:recruit_job_applications|email'
                 ]);
-            }
-            else {
+            } else {
                 return $request->email;
             }
-        }
-        else {
+        } else {
             return $request->email;
         }
     }
@@ -546,7 +844,7 @@ class JobApplicationController extends AccountBaseController
 
         $jobApp->application_source_id = $request->source;
         $jobApp->cover_letter = $request->cover_letter;
-        $jobApp->location_id = $request->location_id;
+        $jobApp->location_id = 1;
         $jobApp->total_experience = $request->total_experience;
         $jobApp->current_location = $request->current_location;
         $jobApp->current_ctc = $request->current_ctc;
@@ -564,7 +862,7 @@ class JobApplicationController extends AccountBaseController
             $redirectUrl = route('job-applications.index');
         }
 
-        return Reply::dataOnly(['redirectUrl' => $redirectUrl,'application_id' => $jobApp->id]);
+        return Reply::dataOnly(['redirectUrl' => $redirectUrl, 'application_id' => $jobApp->id]);
     }
 
     public function importJobApplication()
@@ -597,14 +895,13 @@ class JobApplicationController extends AccountBaseController
 
     public function importProcess(ImportProcessRequest $request)
     {
-        $batch = $this->importJobProcess($request, JobApplicationImport::class, ImportJobApplicationJob::class);
+        $batch = $this->importSalaryJobProcess($request, JobApplicationImport::class, ImportJobApplicationJob::class);
 
         return Reply::successWithData(__('messages.importProcessStart'), ['batch' => $batch]);
     }
 
     public function downloadSampleCsv()
     {
-        return response()->download(storage_path('csv/job-application-sample.xlsx'));
+        return response()->download(storage_path('csv/job_applicants_sample.csv'));
     }
-
 }

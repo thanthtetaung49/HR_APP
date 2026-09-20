@@ -54,6 +54,7 @@ return array(
     'confirmArchive' => 'Yes, Archive it!',
     'careerSiteDisabled' => 'Careeer is disabled',
     'applicationAdded' => 'Job application has been added successfully',
+    'applicationExists' => 'You have already applied for this job with the provided email or NRC.',
     'careerSiteDisableMessage' => 'Your Career Site is disabled from the setting. Kindly enable it from settings > recruit settings > enable career site',
     'jobAlertCreated' => 'Job Alert Created',
     'customQuestionCreated' => 'Custom question created successfully',

@@ -40,7 +40,12 @@
                                role="tab" aria-controls="nav-paymentMethods" aria-selected="true">
                                 @lang('payroll::modules.payroll.payrollCurrencySetting')
                             </a>
-                             
+                             <a class="nav-item nav-link f-15 payroll-rate-setting"
+                               href="{{ route('payroll.payroll_settings') }}?tab=payroll-rate-setting"
+                               role="tab" aria-controls="nav-paymentMethods" aria-selected="true">
+                                @lang('payroll::modules.payroll.payrollRateSetting')
+                            </a>
+
                         </div>
                     </nav>
                 </div>

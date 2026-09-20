@@ -37,13 +37,20 @@
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center" id="select-label">@lang('app.select')
                 @lang('app.month')</p>
             <div class="select-status">
-                <select class="form-control select-picker" name="month" id="month">
+                {{-- <select class="form-control select-picker" name="month" id="month">
+                </select> --}}
+                <select class="form-control select-picker" id="month" name="month">
+                    @foreach (range(1, 12) as $monthNumber)
+                        <option value="{{ str_pad($monthNumber, 2, '0', STR_PAD_LEFT) }}" @selected($monthNumber === (int) now()->format('m'))>
+                            {{ Carbon\Carbon::create()->month($monthNumber)->format('F') }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
         </div>
 
         <div class="select-box d-flex py-2 px-lg-3 px-md-3 px-0 border-right-grey border-right-grey-sm-0">
-            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">  @lang('payroll::modules.payroll.rank')</p>
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center"> @lang('payroll::modules.payroll.rank')</p>
             <div class="select-status">
                 <select class="form-control select-picker" name="rankId" id="rankId">
                     <option value=''>---</option>
@@ -187,13 +194,14 @@
                                 </select>
                             </div> --}}
 
+                            {{-- @dd($employees) --}}
+
 
                             <div class="col-md-4">
-                                <x-forms.label class="my-3" fieldId="selectEmployee" :popover="__('payroll::messages.payrollEmployees')"
-                                    :fieldLabel="__('modules.employees.title')">
+                                <x-forms.label class="my-3" fieldId="selectEmployee" :popover="__('payroll::messages.payrollEmployees')" :fieldLabel="__('modules.employees.title')">
                                 </x-forms.label>
-                                <select class="form-control multiple-users" multiple name="employee_id[]"
-                                    id="selectEmployee" data-live-search="true" data-size="8">
+                                <select class="form-control multiple-users" multiple name="employee_id[]" id="selectEmployee"
+                                    data-live-search="true" data-size="8">
                                     @foreach ($employees as $item)
                                         <x-user-option :user="$item" :pill="true" />
                                     @endforeach
@@ -298,7 +306,7 @@
                 blockUI: true,
                 data: $('#save-attendance-data-form').serialize(),
                 success: function(response) {
-                    console.log(response);
+                    // console.log(response);
                     if (response.status == 'success') {
                         $('#selectEmployee').html(response.data);
 

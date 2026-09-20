@@ -86,6 +86,13 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $this->year = $request->change_year ?: $request->year;
         $this->month = $request->change_month ?: $request->month;
 
+        $selectedMonthStart = Carbon::createFromDate(
+            $request->year,
+            $request->month,
+            1,
+            company()->timezone
+        )->startOfMonth()->toDateString();
+
         $employees = User::with(
             [
                 'employeeDetail.designation:id,name',
@@ -115,7 +122,18 @@ class EmployeeShiftScheduleController extends AccountBaseController
                             ->whereRaw('MONTH(users.inactive_date) >= ?', [$this->month]);
                     });
             })
+            ->where(function ($query) use ($selectedMonthStart) {
+                $query
+                    ->whereNull('employee_details.last_date')
+                    ->orWhereDate(
+                        'employee_details.last_date',
+                        '>=',
+                        $selectedMonthStart
+                    );
+            })
             ->groupBy('users.id');
+
+        // dd('hi');
 
         $location_id = $request->location;
         $department_id = $request->department;
@@ -265,6 +283,8 @@ class EmployeeShiftScheduleController extends AccountBaseController
         $this->weekEndDate = $this->weekStartDate->copy()->addDays(6);
         $this->weekPeriod = CarbonPeriod::create($this->weekStartDate, $this->weekStartDate->copy()->addDays(6)); // Get All Dates from start to end date
 
+        $weekStartDate = $this->weekStartDate ;
+
         $employees = User::with(
             [
                 'employeeDetail.designation:id,name',
@@ -292,6 +312,15 @@ class EmployeeShiftScheduleController extends AccountBaseController
                             ->whereRaw('MONTH(users.inactive_date) >= ?', [$this->weekStartDate->month])
                             ->orWhereRaw('MONTH(users.inactive_date) >= ?', [$this->weekEndDate->month]);
                     });
+            })
+            ->where(function ($query) use ($weekStartDate) {
+                $query
+                    ->whereNull('employee_details.last_date')
+                    ->orWhereDate(
+                        'employee_details.last_date',
+                        '>=',
+                        $weekStartDate
+                    );
             })
             ->onlyEmployee()
             ->groupBy('users.id');

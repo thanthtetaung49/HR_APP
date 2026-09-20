@@ -54,14 +54,24 @@ class RecruitDashboardController extends AccountBaseController
                 });
         })->count();
 
-        $this->totalApplications = RecruitJobApplication::count();
+        $applicationQuery = RecruitJobApplication::whereDate('created_at', '>=', $startDate)->whereDate('created_at', '<=', $endDate);
+        $this->totalApplications = (clone $applicationQuery)->count();
+        $this->cvForm = (clone $applicationQuery)->where('selection_phase', 'cv_screening')->where('overall_status', 'not_started')->count();
+        $this->cvScreening = (clone $applicationQuery)->where('selection_phase', 'cv_screening')->where('overall_status', '!=', 'not_started')->count();
+        $this->interviewed = (clone $applicationQuery)->whereIn('selection_phase', ['first_interview', 'second_interview', 'job_offer', 'hiring'])->count();
+        $this->offerAccepted = (clone $applicationQuery)->where('selection_phase', 'job_offer')->where('overall_status', 'hired')->where('job_offer_decision', 'accepted')->count();
+
+        $this->activeVacancies = RecruitJob::where('status', 'open')
+            ->whereDate('start_date', '<=', $endDate)
+            ->where(fn ($query) => $query->whereNull('end_date')->orWhereDate('end_date', '>=', $startDate))
+            ->sum('vacancy_count');
 
         $this->totalHired = RecruitJobApplication::join('recruit_application_status', 'recruit_application_status.id', '=', 'recruit_job_applications.recruit_application_status_id')
-            ->where('recruit_application_status.status', 'hired')
+            ->where('recruit_job_applications.overall_status', 'hired')
             ->count();
 
         $this->totalRejected = RecruitJobApplication::join('recruit_application_status', 'recruit_application_status.id', '=', 'recruit_job_applications.recruit_application_status_id')
-            ->where('recruit_application_status.status', 'rejected')
+            ->where('recruit_job_applications.overall_status', 'rejected')
             ->count();
 
         $currentDate = now()->format('Y-m-d');

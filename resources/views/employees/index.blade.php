@@ -271,7 +271,8 @@
             const employmentType = $('#employmentType').val();
             const searchText = $('#search-text-field').val();
             const rankId = $('#rank_id').val();
-            // console.log(rankId);
+
+            // console.log(employee);
 
             data['status'] = status;
             data['employee'] = employee;

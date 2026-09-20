@@ -98,6 +98,7 @@ class EmployeeShiftController extends AccountBaseController
 
     public function index()
     {
+        // dd('hi');
         $this->weekMap = Holiday::weekMap();
         $this->employeeShifts = EmployeeShift::where('shift_name', '<>', 'Day Off')->get();
         $generalShift = attendance_setting();

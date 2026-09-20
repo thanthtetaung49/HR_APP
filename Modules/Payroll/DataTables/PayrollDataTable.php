@@ -37,6 +37,9 @@ class PayrollDataTable extends BaseDataTable
         return datatables()
             ->eloquent($query)
             ->addColumn('check', function ($row) {
+                if (in_array($row->salary_status, ['paid', 'locked'], true)) {
+                    return '';
+                }
                 return '<input type="checkbox" class="select-table-row" data-user-id="' . $row->id . '" id="datatable-row-' . $row->salary_slip_id . '"  name="datatable_ids[]" value="' . $row->salary_slip_id . '" onclick="dataTableRowCheck(' . $row->salary_slip_id . ')">';
             })
             ->editColumn('month', function ($row) {
@@ -102,14 +105,14 @@ class PayrollDataTable extends BaseDataTable
 
                 $actions .= '<a href="' . route('payroll.show', [$row->salary_slip_id]) . '" class="dropdown-item openRightModal"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
 
-                if ($this->editPayrollPermission == 'all' || ($this->editPayrollPermission == 'added' && user()->id == $row->added_by)) {
+                if (!in_array($row->salary_status, ['paid', 'locked'], true) && ($this->editPayrollPermission == 'all' || ($this->editPayrollPermission == 'added' && user()->id == $row->added_by))) {
                     $actions .= '<a class="dropdown-item openRightModal" href="' . route('payroll.edit', [$row->salary_slip_id]) . '">
                                     <i class="fa fa-edit mr-2"></i>
                                     ' . __('app.edit') . '
                             </a>';
                 }
 
-                if ($this->deletePayrollPermission == 'all' || ($this->deletePayrollPermission == 'added' && user()->id == $row->added_by)) {
+                if (!in_array($row->salary_status, ['paid', 'locked'], true) && ($this->deletePayrollPermission == 'all' || ($this->deletePayrollPermission == 'added' && user()->id == $row->added_by))) {
                     $actions .= '<a data-payroll-id=' . $row->salary_slip_id . '
                                 class="dropdown-item delete-table-row" href="javascript:;">
                                    <i class="fa fa-trash mr-2"></i>
@@ -137,24 +140,18 @@ class PayrollDataTable extends BaseDataTable
     {
         $request = $this->request();
 
-        // dd($request->all());
-
         $startDate = null;
         $endDate = null;
 
         $isAdmin = false;
         $isHRManager = false;
 
+        $month = explode(' ', $request->month);
+
         if (!is_null($request->month) && $request->month != 'null' && $request->month != '') {
-            $month = explode(' ', $request->month);
-            // $prevDate = trim($explode[0]);
-            // $todayDate = trim($explode[1]);
-
-            $startDate = CarbonImmutable::parse($month[0])->subMonth()->setDay(26);
-            $endDate = CarbonImmutable::parse($month[1])->setDay(25);
+            $startDate = Carbon::parse($month[0])->subMonth()->setDay(26);
+            $endDate = Carbon::parse($month[1])->setDay(25);
         }
-
-
 
         if (in_array('admin', user_roles())) {
             $isAdmin = true;
@@ -172,12 +169,21 @@ class PayrollDataTable extends BaseDataTable
             ->join('roles', 'roles.id', '=', 'role_user.role_id')
             ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
             ->join('payroll_cycles', 'payroll_cycles.id', '=', 'employee_payroll_cycles.payroll_cycle_id')
-            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to', 'salary_slips.total_deductions', 'designations.rank_id')
+            ->select('users.id', 'users.name', 'users.email', 'users.image', 'designations.name as designation_name', 'salary_slips.net_salary', 'salary_slips.gross_salary', 'salary_slips.paid_on', 'salary_slips.status as salary_status', 'salary_slips.id as salary_slip_id', 'salary_slips.added_by', 'salary_slips.month', 'salary_slips.year', 'salary_slips.currency_id', 'salary_slips.salary_from', 'salary_slips.salary_to', 'salary_slips.total_deductions', 'designations.rank_id', 'employee_details.last_date')
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $request->cycle)
             ->where('salary_slips.year', $request->year)
             ->where('users.status', 'active')
-            ->when(!in_array('admin', user_roles()) && !in_array('hr-manager', user_roles()) , function ($query) {
+            ->where(function ($query) use ($startDate) {
+                $query
+                    ->whereNull('employee_details.last_date')
+                    ->orWhereDate(
+                        'employee_details.last_date',
+                        '>=',
+                        $startDate->format('Y-m-d')
+                    );
+            })
+            ->when(!in_array('admin', user_roles()) && !in_array('hr-manager', user_roles()), function ($query) {
                 $query
                     ->where('salary_slips.status', '<>', 'generated');
             })
@@ -190,12 +196,6 @@ class PayrollDataTable extends BaseDataTable
                         });
                 });
             });
-
-
-
-        // dd(!in_array('admin', user_roles()) && !in_array('hr-manager', user_roles()));
-
-        // dd($users->get()->toArray(), $this->viewPayrollPermission);
 
         if (!is_null($startDate) && !is_null($endDate)) {
             $users = $users->whereRaw('Date(salary_slips.salary_from) = ?', [$startDate]);
@@ -213,8 +213,6 @@ class PayrollDataTable extends BaseDataTable
             });
         }
 
-        // dd($this->viewPayrollPermission, $users->count(), $users->toSql(), $users->getBindings());
-
         if ($request->searchText != '') {
             $users = $users->where(function ($query) {
                 $query->where('users.name', 'like', '%' . request('searchText') . '%')
@@ -227,18 +225,6 @@ class PayrollDataTable extends BaseDataTable
         }
 
         $users->groupBy('users.id');
-
-        // dd([
-        //     'roles' => user_roles(),
-        //     'isAdmin' => $isAdmin,
-        //     'isHRManager' => $isHRManager,
-        //     'isHROfficer' => $isHROfficer,
-        //     'viewPermission' => $this->viewPayrollPermission,
-        //     'request' => $request->all(),
-        //     'count' => $users->count(),
-        //     'sql' => $users->toSql(),
-        //     'bindings' => $users->getBindings(),
-        // ]);
 
         $this->currency = PayrollSetting::with('currency')->first();
 
@@ -254,6 +240,9 @@ class PayrollDataTable extends BaseDataTable
     {
         return parent::setBuilder('payroll-table')
             ->parameters([
+                'deferLoading' => 0,
+                'responsive' => true,
+                'autoWidth' => false,
                 'initComplete' => 'function () {
                     window.LaravelDataTables["payroll-table"].buttons().container()
                      .appendTo( "#table-actions")

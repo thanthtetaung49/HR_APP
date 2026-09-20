@@ -37,6 +37,7 @@
                             </td>
                             <td class="pr-20 text-right">
                                 @if (isset($weekShifts[$key]->shift))
+                                    {{-- @dd($weekShifts[$key]->shift) --}}
                                     @if (attendance_setting()->allow_shift_change && !$weekDate->isPast())
                                         @if (!is_null($weekShifts[$key]->requestChange) && $weekShifts[$key]->requestChange->status == 'waiting')
                                             <div class="task_view">

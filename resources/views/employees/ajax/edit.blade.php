@@ -498,6 +498,14 @@
                 <x-forms.custom-field :fields="$fields" :criterias="$criterias" :model="$employeeDetail"
                     :subCriterias="$subCriterias"></x-forms.custom-field>
 
+                <div class="col-md-12 my-3">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="blacklist" name="blacklist"
+                            value="1" @checked($blackListStatus)>
+                        <label class="custom-control-label" for="blacklist">Add applicant to blacklist</label>
+                    </div>
+                </div>
+
                 <x-form-actions>
                     <x-forms.button-primary id="save-form" class="mr-3" icon="check">@lang('app.save')
                     </x-forms.button-primary>

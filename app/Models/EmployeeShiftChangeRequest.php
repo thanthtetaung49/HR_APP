@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $shift_schedule_id
  * @property int $employee_shift_id
  * @property string $status
+ * @property string|null $manager_status_permission
+ * @property int|null $action_by
  * @property string|null $reason
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at

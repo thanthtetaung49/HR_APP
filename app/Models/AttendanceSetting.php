@@ -69,6 +69,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @method static \Illuminate\Database\Eloquent\Builder|AttendanceSetting whereMonthlyReport($value)
  * @method static \Illuminate\Database\Eloquent\Builder|AttendanceSetting whereMonthlyReportRoles($value)
  * @property string|null $early_clock_in
+ * @property string $shift_manager_permission
  * @method static \Illuminate\Database\Eloquent\Builder|AttendanceSetting whereEarlyClockIn($value)
  * @mixin \Eloquent
  */
@@ -76,7 +77,8 @@ class AttendanceSetting extends BaseModel
 {
 
     use HasCompany;
-    protected $fillable = ['qr_enable', 'default_employee_shift'];
+    // protected $fillable = ['qr_enable', 'default_employee_shift', 'shift_manager_permission'];
+    protected $guarded = [];
 
     public function shift(): BelongsTo
     {

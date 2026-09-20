@@ -1,6 +1,55 @@
 @php
-$manageShiftPermission = user()->permission('manage_employee_shifts');
+    $manageShiftPermission = user()->permission('manage_employee_shifts');
 @endphp
+
+<div class="col-lg-12 col-md-12 ntfcn-tab-content-left w-100 p-4">
+    <div class="d-block d-lg-flex d-md-flex">
+        <x-alert type="info">@lang('modules.leaves.leaveSettingNote')</x-alert>
+    </div>
+
+    <div class="d-block d-lg-flex d-md-flex">
+        <p> @lang('modules.leaves.reportingManager') </p>
+        <div class="col-lg-4">
+
+            <select id="shift_manager_permission" name="shift_manager_permission" class="form-control select-picker shift_manager_permission">
+                <option value="cannot-approve" @selected(($attendanceSetting->shift_manager_permission ?? 'cannot-approve') === 'cannot-approve')>
+                    @lang('modules.attendance.cannotApprove')
+                </option>
+                <option value="approved" @selected(($attendanceSetting->shift_manager_permission ?? 'cannot-approve') === 'approved')>
+                    @lang('app.approve')
+                </option>
+                <option value="pre-approve" @selected(($attendanceSetting->shift_manager_permission ?? 'cannot-approve') === 'pre-approve')>
+                    @lang('app.preApprove')
+                </option>
+            </select>
+        </div>
+        <p> Shift Change </p>
+    </div>
+</div>
+
+{{-- <div class="row mb-4">
+    <div class="col-lg-6 col-md-8">
+        <x-forms.label fieldId="shift_manager_permission" :fieldLabel="__('modules.attendance.reportingManagerPermission')">
+        </x-forms.label>
+
+        <select class="form-control select-picker" id="shift_manager_permission" name="shift_manager_permission">
+            <option value="cannot-approve" @selected(($attendanceSetting->shift_manager_permission ?? 'cannot-approve') === 'cannot-approve')>
+                @lang('modules.attendance.cannotApprove')
+            </option>
+            <option value="approved" @selected(($attendanceSetting->shift_manager_permission ?? 'cannot-approve') === 'approved')>
+                @lang('app.approve')
+            </option>
+            <option value="pre-approve" @selected(($attendanceSetting->shift_manager_permission ?? 'cannot-approve') === 'pre-approve')>
+                @lang('app.preApprove')
+            </option>
+        </select>
+
+        <small class="form-text text-muted mt-2">
+            @lang('modules.attendance.shiftManagerPermissionHelp')
+        </small>
+    </div>
+</div> --}}
+
 <div class="table-responsive">
     <x-table class="table-bordered">
         <x-slot name="thead">
@@ -28,12 +77,12 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                         </div>
                         <div class="f-11">
                             @lang('modules.attendance.halfDay'):
-                            {{ $shift->halfday_mark_time? \Carbon\Carbon::createFromFormat('H:i:s', $shift->halfday_mark_time)->translatedFormat(company()->time_format): '' }}
+                            {{ $shift->halfday_mark_time ? \Carbon\Carbon::createFromFormat('H:i:s', $shift->halfday_mark_time)->translatedFormat(company()->time_format) : '' }}
                         </div>
                         <div class="f-11">
                             @lang('modules.employees.endTime'):
                             {{ \Carbon\Carbon::createFromFormat('H:i:s', $shift->office_end_time)->translatedFormat(company()->time_format) }}
-                        </div>                        
+                        </div>
                     @else
                         <div class="f-11">@lang('modules.attendance.totalShiftHours'):
                             {{ $shift->flexible_total_hours }} @lang('app.hrs')
@@ -46,11 +95,11 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                 </td>
                 <td>
                     @if ($shift->shift_type == 'strict')
-                    <div class="f-11">
-                        @lang('modules.attendance.lateMark'): {{ $shift->late_mark_duration }}
-                    </div>
+                        <div class="f-11">
+                            @lang('modules.attendance.lateMark'): {{ $shift->late_mark_duration }}
+                        </div>
                     @endif
-                    
+
                     <div class="f-11">
                         @lang('modules.attendance.checkininday'): {{ $shift->clockin_in_day }}
                     </div>
@@ -72,16 +121,16 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
                     <td class="text-right pr-20">
                         <div class="task_view mb-1">
                             <a href="javascript:;" data-shift-id="{{ $shift->id }}"
-                                class="edit-shift task_view_more d-flex align-items-center justify-content-center" data-toggle="tooltip"
-                                data-original-title="@lang('app.edit')"> <i
+                                class="edit-shift task_view_more d-flex align-items-center justify-content-center"
+                                data-toggle="tooltip" data-original-title="@lang('app.edit')"> <i
                                     class="fa fa-edit icons"></i>
                             </a>
                         </div>
                         @if ($shift->id != attendance_setting()->default_employee_shift)
                             <div class="task_view mt-1 mt-lg-0 mt-md-0">
                                 <a href="javascript:;" data-shift-id="{{ $shift->id }}"
-                                    class="delete-shift task_view_more d-flex align-items-center justify-content-center dropdown-toggle" data-toggle="tooltip"
-                                    data-original-title="@lang('app.delete')">
+                                    class="delete-shift task_view_more d-flex align-items-center justify-content-center dropdown-toggle"
+                                    data-toggle="tooltip" data-original-title="@lang('app.delete')">
                                     <i class="fa fa-trash icons"></i>
                                 </a>
                             </div>
@@ -106,6 +155,32 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
 </div>
 
 <script>
+    // function changeStatus(value) {
+    //     $.easyAjax({
+    //         url: "{{ route('shifts-change.change_manager_permission') }}",
+    //         type: 'POST',
+    //         blockUI: true,
+    //         data: {
+    //             shift_manager_permission: $(this).val(),
+    //             _token: "{{ csrf_token() }}"
+    //         }
+    //     });
+    // }
+
+    $('#shift_manager_permission')
+        .off('change.shiftManagerPermission')
+        .on('change.shiftManagerPermission', function() {
+            $.easyAjax({
+                url: "{{ route('shifts-change.change_manager_permission') }}",
+                type: 'POST',
+                blockUI: true,
+                data: {
+                    shift_manager_permission: $(this).val(),
+                    _token: "{{ csrf_token() }}"
+                }
+            });
+        });
+
     $('body').on('click', '#addEmployeeShift', function() {
         var url = "{{ route('employee-shifts.create') }}";
         $(MODAL_XL + ' ' + MODAL_HEADING).html('...');
@@ -187,5 +262,4 @@ $manageShiftPermission = user()->permission('manage_employee_shifts');
             }
         });
     });
-
 </script>

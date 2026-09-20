@@ -33,15 +33,9 @@
 
                             <x-forms.input-group>
                                 <select class="form-control select-picker mt" name="quarter" id="quarter"
-                                    data-live-search="true">
+                                    data-live-search="true" disabled>
                                     <option value="">--</option>
-                                    <option value="1" @if ($reports->quarter == 1) selected @endif>Q1 (Jan to Dec)
-                                    </option>
-                                    <option value="2" @if ($reports->quarter == 2) selected @endif>Q2 (Apr to Dec)
-                                    </option>
-                                    <option value="3" @if ($reports->quarter == 3) selected @endif>Q3 (Jul to
-                                        Dec)</option>
-                                    <option value="4" @if ($reports->quarter == 4) selected @endif>Q4 (Oct to Dec)
+                                    <option value="1" @if ($reports->quarter == 1) selected @endif>(Apr to Mar)
                                     </option>
                                 </select>
                             </x-forms.input-group>

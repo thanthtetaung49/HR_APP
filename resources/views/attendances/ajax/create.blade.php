@@ -109,28 +109,58 @@
 
                     <div class="col-lg-4 col-md-6 col-xl-3">
                         <div class="form-group my-3">
-                            <x-forms.label fieldId="late_yes" :fieldLabel="__('modules.attendance.late')">
+                            <x-forms.label fieldId="late" :fieldLabel="__('modules.attendance.late')">
                             </x-forms.label>
                             <div class="d-flex">
-                                <x-forms.radio fieldId="late_yes" :fieldLabel="__('app.yes')" fieldName="late"
+                                <x-forms.radio fieldId="late" :fieldLabel="__('app.yes')" fieldName="late"
                                     fieldValue="yes">
                                 </x-forms.radio>
-                                <x-forms.radio fieldId="late_no" :fieldLabel="__('app.no')" fieldValue="no"
+                                <x-forms.radio fieldId="late" :fieldLabel="__('app.no')" fieldValue="no"
                                     fieldName="late" checked="true"></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-4 col-md-6 col-xl-3">
+                        <div class="form-group my-3">
+                            <x-forms.label fieldId="lateBetween" :fieldLabel="__('modules.attendance.lateBetween')">
+                            </x-forms.label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="lateBetween" :fieldLabel="__('app.yes')" fieldName="lateBetween"
+                                    fieldValue="yes">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="lateBetween" :fieldLabel="__('app.no')" fieldValue="no"
+                                    fieldName="lateBetween" checked="true"></x-forms.radio>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="col-lg-4 col-md-6 col-xl-3">
+                        <div class="form-group my-3">
+                            <x-forms.label fieldId="halfDay" :fieldLabel="__('modules.attendance.halfDay')">
+                            </x-forms.label>
+                            <div class="d-flex">
+                                <x-forms.radio fieldId="halfDay" :fieldLabel="__('app.yes')" fieldName="half_day"
+                                    fieldValue="yes">
+                                </x-forms.radio>
+                                <x-forms.radio fieldId="halfDay" :fieldLabel="__('app.no')" fieldValue="no"
+                                    fieldName="half_day" checked="true"></x-forms.radio>
                             </div>
                         </div>
                     </div>
 
                     <div class="col-lg-4 col-md-6 col-xl-3">
                         <div class="form-group my-3">
-                            <x-forms.label fieldId="half_day_yes" :fieldLabel="__('modules.attendance.halfDay')">
+                            <x-forms.label fieldId="breakTimeLate" :fieldLabel="__('modules.attendance.breakTime')">
                             </x-forms.label>
                             <div class="d-flex">
-                                <x-forms.radio fieldId="half_day_yes" :fieldLabel="__('app.yes')" fieldName="half_day"
+                                <x-forms.radio fieldId="breakTimeLate" :fieldLabel="__('app.yes')" fieldName="breakTime"
                                     fieldValue="yes">
                                 </x-forms.radio>
-                                <x-forms.radio fieldId="half_day_no" :fieldLabel="__('app.no')" fieldValue="no"
-                                    fieldName="half_day" checked="true"></x-forms.radio>
+                                <x-forms.radio fieldId="breakTimeLate" :fieldLabel="__('app.no')" fieldValue="no"
+                                    fieldName="breakTime" checked="true"></x-forms.radio>
                             </div>
                         </div>
                     </div>

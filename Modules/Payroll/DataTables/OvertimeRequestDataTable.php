@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Html\Column;
 use Modules\Payroll\Entities\OvertimeRequest;
+use Modules\Payroll\Entities\OvertimeSetting;
 use Modules\Payroll\Entities\PayrollSetting;
 
 class OvertimeRequestDataTable extends BaseDataTable
@@ -16,6 +17,7 @@ class OvertimeRequestDataTable extends BaseDataTable
     private $roleId;
     private $payrollSetting;
     private $payCode;
+    private $managerPermission;
 
     /**
      * Build DataTable class.
@@ -27,37 +29,193 @@ class OvertimeRequestDataTable extends BaseDataTable
     {
         $this->roleId = self::getUserSecondRole();
         $this->payrollSetting = PayrollSetting::first();
+        $this->managerPermission = OvertimeSetting::current()->manager_permission;
+
         return datatables()
             ->eloquent($query)
             ->addColumn('action', function ($row) {
-                $allowRoles = $row->policy->allow_roles;
-                $this->payCode = $row->policy->payCode;
-                $reportingTo = user()->employeeDetails->reporting_to;
-                $action = '';
+                $allowRoles =
+                    $row->policy->allow_roles ?? [];
 
-                if ($row->status == 'reject') {
-                    $statusColor = 'danger';
-                    $status = __('app.rejected');
-                } elseif ($row->status == 'pending') {
-                    $statusColor = 'warning';
-                    $status = __('app.pending');
-                } else {
-                    $statusColor = 'success';
-                    $status = __('app.accepted');
+                $this->payCode =
+                    $row->policy->payCode;
+
+                $isAdminOrHr =
+                    user()->hasRole('admin') ||
+                    user()->hasRole('hr-officer') ||
+                    user()->hasRole('hr-manager');
+
+                $isAllowedRole = in_array(
+                    $this->roleId,
+                    $allowRoles
+                );
+
+                $isReportingManager =
+                    (int) $row->reporting_to ===
+                    (int) user()->id &&
+                    (int) $row->user_id !==
+                    (int) user()->id;
+
+                $isFinalApprover =
+                    $isAdminOrHr ||
+                    $isAllowedRole;
+
+
+                if ($row->status !== 'pending') {
+                    if ($row->status === 'reject') {
+                        $statusColor = 'danger';
+                        $status = __('app.rejected');
+                    } else {
+                        $statusColor = 'success';
+                        $status = __('app.accepted');
+                    }
+
+                    $actionBy =
+                        $row->actionByName ?? '--';
+
+                    return
+                        '<i class="mr-1 fa fa-circle text-' .
+                        $statusColor .
+                        '"></i>' .
+                        $status .
+                        '<br>' .
+                        '<p>' .
+                        __('payroll::modules.payroll.actionBy') .
+                        ' : ' .
+                        e($actionBy) .
+                        '</p>';
                 }
 
-                if ($row->status == 'pending' && (user()->hasRole('admin') || user()->hasRole('hr-officer') || user()->hasRole('hr-manager') || in_array($this->roleId, $allowRoles) || $reportingTo == user()->id)) {
-                    $action .= '<button type="button" id="edit"  data-request-id="' . $row->id . '" data-type="edit" class="btn-primary btn-sm rounded f-14 p-2 editRequest mr-1"> <i class="fa fa-edit "></i> </button>';
-                    $action .= '<button type="button" id="reject"  data-request-id="' . $row->id . '" data-type="reject" class="btn-danger btn-sm rounded f-14 p-2 acceptButton"> <i class="fa fa-times mr-1"></i> ' . __('app.reject') . '</button>';
+                $actions = '';
 
-                    $action .= ' <button type="button" id="acceptButton"  data-request-id="' . $row->id . '" data-type="accept" class="btn-primary btn-sm rounded f-14 p-2 acceptButton">  <i class="fa fa-check mr-1"></i>' . __('app.accept') . '</button>';
+                if (
+                    $row->manager_status_permission ===
+                    'pre-approve'
+                ) {
+                    $actions .=
+                        '<div class="mb-2">' .
+                        '<i class="mr-1 fa fa-circle ' .
+                        'text-warning"></i>' .
+                        __('app.pending') .
+                        '<br>' .
+                        '<span class="badge badge-success">' .
+                        __('payroll::messages.preApproved') .
+                        '</span>' .
+                        '</div>';
                 }
 
-                if ($row->status != 'pending') {
-                    return '<i class="mr-1 fa fa-circle text-' . $statusColor . '" ></i>' . $status . '<br> <p>' . __('payroll::modules.payroll.actionBy') . ' : ' . $row->actionByName . '</p>';
+                /*
+     * Admin, HR and allowed policy roles perform
+     * the final action.
+     */
+                if ($isFinalApprover) {
+                    $actions .=
+                        '<button type="button" ' .
+                        'data-request-id="' . $row->id . '" ' .
+                        'data-type="edit" ' .
+                        'class="btn-primary btn-sm rounded ' .
+                        'f-14 p-2 editRequest mr-1">' .
+                        '<i class="fa fa-edit"></i>' .
+                        '</button>';
+
+                    $actions .=
+                        '<button type="button" ' .
+                        'data-request-id="' . $row->id . '" ' .
+                        'data-type="reject" ' .
+                        'class="btn-danger btn-sm rounded ' .
+                        'f-14 p-2 acceptButton mr-1">' .
+                        '<i class="fa fa-times mr-1"></i>' .
+                        __('app.reject') .
+                        '</button>';
+
+                    $actions .=
+                        '<button type="button" ' .
+                        'data-request-id="' . $row->id . '" ' .
+                        'data-type="accept" ' .
+                        'class="btn-primary btn-sm rounded ' .
+                        'f-14 p-2 acceptButton">' .
+                        '<i class="fa fa-check mr-1"></i>' .
+                        __('app.accept') .
+                        '</button>';
+
+                    return $actions;
                 }
 
-                return $action;
+                /*
+     * Reporting manager actions
+     */
+                if (!$isReportingManager) {
+                    return $actions;
+                }
+
+                if (
+                    $this->managerPermission ===
+                    'cannot-approve'
+                ) {
+                    return $actions;
+                }
+
+                /*
+     * Do not allow the manager to act twice.
+     */
+                if (
+                    $row->manager_status_permission ===
+                    'pre-approve'
+                ) {
+                    return $actions;
+                }
+
+                /*
+     * Reporting manager can reject under both
+     * Approve and Pre-approve settings.
+     */
+                $actions .=
+                    '<button type="button" ' .
+                    'data-request-id="' . $row->id . '" ' .
+                    'data-type="reject" ' .
+                    'class="btn-danger btn-sm rounded ' .
+                    'f-14 p-2 acceptButton mr-1">' .
+                    '<i class="fa fa-times mr-1"></i>' .
+                    __('app.reject') .
+                    '</button>';
+
+                /*
+     * Reporting manager gives final acceptance.
+     */
+                if (
+                    $this->managerPermission ===
+                    'approved'
+                ) {
+                    $actions .=
+                        '<button type="button" ' .
+                        'data-request-id="' . $row->id . '" ' .
+                        'data-type="accept" ' .
+                        'class="btn-primary btn-sm rounded ' .
+                        'f-14 p-2 acceptButton">' .
+                        '<i class="fa fa-check mr-1"></i>' .
+                        __('app.accept') .
+                        '</button>';
+                }
+
+                /*
+     * Reporting manager only pre-approves.
+     */
+                if (
+                    $this->managerPermission ===
+                    'pre-approve'
+                ) {
+                    $actions .=
+                        '<button type="button" ' .
+                        'data-request-id="' . $row->id . '" ' .
+                        'data-type="pre-approve" ' .
+                        'class="btn-success btn-sm rounded ' .
+                        'f-14 p-2 preApproveButton">' .
+                        '<i class="fa fa-check mr-1"></i>' .
+                        __('app.preApprove') .
+                        '</button>';
+                }
+
+                return $actions;
             })
 
             ->editColumn('user_id', function ($row) {
@@ -131,7 +289,7 @@ class OvertimeRequestDataTable extends BaseDataTable
         $roleId = self::getUserSecondRole();
 
         $overtimeRequest = $model->with('actionBy', 'user', 'company', 'policy', 'policy.payCode')
-            ->select('overtime_requests.*', 'users.name', 'users.email', 'actionby.email', 'actionby.name as actionByName', 'pay_codes.fixed', 'pay_codes.fixed_amount', 'employee_details.overtime_hourly_rate', 'users.location_id', 'users.department_id', 'users.designation_id', DB::raw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) as employee_shift_id'), 'holidays.date as holiday_date')
+            ->select('overtime_requests.*', 'users.name', 'users.email', 'actionby.email', 'actionby.name as actionByName', 'pay_codes.fixed', 'pay_codes.fixed_amount', 'employee_details.overtime_hourly_rate', 'employee_details.reporting_to', 'users.location_id', 'users.department_id', 'users.designation_id', DB::raw('COALESCE(employee_shift_schedules.employee_shift_id, (SELECT default_employee_shift FROM attendance_settings LIMIT 1)) as employee_shift_id'), 'holidays.date as holiday_date')
             ->leftJoin('users', 'users.id', '=', 'overtime_requests.user_id')
             ->leftJoin('overtime_policy_employees', 'users.id', '=', 'overtime_policy_employees.user_id')
             ->leftJoin('overtime_policies', 'overtime_policies.id', '=', 'overtime_policy_employees.overtime_policy_id')

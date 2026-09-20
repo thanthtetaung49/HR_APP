@@ -86,12 +86,20 @@ class AttendanceReportDataTable extends BaseDataTable
             })
             ->addColumn('hours_clocked', fn($row) => $this->calculateHours($period, $row))
             ->addColumn('late_day_count', fn($row) => Attendance::countDaysLateByUser($startDate, $endDate, $row->id) ?: '0')
+            ->addColumn('late_after_count', fn($row) => Attendance::where('user_id', $row->id)
+                ->whereBetween(DB::raw('DATE(clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+                ->where('late', 'yes')->distinct(DB::raw('DATE(clock_in_time)'))->count(DB::raw('DATE(clock_in_time)')) ?: '0')
+            ->addColumn('late_between_count', fn($row) => Attendance::where('user_id', $row->id)
+                ->whereBetween(DB::raw('DATE(clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
+                ->where('late_between', 'yes')->distinct(DB::raw('DATE(clock_in_time)'))->count(DB::raw('DATE(clock_in_time)')) ?: '0')
             ->addColumn('half_day_count', fn($row) => Attendance::countHalfDaysByUser($startDate, $endDate, $row->id) ?: '0')
             ->orderColumn('present_days', 'user_id $1')
             ->orderColumn('absent_days', 'user_id $1')
             ->orderColumn('extra_days', 'user_id $1')
             ->orderColumn('hours_clocked', 'user_id $1')
             ->orderColumn('late_day_count', 'user_id $1')
+            ->orderColumn('late_after_count', 'user_id $1')
+            ->orderColumn('late_between_count', 'user_id $1')
             ->orderColumn('half_day_count', 'user_id $1');
     }
 
@@ -157,6 +165,8 @@ class AttendanceReportDataTable extends BaseDataTable
             __('modules.attendance.extraDays') => ['data' => 'extra_days', 'name' => 'extra_days', 'title' => __('modules.attendance.extraDays')],
             __('modules.attendance.hoursClocked') => ['data' => 'hours_clocked', 'name' => 'hours_clocked', 'title' => __('modules.attendance.hoursClocked')],
             __('app.days') . ' ' . __('modules.attendance.late') => ['data' => 'late_day_count', 'name' => 'late_day_count', 'title' => __('app.days') . ' ' . __('modules.attendance.late')],
+            'Late After' => ['data' => 'late_after_count', 'name' => 'late_after_count', 'title' => 'Late After'],
+            'Late Between' => ['data' => 'late_between_count', 'name' => 'late_between_count', 'title' => 'Late Between'],
             __('modules.attendance.halfDay') => ['data' => 'half_day_count', 'name' => 'half_day_count', 'title' => __('modules.attendance.halfDay')],
         ];
     }

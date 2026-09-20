@@ -64,6 +64,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::post('jobs/apply-quick-action', [JobController::class, 'applyQuickAction'])->name('jobs.apply_quick_action');
     Route::get('getJobSubCategories/{id}', [JobSubCategoryController::class, 'getSubCategories'])->name('get_job_sub_categories');
     Route::get('jobs/fetch-job', [JobController::class, 'fetchJob'])->name('jobs.fetch_job');
+    Route::get('jobs/hr-locations/{location}/departments', [JobController::class, 'departmentsByLocation'])->name('jobs.departments_by_location');
+    Route::get('jobs/departments/{department}/designations', [JobController::class, 'designationsByDepartment'])->name('jobs.designations_by_department');
+    Route::get('jobs/designations/{designation}/rank', [JobController::class, 'rankByDesignation'])->name('jobs.rank_by_designation');
+    Route::get('jobs/available-vacancy', [JobController::class, 'availableVancancy'])->name('jobs.available_vacancy');
     Route::get('jobs/addRecruiter', [RecruiterController::class, 'addRecruiter'])->name('jobs.addRecruiter');
     Route::post('jobs/change-status', [JobController::class, 'changeJobStatus'])->name('jobs.change_job_status');
     Route::resource('interview-stages', InterviewStageController::class);
@@ -151,9 +155,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('candidate-follow-up', RecruitCandidateFollowUpController::class);
 
     Route::post('job-applications/change-status', [JobApplicationController::class, 'changeStatus'])->name('job-applications.change_status');
+    Route::post('job-applications/{id}/workflow', [JobApplicationController::class, 'updateWorkflow'])->name('job-applications.update_workflow');
 
     Route::post('job-applications/apply-quick-action', [JobApplicationController::class, 'applyQuickAction'])->name('job-applications.apply_quick_action');
-    Route::get('job-application/location', [JobApplicationController::class, 'getLocation'])->name('job-applications.get_location');
+    Route::get('job-application/rankLevel', [JobApplicationController::class, 'getRankLevel'])->name('job-applications.rank_level');
     Route::post('job-applications/quick-add-form-store', [JobApplicationController::class, 'quickAddFormStore'])->name('job-applications.quick_add_form_store');
     Route::resource('job-applications', JobApplicationController::class);
 
@@ -197,6 +202,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
 
     // Report
     Route::post('report-chart', [ReportController::class, 'reportChartData'])->name('jobreport.chart');
+    Route::get('recruit-job-report/export/analytics', [ReportController::class, 'exportAnalytics'])->name('jobreport.export_analytics');
     Route::resource('recruit-job-report', ReportController::class);
 
     Route::resource('evaluation', EvaluationController::class);

@@ -95,6 +95,8 @@ class InterviewScheduleController extends AccountBaseController
             ->orderBy('schedule_date')
             ->groupBy('recruit_interview_schedules.id');
 
+        // dd($model->get()->toArray());
+
         if (request()->has('employee') && $request->employee != 0) {
             $model->whereHas('attendees', function ($query) use ($request) {
                 return $query->where('user_id', $request->employee);
@@ -211,7 +213,7 @@ class InterviewScheduleController extends AccountBaseController
         $interview = new RecruitInterviewSchedule();
 
         $date = Carbon::createFromFormat(company()->date_format, $request->start_date)->format('Y-m-d');
-        $start = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->start_time, $this->company->timezone)->setTimezone('UTC');
+        $start = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->start_time, $this->company->timezone);
 
         if (isset($request->video_type) && $request->video_type == 'zoom') {
             $this->setZoomConfigs();
@@ -220,7 +222,7 @@ class InterviewScheduleController extends AccountBaseController
             $meeting = new ZoomMeeting();
             $data['meeting_name'] = $request->meeting_title;
 
-            $end = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->end_date . ' ' . $request->end_time)->setTimezone('UTC');
+            $end = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->end_date . ' ' . $request->end_time);
 
             $data['start_date_time'] = $start->toDateTimeString();
             $data['end_date_time'] = $end->toDateTimeString();
@@ -248,7 +250,10 @@ class InterviewScheduleController extends AccountBaseController
         $interview->interview_type = $request->interview_type;
         $interview->video_type = ($request->has('video_type')) ? $request->video_type : 'other';
         $interview->meeting_id = ($meetings != '') ? $meetings->id : null;
-        $interview->schedule_date = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->start_time, $this->company->timezone)->setTimezone('UTC');
+        $interview->schedule_date = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->start_time, $this->company->timezone);
+
+        // dd($interview->schedule_date, $this->company->timezone, $request->start_time , $this->company->time_format, $date);
+
         $interview->phone = $request->phone;
         $interview->other_link = $request->other_link;
         $interview->send_reminder_all = $request->send_reminder_all ? $request->send_reminder_all : '0';
@@ -533,7 +538,7 @@ class InterviewScheduleController extends AccountBaseController
                 ->where('id', $interviewid)->first();
         }
 
-        $interviewSchedule->schedule_date = Carbon::createFromFormat($this->company->date_format . ' ' . $this->company->time_format, $request->scheduleDate . ' ' . $request->scheduleTime, $this->company->timezone)->setTimezone('UTC');
+        $interviewSchedule->schedule_date = Carbon::createFromFormat($this->company->date_format . ' ' . $this->company->time_format, $request->scheduleDate . ' ' . $request->scheduleTime, $this->company->timezone);
 
         if ($request->interview_type == 'in person') {
             $interviewSchedule->interview_type = $request->interview_type;
@@ -619,8 +624,8 @@ class InterviewScheduleController extends AccountBaseController
                 $meeting = is_null($interviewSchedule->meeting_id) ? new ZoomMeeting() : ZoomMeeting::findOrFail($interviewSchedule->meeting_id);
                 $data = $request->all();
                 $data['meeting_name'] = $request->meeting_title;
-                $start = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->scheduleDate . ' ' . $request->scheduleTime)->setTimezone('UTC');
-                $end = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->end_date . ' ' . $request->end_time)->setTimezone('UTC');
+                $start = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->scheduleDate . ' ' . $request->scheduleTime);
+                $end = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->end_date . ' ' . $request->end_time);
                 $data['start_date_time'] = $start->toDateTimeString();
                 $data['end_date_time'] = $end->toDateTimeString();
                 $data['status'] = 'waiting';
@@ -739,7 +744,7 @@ class InterviewScheduleController extends AccountBaseController
         }
 
         $date = Carbon::createFromFormat(company()->date_format, $request->scheduleDate)->format('Y-m-d');
-        $interview->schedule_date = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->scheduleTime, $this->company->timezone)->setTimezone('UTC');
+        $interview->schedule_date = Carbon::createFromFormat('Y-m-d ' . $this->company->time_format, $date . ' ' . $request->scheduleTime, $this->company->timezone);
 
         $interview->notify_c = ($request->has('notify_c')) ? $request->notify_c : '0';
         $interview->save();
@@ -753,8 +758,8 @@ class InterviewScheduleController extends AccountBaseController
                 $host = User::find($interview->meeting->create_by);
                 $user = Zoom::user()->find('me');
                 $data = $request->all();
-                $start = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->scheduleDate . ' ' . $request->scheduleTime)->setTimezone('UTC');
-                $end = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->end_date . ' ' . $request->end_time)->setTimezone('UTC');
+                $start = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->scheduleDate . ' ' . $request->scheduleTime);
+                $end = Carbon::createFromFormat(company()->date_format.' '.company()->time_format, $request->end_date . ' ' . $request->end_time);
 
                 $data['meeting_name'] = $meeting->meeting_name;
                 $data['start_date_time'] = $start->toDateTimeString();

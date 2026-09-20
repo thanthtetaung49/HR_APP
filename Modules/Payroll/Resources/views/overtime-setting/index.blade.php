@@ -11,8 +11,13 @@
                 <div class="s-b-n-header" id="tabs">
                     <nav class="tabs px-4 border-bottom-grey">
                         <div class="nav" id="nav-tab" role="tablist">
+                             <a class="nav-item nav-link f-15 active overtime-general"
+                               href="{{ route('payroll.overtime_settings') }}?tab=overtime-general" role="tab"
+                               aria-controls="nav-salaryGroups" aria-selected="true"
+                               ajax="false">@lang('payroll::app.menu.overtimeGeneral')
+                            </a>
 
-                            <a class="nav-item nav-link f-15 active pay-code"
+                            <a class="nav-item nav-link f-15 pay-code"
                                href="{{ route('payroll.overtime_settings') }}?tab=pay-code" role="tab"
                                aria-controls="nav-salaryGroups" aria-selected="true"
                                ajax="false">@lang('payroll::app.menu.payCode')

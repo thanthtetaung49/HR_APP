@@ -83,20 +83,20 @@
 
                                 @foreach ($applicationStatus as $item)
 
-                                @continue($application->applicationStatus->slug == 'hired' && $item->slug == 'rejected')
+                                @continue($application->applicationStatus?->slug == 'hired' && $item->slug == 'rejected')
 
-                                @continue($application->applicationStatus->slug == 'rejected' && $item->slug == 'hired')
+                                @continue($application->applicationStatus?->slug == 'rejected' && $item->slug == 'hired')
 
-                                @continue($application->applicationStatus->slug != 'rejected' && $item->slug == 'rejected')
+                                @continue($application->applicationStatus?->slug != 'rejected' && $item->slug == 'rejected')
 
                                 {{-- @continue(!empty($applicationStatusHistory) && !in_array($item->id, $applicationStatusHistory)) --}}
 
                                 @if (
                                     $item->slug != 'applied' &&
                                     ((!empty($applicationStatusHistory) && !in_array($item->id, $applicationStatusHistory))
-                                    || (empty($applicationStatusHistory) && $application->recruit_application_status_id != $item->id && $application->applicationStatus->slug != 'hired' && $application->applicationStatus->slug != 'rejected' && $item->position > $application->applicationStatus->position))
-                                   && (($application->recruit_application_status_id != $item->id && $application->applicationStatus->slug != 'hired' && $application->applicationStatus->slug != 'rejected')
-                                || ($application->applicationStatus->slug != 'rejected' && $application->applicationStatus->slug != 'hired' && $item->slug == 'hired'))
+                                    || (empty($applicationStatusHistory) && $application->recruit_application_status_id != $item->id && $application->applicationStatus?->slug != 'hired' && $application->applicationStatus?->slug != 'rejected' && $item->position > $application->applicationStatus?->position))
+                                   && (($application->recruit_application_status_id != $item->id && $application->applicationStatus?->slug != 'hired' && $application->applicationStatus?->slug != 'rejected')
+                                || ($application->applicationStatus?->slug != 'rejected' && $application->applicationStatus?->slug != 'hired' && $item->slug == 'hired'))
                                 )
                                     <div class="progress-bar f-14 border-right font-weight-semibold text-lightest progress-bar-striped" role="progressbar" style="width: {{ $progressValue }}%; background-color: {{ $item->color }}20;" aria-valuenow="{{ $progressValue }}" aria-valuemin="0" aria-valuemax="100" data-toggle="tooltip" data-original-title="{{ $item->status }} : @lang('recruit::modules.jobApplication.applicationNotMoved')">
                                         {{-- {{ $item->status }} --}}
@@ -115,11 +115,56 @@
                             </div>
 
 
+                            @php
+                                $displayValue = static fn ($value) => filled($value) ? $value : '--';
+                                $age = $application->age;
+
+                                if (blank($age) && $application->date_of_birth) {
+                                    $age = \Carbon\Carbon::parse($application->date_of_birth)->age;
+                                }
+
+                                $selectionPhaseLabels = [
+                                    'cv_screening' => 'CV Screening',
+                                    'first_interview' => 'First Interview',
+                                    'second_interview' => 'Second Interview',
+                                    'job_offer' => 'Job Offer',
+                                    'hiring' => 'Hiring',
+                                ];
+
+                                $overallStatusLabels = [
+                                    'not_started' => 'Not Started',
+                                    'in_progress' => 'In Progress',
+                                    'keep_cv' => 'Keep CV',
+                                    'rejected' => 'Rejected',
+                                    'hired' => 'Hired',
+                                ];
+
+                                $rejectionReasonLabels = [
+                                    'location_unfit' => 'Location Unfit',
+                                    'experience_gap' => 'Experience Gap (Overqualified or Underqualified)',
+                                    'culture_unfit' => 'Culture Unfit',
+                                    'salary_range_benefit' => 'Salary Range & Benefit',
+                                    'other_competitor_join' => 'Other Competitor Join',
+                                    'interview_absent' => 'Interview Absent',
+                                    'not_contact' => 'Not Contact',
+                                    'failed_assessment_or_interview' => 'Failed Assessment or Interview',
+                                    'failed_reference_check' => 'Failed Reference Check',
+                                    'position_closed' => 'Position Closed',
+                                    'blacklist' => 'Blacklist',
+                                ];
+
+                                $workExperiences = $application->work_experience_details ?? [];
+
+                                if (is_string($workExperiences)) {
+                                    $workExperiences = json_decode($workExperiences, true) ?: [];
+                                }
+                            @endphp
+
                             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
                                 <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                                     @lang('recruit::modules.job.jobTitle')</p>
                                 <p class="mb-0 text-dark-grey f-14 w-70">
-                                    {{ ($application->job->title) ?? '--' }}
+                                    {{ $displayValue(optional($application->job)->title) }}
                                 </p>
                             </div>
 
@@ -128,7 +173,7 @@
                                     @lang('recruit::modules.jobApplication.applicantEmail')
                                 </p>
                                 <p class="mb-0 text-dark-grey f-14 w-70 font-weight-bold">
-                                    {{ ($application->email ?? '--') }}
+                                    {{ $displayValue($application->email) }}
                                 </p>
                             </div>
 
@@ -137,111 +182,193 @@
                                     @lang('recruit::modules.jobApplication.applicantPhone')
                                 </p>
                                 <p class="mb-0 text-dark-grey f-14 w-70 font-weight-bold">
-                                    {{ $application->phone ?? '--' }}
+                                    {{ $displayValue($application->phone) }}
                                 </p>
                             </div>
+
                             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
                                 <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                    @lang('recruit::modules.jobApplication.location')
+                                    @lang('recruit::modules.jobApplication.gender')
                                 </p>
                                 <p class="mb-0 text-dark-grey f-14 w-70">
-                                    {{ $application->location->location }}
+                                    {{ $displayValue($application->gender ? ucfirst($application->gender) : null) }}
                                 </p>
                             </div>
-                            @if ($application->date_of_birth)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.dateOfBirth')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ $application->date_of_birth->format($company->date_format) }}
-                                    </p>
-                                </div>
-                            @endif
 
-                            @if ($application->gender)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.gender')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ ($application->gender ?? '--') }}
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Current Location</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $displayValue($application->current_location) }}
+                                </p>
+                            </div>
 
-                            @if ($application->total_experience)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.experience')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        @if ($application->total_experience == 'fresher')
-                                            {{ ($application->total_experience) }}
-                                        @else
-                                            {{ ($application->total_experience) }} @lang('recruit::modules.jobApplication.years')
-                                        @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Total Experience</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    @if ($application->total_experience === 'fresher')
+                                        Fresher
+                                    @elseif (filled($application->total_experience))
+                                        {{ $application->total_experience }} Years
+                                    @else
+                                        --
+                                    @endif
+                                </p>
+                            </div>
 
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Notice Period</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ filled($application->notice_period) ? $application->notice_period . ($application->notice_period === 'over-90' ? '' : ' Days') : '--' }}
+                                </p>
+                            </div>
 
-                            @if ($application->current_location)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.currentLocation')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ ($application->current_location ?? '--') }}
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Application Source</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $displayValue(optional($application->source)->application_source) }}
+                                </p>
+                            </div>
 
-                            @if ($application->current_ctc)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.currentCtc')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ currency_format($application->current_ctc, $currencySymbol->id) }}
-                                         {{ $application->currenct_ctc_rate ? __('recruit::modules.joboffer.per') . ' ' . $application->currenct_ctc_rate : '' }}
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Date of Birth</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $application->date_of_birth ? $application->date_of_birth->format($company->date_format) : '--' }}
+                                </p>
+                            </div>
 
-                            @if ($application->expected_ctc)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.expectedCtc')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ currency_format($application->expected_ctc, $currencySymbol->id) }}
-                                        {{ $application->expected_ctc_rate ? __('recruit::modules.joboffer.per') . ' ' . $application->expected_ctc_rate : '' }}
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Age</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">{{ $displayValue($age) }}</p>
+                            </div>
 
-                            @if ($application->notice_period)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.jobApplication.noticePeriod')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ $application->notice_period ?? '--' }} @lang('recruit::modules.jobApplication.days')
-                                    </p>
-                                </div>
-                            @endif
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Management Rank</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $displayValue($application->management_rank_level ?? optional($application->job)->management_rank_level) }}
+                                </p>
+                            </div>
 
-                            @if ($application->source_id)
-                                <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
-                                    <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
-                                        @lang('recruit::modules.front.applicationSource')
-                                    </p>
-                                    <p class="mb-0 text-dark-grey f-14 w-70">
-                                        {{ $application->source->application_source ?? '--' }}
-                                    </p>
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Marital Status</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $displayValue($application->marital_status ? ucfirst($application->marital_status) : null) }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">NRC</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">{{ $displayValue($application->nrc) }}</p>
+                            </div>
+
+                            {{-- <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Current CTC (MMK)</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ filled($application->current_ctc) ? number_format((float) $application->current_ctc, 2) : '--' }}
+                                    {{ filled($application->currenct_ctc_rate) ? ' / ' . $application->currenct_ctc_rate : '' }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Expected CTC (MMK)</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ filled($application->expected_ctc) ? number_format((float) $application->expected_ctc, 2) : '--' }}
+                                    {{ filled($application->expected_ctc_rate) ? ' / ' . $application->expected_ctc_rate : '' }}
+                                </p>
+                            </div> --}}
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Last Salary (Minimum)</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ filled($application->last_salary_minimum) ? number_format((float) $application->last_salary_minimum, 2) : '--' }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Expected Salary (Minimum)</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ filled($application->expected_salary_minimum) ? number_format((float) $application->expected_salary_minimum, 2) : '--' }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Education</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-break">{{ $displayValue($application->education) }}</p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Certifications &amp; Qualifications</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-break">
+                                    {{ $displayValue($application->certifications_qualifications) }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Work Experience Details</p>
+                                <div class="mb-0 text-dark-grey f-14 w-70">
+                                    @forelse ($workExperiences as $experience)
+                                        <div class="mb-1">
+                                            {{ $displayValue($experience['company'] ?? null) }} —
+                                            {{ $displayValue($experience['position'] ?? null) }} —
+                                            {{ filled($experience['years'] ?? null) ? $experience['years'] . ' Years' : '--' }}
+                                        </div>
+                                    @empty
+                                        --
+                                    @endforelse
                                 </div>
-                            @endif
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Selection Phase</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $selectionPhaseLabels[$application->selection_phase] ?? $displayValue($application->selection_phase) }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Overall Status</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $overallStatusLabels[$application->overall_status] ?? $displayValue($application->overall_status) }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Keep CV Reason</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-break">{{ $displayValue($application->keep_cv_reason) }}</p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Rejection Reason</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $rejectionReasonLabels[$application->rejection_reason] ?? $displayValue($application->rejection_reason) }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Rejection Details</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-break">{{ $displayValue($application->rejection_reason_details) }}</p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Job Offer Decision</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $application->job_offer_decision === 'accepted' ? 'Accepted (Joined)' : ($application->job_offer_decision === 'declined' ? 'Declined (Did Not Join)' : '--') }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Offer Decision Reason</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-break">{{ $displayValue($application->job_offer_decision_reason) }}</p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Blacklisted</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">{{ $application->is_blacklisted ? 'Yes' : 'No' }}</p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Blacklist Reason</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70 text-break">{{ $displayValue($application->blacklist_reason) }}</p>
+                            </div>
 
                             <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
                                 <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
@@ -252,15 +379,15 @@
                                 </p>
                             </div>
 
-                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                            {{-- <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
                                 <p class="mb-0 text-lightest f-14 w-30 d-inline-block ">
                                     @lang('recruit::modules.jobApplication.currentStatus')</p>
                                 <p class="mb-0 text-dark-grey f-14 w-70">
                                     @if (!is_null($application->recruit_application_status_id))
-                                        <x-status :value="$application->applicationStatus->status" :style="'color:'.$application->applicationStatus->color" />
+                                        <x-status :value="$application->applicationStatus?->status" :style="'color:'.$application->applicationStatus?->color" />
                                     @endif
                                 </p>
-                            </div>
+                            </div> --}}
 
                             @if($application->remark)
                                 <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
@@ -285,6 +412,13 @@
                                     @lang('recruit::modules.jobApplication.coverLetter')</p>
                                 <p class="mb-0 text-dark-grey f-14 w-70">
                                     {{ $application->cover_letter ?? '--' }}
+                                </p>
+                            </div>
+
+                            <div class="col-12 px-0 pb-3 d-block d-lg-flex d-md-flex">
+                                <p class="mb-0 text-lightest f-14 w-30 d-inline-block">Send Email</p>
+                                <p class="mb-0 text-dark-grey f-14 w-70">
+                                    {{ $application->send_email ? 'Yes' : 'No' }}
                                 </p>
                             </div>
 
@@ -322,6 +456,8 @@
                                         @empty
                                             <x-cards.no-record :message="__('messages.noFileUploaded')" icon="file"/>
                                         @endforelse
+                                    @else
+                                        <x-cards.no-record :message="__('messages.noFileUploaded')" icon="file"/>
                                     @endif
                                 </div>
                             </div>

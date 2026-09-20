@@ -7,6 +7,9 @@ use App\Models\CompanyAddress;
 use App\Models\Currency;
 use App\Models\Team;
 use App\Models\User;
+use App\Models\ManPowerReport;
+use App\Models\Designation;
+use App\Models\Location;
 use App\Traits\HasCompany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -22,6 +25,21 @@ class RecruitJob extends BaseModel
     protected $casts = [
         'meta_details' => 'array',
     ];
+
+    public function manPowerReport(): BelongsTo
+    {
+        return $this->belongsTo(ManPowerReport::class, 'man_power_report_id');
+    }
+
+    public function hrLocation(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'hr_location_id');
+    }
+
+    public function designation(): BelongsTo
+    {
+        return $this->belongsTo(Designation::class, 'designation_id');
+    }
 
     public function team(): BelongsTo
     {

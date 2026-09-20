@@ -22,4 +22,9 @@ class ManPowerReport extends Model
     public function designation() {
         return $this->belongsTo(Designation::class, 'position_id');
     }
+
+    public function recruitmentJobs()
+    {
+        return $this->hasMany(\Modules\Recruit\Entities\RecruitJob::class, 'man_power_report_id');
+    }
 }

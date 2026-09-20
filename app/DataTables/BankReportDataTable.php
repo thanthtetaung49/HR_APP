@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\Models\User;
 use App\Models\EmployeeDetails;
+use App\Scopes\ActiveScope;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
 use Yajra\DataTables\EloquentDataTable;
@@ -69,7 +70,9 @@ class BankReportDataTable extends BaseDataTable
         $month = request()->month;
         $year = request()->year;
 
-        $model = $model->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', 'employee_details.notice_period_end_date as notice_period_end_date')
+        $model = $model
+            ->withoutGlobalScope(ActiveScope::class)
+            ->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', 'employee_details.notice_period_end_date as notice_period_end_date')
             ->leftJoin('salary_slips', 'salary_slips.user_id', 'users.id')
             ->leftJoin('employee_details', 'employee_details.user_id', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
@@ -77,6 +80,7 @@ class BankReportDataTable extends BaseDataTable
             ->where('salary_slips.year', $year)
             ->where(DB::raw('CAST(salary_slips.month AS SIGNED)'), $month)
             ->whereNotNull('users.bank_account_number');
+            // ->whereIn('users.status', ['active', 'deactive']);
 
         if (isset(request()->locationId) && request()->locationId != '') {
             $model->where('locations.id', request()->locationId);

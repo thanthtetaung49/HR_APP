@@ -1,4 +1,3 @@
-
 <style>
     #save-application-data-form .input-width {
         width: 75px !important;
@@ -25,7 +24,7 @@
                 <x-table>
                     <x-slot name="thead">
                         <th class="pl-20">@lang('recruit::modules.jobApplication.jobs')</th>
-                        <th>@lang('recruit::modules.job.location')</th>
+                        {{-- <th>@lang('recruit::modules.job.location')</th> --}}
                         <th>@lang('recruit::modules.jobApplication.name')</th>
 
                         @if (in_array('email', $formFields))
@@ -86,7 +85,7 @@
                                 </div>
                             </td>
 
-                            <td>
+                            {{-- <td>
                                 <div class="select-others">
                                     <select class="form-control select-picker" name="location_id" id="locationid" data-live-search="false" data-container="body">
                                             <option value="">--</option>
@@ -95,7 +94,7 @@
                                             @endforeach
                                     </select>
                                 </div>
-                            </td>
+                            </td> --}}
 
                             <td>
                                 <x-forms.input-group>
@@ -238,27 +237,3 @@
         </x-form>
     </div>
 <!-- CONTENT WRAPPER END -->
-
-<script>
-
-    $('#job-id').change(function() {
-        const jobId = $(this).val();
-        const url = "{{ route('job-applications.get_location') }}";
-
-        $.easyAjax({
-            url: url,
-            type: "GET",
-            disableButton: true,
-            blockUI: true,
-            data: {
-                job_id:jobId
-            },
-            success: function(response) {
-                $('#locationid').html(response.locations);
-                $('#locationid').selectpicker('refresh');
-            }
-
-        });
-    });
-
-</script>

@@ -87,20 +87,22 @@
             <div id="table-actions" class="flex-grow-1 align-items-center mb-2 mb-lg-0 mb-md-0">
             </div>
 
-            <x-datatable.actions>
-                <div class="select-status mr-3 pl-3">
-                    <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
-                        <option value="">@lang('app.selectAction')</option>
-                        <option value="change-status">@lang('modules.tasks.changeStatus')</option>
-                    </select>
-                </div>
-                <div class="select-status mr-3 d-none quick-action-field" id="change-status-action">
-                    <select name="status" class="form-control select-picker">
-                        <option value="accepted">@lang('app.accept')</option>
-                        <option value="rejected">@lang('app.reject')</option>
-                    </select>
-                </div>
-            </x-datatable.actions>
+            @if ($canFinalApprove)
+                <x-datatable.actions>
+                    <div class="select-status mr-3 pl-3">
+                        <select name="action_type" class="form-control select-picker" id="quick-action-type" disabled>
+                            <option value="">@lang('app.selectAction')</option>
+                            <option value="change-status">@lang('modules.tasks.changeStatus')</option>
+                        </select>
+                    </div>
+                    <div class="select-status mr-3 d-none quick-action-field" id="change-status-action">
+                        <select name="status" class="form-control select-picker">
+                            <option value="accepted">@lang('app.accept')</option>
+                            <option value="rejected">@lang('app.reject')</option>
+                        </select>
+                    </div>
+                </x-datatable.actions>
+            @endif
 
 
             <div class="btn-group mt-2 mt-lg-0 mt-md-0 ml-0 ml-lg-3 ml-md-3" role="group">
@@ -277,6 +279,49 @@
             })
 
         });
+
+        $('body')
+            .off('click.shiftPreApprove', '.preapprove-request')
+            .on('click.shiftPreApprove', '.preapprove-request', function() {
+                const id = $(this).data('request-id');
+
+                Swal.fire({
+                    title: "@lang('messages.sweetAlertTitle')",
+                    text: "@lang('modules.attendance.confirmShiftPreApprove')",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    focusConfirm: false,
+                    confirmButtonText: "@lang('app.preApprove')",
+                    cancelButtonText: "@lang('app.cancel')",
+                    customClass: {
+                        confirmButton: 'btn btn-primary mr-3',
+                        cancelButton: 'btn btn-secondary'
+                    },
+                    buttonsStyling: false
+                }).then((result) => {
+                    if (!result.isConfirmed) {
+                        return;
+                    }
+
+                    let url = "{{ route('shifts-change.pre_approve', ':id') }}";
+                    url = url.replace(':id', id);
+
+                    $.easyAjax({
+                        url: url,
+                        type: 'POST',
+                        blockUI: true,
+                        container: '.content-wrapper',
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                showTable();
+                            }
+                        }
+                    });
+                });
+            });
 
         const applyQuickAction = () => {
             var rowdIds = $("#shift-table input:checkbox:checked").map(function() {

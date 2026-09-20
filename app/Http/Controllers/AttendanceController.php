@@ -95,6 +95,14 @@ class AttendanceController extends AccountBaseController
     public function summaryData($request)
     {
         $viewEmployeePermission = user()->permission('view_employees');
+
+        $selectedMonthStart = Carbon::createFromDate(
+            $request->year,
+            $request->month,
+            1,
+            company()->timezone
+        )->startOfMonth()->toDateString();
+
         $employees = User::with(
             [
                 'employeeDetail.designation:id,name',
@@ -146,7 +154,21 @@ class AttendanceController extends AccountBaseController
                             ->whereRaw('MONTH(users.inactive_date) >= ?', [$request->month]);
                     });
             })
+            ->where(function ($query) use ($selectedMonthStart) {
+                $query
+                    ->whereNull('employee_details.last_date')
+                    ->orWhereDate(
+                        'employee_details.last_date',
+                        '>=',
+                        $selectedMonthStart
+                    );
+            })
+            // ->where('users.id', 683)
             ->groupBy('users.id');
+
+
+
+        // dd($employees->get()->toArray(), $selectedMonthStart);
 
         $location_id = $request->location;
         $department_id = $request->department;
@@ -503,6 +525,7 @@ class AttendanceController extends AccountBaseController
 
     public function update(ClockInRequest $request, $id)
     {
+        // dd($request->all());
         $attendance = Attendance::findOrFail($id);
         $userId = $attendance->user_id;
         $carbonDate = Carbon::parse($request->attendance_date, $this->company->timezone);
@@ -531,6 +554,7 @@ class AttendanceController extends AccountBaseController
         }
 
         // dd($halfDayStartTime);
+        // C:\laragon\www\hr_app\app\Http\Controllers\AttendanceController.php
 
         $halfDayStartDate = Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $halfDayStartTime, $this->company->timezone);
         $officeStartTime = Carbon::createFromFormat('Y-m-d H:i:s', $date . ' ' . $officeStartTime, $this->company->timezone);
@@ -540,8 +564,12 @@ class AttendanceController extends AccountBaseController
         $halfDayLateTime = $halfDayStartDate->addMinutes(15);
 
         $halfDayLateStatus = 'no';
+
         $late = ($request->has('late')) ? 'yes' : 'no';
         $breakTimeLate = ($request->has('breakTime')) ? 'yes' : 'no';
+        $lateBetween = ($request->has('lateBetween')) ? 'yes' : 'no';
+
+        // dd($late, $breakTimeLate, $lateBetween);
 
         if ($request->has('halfday') && $request->half_day_duration == "first_half" && $clockIn->gt($officeLateTime)) {
             $halfDayLateStatus = 'yes';
@@ -576,8 +604,11 @@ class AttendanceController extends AccountBaseController
                 return false;
             }
 
-            $clockInTime = $item->clock_in_time->timezone($this->company->timezone);
-            $clockOutTime = $item->clock_out_time->timezone($this->company->timezone);
+            $clockInTime = $item->clock_in_time?->timezone($this->company->timezone);
+            // dd($clockInTime, $clockIn, $clockOut);
+            $clockOutTime = $item->clock_out_time?->timezone($this->company->timezone);
+
+            // dd($item);
 
             return (
                 ($clockInTime->lt($clockOut) && $clockOutTime->gt($clockIn))
@@ -591,17 +622,21 @@ class AttendanceController extends AccountBaseController
         $attendance->user_id = $request->user_id;
         $attendance->clock_in_time = $clockIn->copy()->timezone(config('app.timezone'));
         $attendance->clock_in_ip = $request->clock_in_ip;
-        $attendance->clock_out_time = $clockOut?->copy()->timezone(config('app.timezone'));
+        $attendance->clock_out_time = $clockOut ? $clockOut->copy()->timezone(config('app.timezone')) : null;
         $attendance->auto_clock_out = 0;
         $attendance->clock_out_ip = $request->clock_out_ip;
         $attendance->working_from = $request->working_from;
         $attendance->work_from_type = $request->work_from_type;
         $attendance->location_id = $request->location;
         $attendance->late = $late;
+        $attendance->late_between = $lateBetween;
         $attendance->half_day = ($request->has('halfday')) ? 'yes' : 'no';
         $attendance->half_day_late = $halfDayLateStatus;
         $attendance->half_day_type = ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null;
         $attendance->break_time_late = $breakTimeLate;
+
+        // dd($attendance->toArray());
+
         $attendance->save();
 
         return Reply::success(__('messages.attendanceSaveSuccess'));
@@ -666,6 +701,7 @@ class AttendanceController extends AccountBaseController
 
         $late = ($request->has('late')) ? 'yes' : 'no';
         $breakTimeLate = ($request->has('breakTime')) ? 'yes' : 'no';
+        $lateBetween = ($request->has('lateBetween')) ? 'yes' : 'no';
 
         if ($request->has('halfday') && $request->half_day_duration == "first_half" && $clockIn->gt($officeLateTime)) {
             $halfDayLateStatus = 'yes';
@@ -756,6 +792,7 @@ class AttendanceController extends AccountBaseController
                 'shift_start_time' => $shiftStartTime,
                 'shift_end_time' => $shiftEndTime,
                 'late' => $late,
+                'late_between' => $lateBetween,
                 'half_day_late' => $halfDayLateStatus,
                 'half_day' => ($request->has('halfday')) ? 'yes' : 'no',
                 'half_day_type' => ($request->has('half_day_duration') && $request->has('halfday')) ? $request->half_day_duration : null,
@@ -785,6 +822,7 @@ class AttendanceController extends AccountBaseController
                     'working_from' => $request->working_from,
                     'location_id' => $request->location,
                     'late' => ($request->has('late')) ? 'yes' : 'no',
+                    'late_between' => $lateBetween,
                     'employee_shift_id' => $employeeShiftId,
                     'shift_start_time' => $shiftStartTime,
                     'shift_end_time' => $shiftEndTime,
@@ -996,7 +1034,11 @@ class AttendanceController extends AccountBaseController
             return Reply::dataOnly(['status' => 'success', 'html' => $html, 'title' => $this->pageTitle]);
         }
 
+
+
         $this->view = 'attendances.ajax.create';
+
+        // dd('hiewrew');
 
         return view('attendances.create', $this->data);
     }

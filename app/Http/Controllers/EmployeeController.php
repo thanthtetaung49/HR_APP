@@ -18,12 +18,16 @@ use App\Http\Requests\Admin\Employee\UpdateRequest;
 use App\Http\Requests\User\CreateInviteLinkRequest;
 use App\Http\Requests\User\InviteEmailRequest;
 use App\Imports\EmployeeImport;
-use App\Models\ModuleSetting;
 use App\Jobs\ImportEmployeeJob;
 use App\Models\Appreciation;
 use App\Models\Attendance;
 use App\Models\AutomateShift;
 use App\Models\Cause;
+use App\Models\Company;
+use App\Models\CompanyAddress;
+use App\Models\Criteria;
+use App\Models\CustomField;
+use App\Models\CustomFieldGroup;
 use App\Models\Designation;
 use App\Models\EmployeeActivity;
 use App\Models\EmployeeDetails;
@@ -31,14 +35,21 @@ use App\Models\EmployeeSkill;
 use App\Models\LanguageSetting;
 use App\Models\Leave;
 use App\Models\LeaveType;
+use App\Models\Location;
+use App\Models\ManagementRank;
+use App\Models\ManPowerReport;
 use App\Models\Module;
+use App\Models\ModuleSetting;
 use App\Models\Notification;
 use App\Models\Passport;
 use App\Models\ProjectTimeLog;
 use App\Models\ProjectTimeLogBreak;
+use App\Models\Promotion;
 use App\Models\Role;
 use App\Models\RoleUser;
+use App\Models\ShiftRotation;
 use App\Models\Skill;
+use App\Models\SubCriteria;
 use App\Models\Task;
 use App\Models\TaskboardColumn;
 use App\Models\Team;
@@ -52,17 +63,11 @@ use App\Traits\ImportExcel;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\Mailer\Exception\TransportException;
-use App\Models\CompanyAddress;
-use App\Models\Criteria;
-use App\Models\Location;
-use App\Models\ManagementRank;
-use App\Models\ManPowerReport;
-use App\Models\Promotion;
-use App\Models\ShiftRotation;
-use App\Models\SubCriteria;
 use Modules\Payroll\Entities\EmployeeMonthlySalary;
 use Modules\Payroll\Entities\PayrollSetting;
+use Modules\Recruit\Entities\RecruitApplicantBlacklist;
+use Modules\Recruit\Entities\RecruitJobApplication;
+use Symfony\Component\Mailer\Exception\TransportException;
 
 class EmployeeController extends AccountBaseController
 {
@@ -267,7 +272,9 @@ class EmployeeController extends AccountBaseController
      */
     public function store(StoreRequest $request)
     {
-        // dd($request->all());
+
+
+        // $this->syncApplicantBlacklist($jobApp, $request);
         $addPermission = user()->permission('add_employees');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
@@ -446,7 +453,6 @@ class EmployeeController extends AccountBaseController
     public function edit($id)
     {
         $this->employee = User::withoutGlobalScope(ActiveScope::class)->with('employeeDetail', 'reportingTeam')->findOrFail($id);
-
         $this->editPermission = user()->permission('edit_employees');
 
         $userRoles = $this->employee->roles->pluck('name')->toArray();
@@ -460,6 +466,10 @@ class EmployeeController extends AccountBaseController
         ));
 
         $this->pageTitle = __('app.update') . ' ' . __('app.employee');
+
+        $this->blackListStatus = false;
+        $blackListMatch = RecruitApplicantBlacklist::where('source_employee_id', $this->employee->id)->first();
+
         $this->skills = Skill::all()->pluck('name')->toArray();
         // $this->teams = Team::allDepartments();
         // $this->designations = Designation::allDesignations();
@@ -481,6 +491,10 @@ class EmployeeController extends AccountBaseController
         $this->designations = Designation::whereIn('id', json_decode($selectedTeams->designation_ids))->get();
 
         $this->subCriterias = null;
+
+        if ($blackListMatch) {
+            $this->blackListStatus = true;
+        }
 
         if ($this->criteria) {
             $this->subCriterias = SubCriteria::whereIn('id', $this->criteria?->sub_criteria_ids)->get();
@@ -524,7 +538,7 @@ class EmployeeController extends AccountBaseController
      */
     public function update(UpdateRequest $request, $id)
     {
-        // dd($request->all());
+
         $user = User::withoutGlobalScope(ActiveScope::class)->findOrFail($id);
         $user->name = $request->name;
         $user->email = $request->email;
@@ -654,6 +668,8 @@ class EmployeeController extends AccountBaseController
         if (user()->id == $user->id) {
             session(['user' => $user]);
         }
+
+        $this->syncApplicantBlacklist($request, $id);
 
         return Reply::successWithData(__('messages.updateSuccess'), ['redirectUrl' => route('employees.index')]);
     }
@@ -1318,5 +1334,70 @@ class EmployeeController extends AccountBaseController
         return response()->json([
             'subCriterias' => $subCriterias
         ]);
+    }
+
+    private function syncApplicantBlacklist(
+        Request $request,
+        $id
+    ): void {
+
+        // dd($request->boolean('blacklist'));
+
+        if (!$request->boolean('blacklist')) {
+            $blacklist = RecruitApplicantBlacklist::query()
+                ->where('company_id', company()->id)
+                ->where('source_employee_id', $id)
+                ->first();
+
+            // dd($blacklist, $request->boolean('blacklist'));
+
+            $blacklist?->delete();
+
+        } else {
+            $employee = EmployeeDetails::with('user')->where('user_id', $id)->first();
+
+            $employeeDetail = $employee->withCustomFields();
+            $getCustomFieldGroupsWithFields = $employee->getCustomFieldGroupsWithFields();
+
+            if ($getCustomFieldGroupsWithFields) {
+                $fields = $getCustomFieldGroupsWithFields->fields;
+            }
+
+            if (isset($fields) && count($fields) > 0) {
+                foreach ($fields as $field) {
+                    if ($field->type == 'text' && $field->name == 'nrc-1') {
+
+                        $nrc = $employeeDetail->custom_fields_data['field_' . $field->id];
+                    }
+                }
+            }
+
+            $blacklist = RecruitApplicantBlacklist::query()
+                ->where('company_id', company()->id)
+                ->where('nrc', $nrc)
+                ->first();
+
+            if (!$blacklist) {
+                RecruitApplicantBlacklist::updateOrCreate(
+                    [
+                        'company_id' => company()->id,
+                        'nrc' => $nrc,
+                    ],
+                    [
+                        'company_id' => company()->id,
+                        'source_employee_id' => $employee->user_id,
+                        'full_name' => $employee->user?->name,
+                        'email' => $employee->user?->email,
+                        'phone' => $employee->user?->mobile,
+                        'nrc'  => $nrc,
+                        'reason' => $request->blacklist_reason
+                            ?: 'Internal Employee Blacklist',
+                        'added_by' => user()->id,
+                    ]
+                );
+
+
+            }
+        }
     }
 }

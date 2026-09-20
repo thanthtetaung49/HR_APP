@@ -150,11 +150,11 @@ class TurnOverReportController extends AccountBaseController
 
         $turnOverReports = EmployeeDetails::select(
             DB::raw(
-                DB::raw('MONTH(employee_details.last_date) AS month'),
+                DB::raw('MONTH(employee_details.created_at) AS month'),
             ),
             DB::raw('COUNT(*) as total'),
             DB::raw('CAST(
-                SUM(CASE WHEN employee_details.last_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED
+                SUM(CASE WHEN employee_details.last_date IS not NULL THEN 1 ELSE 0 END) AS SIGNED
             ) as resigned_total'),
             DB::raw('CAST(
                 SUM(CASE WHEN employee_details.last_date IS NOT NULL AND
@@ -178,15 +178,15 @@ class TurnOverReportController extends AccountBaseController
             ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
             // ->where('users.name', 'Htoo Htoo Hlaing')
             ->whereNotNull('employee_details.last_date')
-            ->whereNotNull('employee_details.probation_end_date')
+            // ->whereNotNull('employee_details.probation_end_date')
             ->when($year, function ($query) use ($year) {
-                $query->whereRaw('YEAR(employee_details.last_date) = ?', [$year]);
+                $query->whereRaw('YEAR(employee_details.created_at) = ?', [$year]);
             })
             ->when($locationId, function ($query) use ($locationId) {
                 $query->where('locations.id', '=', $locationId);
             })
             ->groupBy(
-                DB::raw('MONTH(employee_details.last_date)'),
+                DB::raw('MONTH(employee_details.created_at)'),
                 'teams.department_type'
             )
             ->get();

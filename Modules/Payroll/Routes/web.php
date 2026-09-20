@@ -11,6 +11,7 @@ use Modules\Payroll\Http\Controllers\PayCodeController;
 use Modules\Payroll\Http\Controllers\PayrollController;
 use Modules\Payroll\Http\Controllers\PayrollCurrencyController;
 use Modules\Payroll\Http\Controllers\PayrollExpenseController;
+use Modules\Payroll\Http\Controllers\PayrollRateController;
 use Modules\Payroll\Http\Controllers\PayrollReportController;
 use Modules\Payroll\Http\Controllers\PayrollSettingController;
 use Modules\Payroll\Http\Controllers\SalaryComponentController;
@@ -38,7 +39,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('payroll/download/{id}', [PayrollController::class, 'downloadPdf'])->name('payroll.download_pdf');
     Route::post('payroll/get-cycle-data', [PayrollController::class, 'getCycleData'])->name('payroll.get-cycle-data');
     Route::post('payroll/get_expense_title', [PayrollController::class, 'getExpenseTitle'])->name('payroll.get_expense_title');
-    Route::get('payroll/get_employee', [PayrollController::class, 'byRank'])->name('payroll.get-employee');
+    Route::get('payroll/get_employee', [PayrollController::class, 'getEmployee'])->name('payroll.get-employee');
 
     Route::get('payroll/export_pay_roll/{year}/{payrollCycle?}/{month?}/{searchText?}', [PayrollController::class, 'exportPayroll'])->name('payroll.export_pay_roll');
 
@@ -68,8 +69,10 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::resource('payroll-reports', PayrollReportController::class);
     Route::get('payroll-settings', [PayrollSettingController::class, 'index'])->name('payroll.payroll_settings');
     Route::get('overtime-settings', [OvertimeSettingController::class, 'index'])->name('payroll.overtime_settings');
+    Route::post('overtime-settings/change-permission', [OvertimeSettingController::class, 'changePermission'])->name('payroll.overtime_settings.change_permission');
     Route::post('overtime-change-status', [OvertimeRequestController::class, 'changeStatus'])->name('overtime-change-status');
-    Route::get('overtime-request-accept/{id}', [OvertimeRequestController::class, 'acceptRequest'])->name('overtime-request-accept');
+    Route::post('overtime-request/{id}/pre-approve',[OvertimeRequestController::class,'preApprove'])->name('overtime-request-pre-approve');
+    Route::post('overtime-request-accept/{id}', [OvertimeRequestController::class, 'acceptRequest'])->name('overtime-request-accept');
     Route::get('overtime-request-policy/{id}', [OvertimeRequestController::class, 'getUserPolicy'])->name('overtime-request-policy');
     Route::get('overtime-request-data', [OvertimeRequestController::class, 'getOvertimeData'])->name('overtime-request-data');
     Route::get('overtime-requests/export', [OvertimeRequestController::class, 'exportOvertimeRequests'])
@@ -96,6 +99,7 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
             Route::resource('salary-settings', SalarySettingController::class);
             Route::resource('employee-hourly-rate-settings', EmployeeHourlyRateSettingController::class);
             Route::resource('payroll-currency-settings', PayrollCurrencyController::class);
+            Route::resource('payroll-rate-settings', PayrollRateController::class);
         }
     );
 

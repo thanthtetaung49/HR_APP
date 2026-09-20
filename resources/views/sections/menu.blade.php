@@ -157,6 +157,12 @@
                     <x-sub-menu-item :link="route('bank-reports.index')" :text="__('app.menu.bankReport')" />
                 @endcan
 
+                @can('lateReportPermission', App\Models\User::class)
+                    <x-sub-menu-item :link="route('late-reports.index')" :text="__('app.menu.lateReport')" />
+                @endcan
+
+                {{-- <x-sub-menu-item :link="route('late-reports.index')" :text="__('app.menu.lateReport')" /> --}}
+
                 @can('viewAny', App\Models\ManPowerReport::class)
                     <x-sub-menu-item :link="route('man-power-reports.index')" :text="__('app.menu.manPowerReport')" />
                 @endcan

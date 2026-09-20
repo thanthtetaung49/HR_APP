@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
+use Carbon\Carbon;
 
 class RecruitJobApplication extends BaseModel
 {
@@ -21,7 +22,25 @@ class RecruitJobApplication extends BaseModel
 
     protected $fillable = ['name', 'email', 'phone', 'gender', 'status_id'];
 
+    protected $casts = [
+        'date_of_birth' => 'date',
+        'work_experience_details' => 'array',
+        'is_blacklisted' => 'boolean',
+        'last_salary_minimum' => 'decimal:2',
+        'expected_salary_minimum' => 'decimal:2',
+    ];
+
     const FILE_PATH = 'job_resume';
+
+    public function getAgeAttribute(): ?int
+    {
+        return $this->date_of_birth ? Carbon::parse($this->date_of_birth)->age : null;
+    }
+
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'employee_user_id');
+    }
 
     public function getImageUrlAttribute()
     {
