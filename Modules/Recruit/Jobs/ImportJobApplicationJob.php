@@ -83,6 +83,19 @@ class ImportJobApplicationJob implements ShouldQueue
                 return;
             }
 
+            $fatherName = trim(
+                (string) $this->columnValue('father_name')
+            );
+
+            if ($fatherName === '') {
+                $this->failJob(
+                    __('recruit::messages.fatherNameRequired')
+                );
+
+                return;
+            }
+
+
             $email = trim(
                 (string) $this->columnValue('email')
             );
@@ -254,6 +267,7 @@ class ImportJobApplicationJob implements ShouldQueue
 
 
             $jobApp->full_name = $fullName;
+            $jobApp->father_name = $fatherName;
             $jobApp->email = $email;
             $jobApp->phone = $this->columnValue('phone');
 
@@ -318,6 +332,8 @@ class ImportJobApplicationJob implements ShouldQueue
             $jobApp->job_offer_decision =
                 $this->columnValue('job_offer_decision');
 
+            $jobApp->is_blacklisted = $isBlacklisted ? 1 : 0;
+            $jobApp->blacklist_reason = $this->columnValue('blacklist_reason');
 
             $jobApp->save();
 

@@ -304,8 +304,8 @@
             $.easyAjax({
                 url: url,
                 type: 'GET',
-                disableButton: true,
-                blockUI: true,
+                disableButton: false,
+                blockUI: !useInitialValues,
                 data: {
                     job_id: jobId
                 },

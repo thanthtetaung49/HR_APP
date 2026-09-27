@@ -700,7 +700,9 @@ class PayrollController extends AccountBaseController
                 $eveningShiftAllowance = $eveningShiftPresentCount * 500;
 
                 $totalBetweenLateCount = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3));
-                $totalAfterLateCount = floor($attLateAfter + $attBreakTimeAfter);
+                $totalAfterLateCount = floor($attLateAfter + $attBreakTimeAfter) * (float) $payrollSetting->late_detection_rate;
+
+                // dd($totalAfterLateCount, floor($attLateAfter + $attBreakTimeAfter), (float) $payrollSetting->late_detection_rate, $payrollSetting->late_detection_rate);
 
                 $allLeaveWithoutPayCount = $totalBetweenLateCount + $totalAfterLateCount + $halfDayLateCount + $toalLwpCount;
 

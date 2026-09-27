@@ -213,14 +213,14 @@
 
                             <div class="col-md-3">
                                 <x-forms.datepicker fieldId="start_date" fieldRequired="true" :fieldLabel="__('modules.projects.startDate')"
-                                    fieldName="start_date" :fieldValue="$job->start_date->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" />
+                                    fieldName="start_date" :fieldValue="$job->start_date->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true"  />
                             </div>
 
-                            <div class="col-md-3" id="endDateBox">
+                            <div class="col-md-3" >
                                 <x-forms.datepicker fieldId="end_date" fieldRequired="true" :fieldLabel="__('recruit::modules.job.endDate')"
-                                    fieldName="end_date" :fieldValue="$job->end_date ? $job->end_date->format($company->date_format) : ''" :fieldPlaceholder="__('placeholders.date')" />
+                                    fieldName="end_date" :fieldValue="$job->end_date ? $job->end_date->format($company->date_format) : ''" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true"  />
                             </div>
-                            <div class="col-md-6 col-lg-3">
+                            {{-- <div class="col-md-6 col-lg-3">
                                 <div class="form-group">
                                     <div class="d-flex mt-5">
                                         @if (!is_null($job))
@@ -232,7 +232,7 @@
                                         @endif
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
                             <div class="col-md-3 position">
                                 <x-forms.number fieldId="vacancy_count" fieldLabel="Vacancy" :fieldValue="$job ? $job->vacancy_count : 0"
                                     fieldName="vacancy_count" fieldRequired="true" fieldReadOnly="true"
@@ -567,14 +567,14 @@
 
 <script>
     $(document).ready(function() {
-        datepicker('#start_date', {
-            position: 'bl',
-            ...datepickerConfig
-        });
-        datepicker('#end_date', {
-            position: 'bl',
-            ...datepickerConfig
-        });
+        // datepicker('#start_date', {
+        //     position: 'bl',
+        //     ...datepickerConfig
+        // });
+        // datepicker('#end_date', {
+        //     position: 'bl',
+        //     ...datepickerConfig
+        // });
 
         quillImageLoad('#job_description');
 
@@ -801,6 +801,7 @@
         init(RIGHT_MODAL);
     });
 </script>
+
 @include('recruit::jobs.ajax.job-cascade')
 
 <script>

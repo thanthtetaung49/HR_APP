@@ -11,6 +11,7 @@ class JobApplicationImport implements ToArray
     {
         return array(
             array('id' => 'full_name', 'name' => __('recruit::modules.interviewSchedule.candidateName'), 'required' => 'Yes'),
+            array('id' => 'father_name', 'name' => __('recruit::modules.form.fatherName'), 'required' => 'Yes'),
             array('id' => 'email', 'name' => __('recruit::modules.form.email'), 'required' => 'No'),
             array('id' => 'phone', 'name' => __('recruit::modules.form.phone'), 'required' => 'No'),
             array('id' => 'gender', 'name' => __('recruit::modules.form.gender'), 'required' => 'No'),

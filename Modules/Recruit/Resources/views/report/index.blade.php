@@ -19,6 +19,20 @@
         </div>
         <!-- DATE END -->
 
+        <div class="select-box py-2 d-flex px-2 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location" id="location" data-live-search="true" data-size="8">
+                    <option value="all" @selected(request('location', 'all') === 'all')>@lang('app.all')</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}" @selected((int) request('location') === (int) $location->id)>
+                            {{ $location->location_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <!-- RESET START -->
         <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
             <x-forms.button-secondary class="btn-xs d-none" id="reset-filters" icon="times-circle">
@@ -35,7 +49,11 @@
         <!-- Add Task Export Buttons Start -->
         <div class="d-flex flex-column">
             <div class="mb-3"><a class="btn btn-primary"
-                    href="{{ route('jobreport.export_analytics', request()->only(['startDate', 'endDate'])) }}"><i
+                    href="{{ route('jobreport.export_analytics', [
+                        'startDate' => request('startDate'),
+                        'endDate' => request('endDate'),
+                        'location' => request('location'),
+                    ]) }}"><i
                         class="fa fa-file-excel"></i> Export Recruitment Reports</a></div>
             <div class="row mb-4">
                 <div class="col-lg-3">
@@ -118,26 +136,27 @@
             }, cb);
 
 
-            $('#datatableRange2').on('apply.daterangepicker', function(ev, picker) {
-                const startDate = picker.startDate.format(
-                    '{{ $company->moment_format }}'
-                );
-
-                const endDate = picker.endDate.format(
-                    '{{ $company->moment_format }}'
-                );
-
+            function reloadReport() {
+                const dateRangePicker = $('#datatableRange2').data('daterangepicker');
                 const url = new URL(
                     "{{ route('recruit-job-report.index') }}",
                     window.location.origin
                 );
 
-                url.searchParams.set('startDate', startDate);
-                url.searchParams.set('endDate', endDate);
+                url.searchParams.set('startDate', dateRangePicker.startDate.format('{{ $company->moment_format }}'));
+                url.searchParams.set('endDate', dateRangePicker.endDate.format('{{ $company->moment_format }}'));
+                url.searchParams.set('location', $('#location').val() || 'all');
 
                 window.location.href = url.toString();
+            }
+
+            $('#datatableRange2').on('apply.daterangepicker', function() {
+                reloadReport();
             });
 
+            $('body').on('change', '#location', function() {
+                reloadReport();
+            });
 
             $('body').on('click', '#reset-filters', function() {
                 window.location.href = "{{ route('recruit-job-report.index') }}";
@@ -163,12 +182,13 @@
                 $.easyAjax({
                     url: url,
                     container: '#task-chart-card',
-                    blockUI: true,
+                    blockUI: false,
                     type: "POST",
                     data: {
                         _token: '{{ csrf_token() }}',
                         startDate: startDate,
-                        endDate: endDate
+                        endDate: endDate,
+                        location: $('#location').val()
                     },
                     success: function(response) {
                         $('#task-chart-card').html(response.html);
@@ -176,16 +196,9 @@
                         $('#jobPosted').html(response.jobPosted);
                         $('#candidateHired').html(response.candidateHired);
                         $('#interview').html(response.interview);
-                        console.log(response);
                     }
                 });
             }
-
-            @if (request('start') && request('end'))
-                $('#datatableRange2').data('daterangepicker').setStartDate("{{ request('start') }}");
-                $('#datatableRange2').data('daterangepicker').setEndDate("{{ request('end') }}");
-            @endif
-
 
             pieChart();
         });

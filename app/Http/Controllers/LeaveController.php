@@ -86,6 +86,8 @@ class LeaveController extends AccountBaseController
             $dateRange = $startDate->format('d-m-Y') . '_To_' . $endDate->format('d-m-Y');
         }
 
+        // dd('hi');
+
         return Excel::download(new LeaveExport($startDate, $endDate, $exportAll), 'Leave_From_' . $dateRange . '.xlsx');
     }
 

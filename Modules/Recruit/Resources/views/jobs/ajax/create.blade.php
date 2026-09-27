@@ -46,7 +46,7 @@
                                 </x-forms.label>
                                 <x-forms.input-group>
                                     <select class="form-control select-picker" name="department_id"
-                                        id="employee_department" fieldRequired="true"  data-live-search="true">
+                                        id="employee_department" fieldRequired="true" data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($departments as $team)
                                             {{-- department value --}}
@@ -61,8 +61,8 @@
                                 </x-forms.label>
 
                                 <x-forms.input-group>
-                                    <select class="form-control select-picker" name="designation_id"
-                                        id="designation_id" data-live-search="true">
+                                    <select class="form-control select-picker" name="designation_id" id="designation_id"
+                                        data-live-search="true">
                                         <option value="">--</option>
                                         @foreach ($designations as $designation)
                                             {{-- designation value --}}
@@ -142,14 +142,13 @@
                                 <x-forms.input-group>
                                     <select class="form-control multiple-users" multiple name="stage_id[]"
                                         id="selectStages" data-live-search="true" data-size="8">
-                                        @foreach ($stages as $stage)
+                                        {{-- @foreach ($stages as $stage)
                                             @if ($stage->id == 4 || $stage->id == 8)
-                                                <option
-                                                    value="{{ $stage->id }}"
+                                                <option value="{{ $stage->id }}"
                                                     data-content="<span class='badge badge-pill badge-light border'><div class='d-inline-block mr-1'></div> {{ $stage->name }}</span>"
                                                     @selected(in_array($stage->id, [4, 8]) || (isset($jobInterviews) && in_array($stage->id, $jobInterviews)))>{{ $stage->name }}</option>
                                             @endif
-                                        @endforeach
+                                        @endforeach --}}
                                     </select>
                                     @if ($addPermission == 'all' || $addPermission == 'added')
                                         <x-slot name="append">
@@ -161,15 +160,16 @@
                             </div>
 
                             <div class="col-md-3">
-                                <x-forms.datepicker fieldId="start_date" fieldRequired="true" :fieldLabel="__('modules.projects.startDate')"
-                                    fieldName="start_date" :fieldValue="now($company->timezone)->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" />
+                                <x-forms.text fieldId="start_date" fieldRequired="true" :fieldLabel="__('modules.projects.startDate')"
+                                    fieldName="start_date" :fieldValue="now($company->timezone)->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true" />
                             </div>
 
-                            <div class="col-md-3" id="endDateBox">
-                                <x-forms.datepicker fieldId="end_date" fieldRequired="true" :fieldLabel="__('recruit::modules.job.endDate')"
-                                    fieldName="end_date" :fieldValue="now($company->timezone)->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" />
+                            <div class="col-md-3">
+                                <x-forms.text fieldId="end_date" fieldRequired="true" :fieldLabel="__('recruit::modules.job.endDate')"
+                                    fieldName="end_date" :fieldValue="now($company->timezone)->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true" />
                             </div>
-                            <div class="col-md-6 col-lg-3">
+
+                            {{-- <div class="col-md-6 col-lg-3">
                                 <div class="form-group">
                                     <div class="d-flex mt-5">
                                         @if (!is_null($job))
@@ -181,7 +181,8 @@
                                         @endif
                                     </div>
                                 </div>
-                            </div>
+                            </div> --}}
+
                             <div class="col-md-3 position">
                                 <x-forms.number fieldId="vacancy_count" fieldLabel="Vacancy" :fieldValue="$job ? $job->vacancy_count : 0"
                                     fieldName="vacancy_count" fieldRequired="true" fieldReadOnly="true"
@@ -517,14 +518,14 @@
 
 <script>
     $(document).ready(function() {
-        datepicker('#start_date', {
-            position: 'bl',
-            ...datepickerConfig
-        });
-        datepicker('#end_date', {
-            position: 'bl',
-            ...datepickerConfig
-        });
+        // datepicker('#start_date', {
+        //     position: 'bl',
+        //     ...datepickerConfig
+        // });
+        // datepicker('#end_date', {
+        //     position: 'bl',
+        //     ...datepickerConfig
+        // });
 
         quillImageLoad('#job_description');
 

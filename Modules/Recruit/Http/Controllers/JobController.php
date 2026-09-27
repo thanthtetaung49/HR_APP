@@ -60,32 +60,49 @@ class JobController extends AccountBaseController
     //     return response()->json(['rank' => $designation->rank_id]);
     // }
 
-    public function rankByDesignation(Designation $designation)
+    public function rankByDesignation(Request $request, $id)
     {
+        $designation = Designation::where('id', $id)->first();
         $rankId = (string) $designation->rank_id;
+        $managementRank = ManagementRank::whereJsonContains('rank',  $rankId)->first();
 
-        $managementRank = ManagementRank::all()
-            ->first(function ($item) use ($rankId) {
+        $startDate = Carbon::createFromFormat('d-m-Y', $request->start_date);
+        $endDate = null;
 
-                $rankIds = is_array($item->rank)
-                    ? $item->rank
-                    : json_decode($item->rank ?: '[]', true);
+        $manageRankId = $managementRank->id;
 
-                if (!is_array($rankIds)) {
-                    return false;
-                }
+        if ($rankId < 4) {
+            $stages = RecruitInterviewStage::whereIn('id', [4])->get(); // front line
+        } else {
+            $stages = RecruitInterviewStage::whereIn('id', [4, 8])->get(); // middle management , upper management
+        }
 
-                return in_array(
-                    $rankId,
-                    array_map('strval', $rankIds),
-                    true
-                );
-            });
+        $stageOption = '';
 
-        // dd($designation->rank_id, $managementRank);
+        foreach ($stages as $stage) {
+            $stageName = e($stage->name);
+
+            $stageOption .= '
+                    <option value="' . $stage->id . '"
+                        data-content="<span class=\'badge badge-pill badge-light border\'>' . $stageName . '</span>"
+                        selected>
+                        ' . $stageName . '
+                    </option>';
+        }
+
+        if ($manageRankId == 3) {
+            $endDate = $startDate->copy()->addDays(30);
+        } elseif ($manageRankId == 1) {
+            $endDate = $startDate->copy()->addDay(60);
+        } else {
+            $endDate = $startDate->copy()->addDay(90);
+        }
 
         return response()->json([
-            'rank' => $designation->rank_id,
+            'rank' => $rankId,
+            'startDate' => $startDate->format('d-m-Y'),
+            'endDate' => $endDate->format('d-m-Y'),
+            'stageOption' => $stageOption,
             'management_rank' => $managementRank ? [
                 'id' => $managementRank->id,
                 'name' => $managementRank->name,
@@ -141,6 +158,8 @@ class JobController extends AccountBaseController
             ->whereNull('employee_details.last_date')
             ->distinct()
             ->count('employee_details.id');
+
+        // dd($actualEmployees);
 
         $vacancy = max(
             0,

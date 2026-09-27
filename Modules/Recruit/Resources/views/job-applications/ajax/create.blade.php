@@ -47,7 +47,7 @@
                                 </x-forms.text>
                             </div>
                             <div class="col-md-3">
-                                <x-forms.text fieldId="email" :fieldLabel="__('recruit::modules.jobApplication.email')" fieldName="email" :fieldPlaceholder="__('placeholders.email')">
+                                <x-forms.text fieldId="email" :fieldLabel="__('recruit::modules.jobApplication.email')" fieldName="email" :fieldPlaceholder="__('placeholders.email')" fieldRequired="true">
                                 </x-forms.text>
                             </div>
                             <div class="col-md-3">
@@ -69,7 +69,7 @@
 
                             <div class="col-md-3">
                                 <x-forms.text fieldId="current_location" :fieldLabel="__('recruit::modules.jobApplication.currentLocation')" fieldName="current_location"
-                                    fieldPlaceholder="e.g. New York" fieldRequired="true"></x-forms.text>
+                                    fieldPlaceholder="e.g. New York"></x-forms.text>
                             </div>
 
                             <div class="col-md-3">
@@ -174,6 +174,18 @@
                                     fieldValue="" />
                             </div>
 
+                            {{-- <div class="col-md-3" id="dob">
+                                <x-forms.text class="date-picker" :fieldRequired="true" :fieldLabel="__('recruit::modules.jobApplication.startDate')"
+                                    fieldName="start_date" fieldId="start_date" :fieldPlaceholder="__('placeholders.date')" :fieldValue="now()->format('Y-m-d')"
+                                    :fieldReadOnly="true" />
+                            </div>
+
+                            <div class="col-md-3" id="dob">
+                                <x-forms.text class="date-picker" :fieldRequired="true" :fieldLabel="__('recruit::modules.jobApplication.endDate')"
+                                    fieldName="end_date" fieldId="end_date" :fieldPlaceholder="__('placeholders.date')" fieldValue=""
+                                    :fieldReadOnly="true" />
+                            </div> --}}
+
                             <div class="col-md-3">
                                 <x-forms.select fieldId="rank_level" fieldName="rank_level" :fieldLabel="'Rank Level'">
                                 </x-forms.select>
@@ -243,6 +255,16 @@
                 }, 0);
             }
         });
+
+        // datepicker('#start_date', {
+        //     ...datepickerConfig,
+        //     position: 'bl',
+        // });
+
+        // datepicker('#end_date', {
+        //     ...datepickerConfig,
+        //     position: 'bl',
+        // });
 
         $(document).find('.dropify').dropify({
             messages: dropifyMessages
@@ -319,6 +341,7 @@
             const jobId = $(this).val();
             const rankDropdown = $('#management_rank_level');
             const rankLevelDropdown = $('#rank_level');
+            const startDate = $('#start_date').val();
 
             rankDropdown.html('<option value="">--</option>');
             rankLevelDropdown.html('<option value="">--</option>');
@@ -344,7 +367,8 @@
                 disableButton: true,
                 blockUI: true,
                 data: {
-                    job_id: jobId
+                    job_id: jobId,
+                    start_date: startDate
                 },
                 success: function(response) {
                     if (response.status === 'error') {

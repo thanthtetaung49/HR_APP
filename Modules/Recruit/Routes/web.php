@@ -66,7 +66,9 @@ Route::group(['middleware' => 'auth', 'prefix' => 'account'], function () {
     Route::get('jobs/fetch-job', [JobController::class, 'fetchJob'])->name('jobs.fetch_job');
     Route::get('jobs/hr-locations/{location}/departments', [JobController::class, 'departmentsByLocation'])->name('jobs.departments_by_location');
     Route::get('jobs/departments/{department}/designations', [JobController::class, 'designationsByDepartment'])->name('jobs.designations_by_department');
-    Route::get('jobs/designations/{designation}/rank', [JobController::class, 'rankByDesignation'])->name('jobs.rank_by_designation');
+    // Route::get('jobs/designations/{designation}/{startDate}/rank', [JobController::class, 'rankByDesignation'])->name('jobs.rank_by_designation');
+    Route::get('jobs/rank-by-designation/{id}', [JobController::class, 'rankByDesignation'])
+    ->name('jobs.rank_by_designation');
     Route::get('jobs/available-vacancy', [JobController::class, 'availableVancancy'])->name('jobs.available_vacancy');
     Route::get('jobs/addRecruiter', [RecruiterController::class, 'addRecruiter'])->name('jobs.addRecruiter');
     Route::post('jobs/change-status', [JobController::class, 'changeJobStatus'])->name('jobs.change_job_status');

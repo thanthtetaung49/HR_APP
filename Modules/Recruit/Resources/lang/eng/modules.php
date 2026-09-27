@@ -5,6 +5,7 @@ return array(
     'form' => array(
       'email' => 'Email',
       'phone' => 'Phone',
+      'fatherName' => 'Father Name',
       'gender' => 'Gender',
       'total_experience' => 'Total Experience',
       'current_location' => 'Current Location',
@@ -68,6 +69,7 @@ return array(
     'job' => array(
         'startDate' => 'Start Date',
         'endDate' => 'End Date',
+        'applicationAge' => 'Application Age',
         'jobTitle' => 'Job Title',
         'addJob' => 'Add Job',
         'editJob' => 'Edit Job',
@@ -141,6 +143,9 @@ return array(
         'phone' => 'Phone',
         'gender' => 'Gender',
         'dateOfBirth' => 'Date Of Birth',
+        'startDate' => 'Start Date',
+        'endDate' => 'End Date',
+        'applicationAge' => 'Application Age',
         'currentCtc'=> 'Current CTC',
         'expectedCtc'=> 'Expected CTC',
         'location' => 'Location',

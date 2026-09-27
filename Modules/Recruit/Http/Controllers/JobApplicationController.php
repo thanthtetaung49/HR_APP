@@ -18,6 +18,7 @@ use App\Models\Designation;
 use App\Models\ManagementRank;
 use App\Traits\ImportExcel;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Modules\Recruit\Entities\ApplicationSource;
 use Modules\Recruit\Entities\RecruitJobApplication;
 use Modules\Recruit\Entities\RecruitApplicationFile;
@@ -407,7 +408,7 @@ class JobApplicationController extends AccountBaseController
         Request $request,
         RecruitJob $job
     ): void {
-        // dd($request->blacklist, $request->blacklist_reason);
+
         $jobApp->recruit_job_id = $job->id;
         $jobApp->unsetRelation('job');
 
@@ -422,6 +423,8 @@ class JobApplicationController extends AccountBaseController
         $jobApp->current_location = $request->current_location;
         $jobApp->total_experience = $request->total_experience;
         $jobApp->notice_period = $request->notice_period;
+        // $jobApp->start_date = $request->start_date;
+        // $jobApp->end_date = $request->end_date;
 
         $jobApp->recruit_application_status_id =
             $request->status_id;
@@ -504,7 +507,9 @@ class JobApplicationController extends AccountBaseController
             ? $request->job_offer_decision_reason
             : null;
 
-        $jobApp->is_blacklisted = $request->blacklist ;
+        // dd($request->all());
+
+        $jobApp->is_blacklisted = $request->blacklist == 1 ? 1 : 0 ;
         $jobApp->blacklist_reason = $request->blacklist_reason ;
     }
 
@@ -790,10 +795,7 @@ class JobApplicationController extends AccountBaseController
 
         $designation = Designation::where('id', $designationId)->first();
         $rankLevel = $designation?->rank_id;
-
-        // dd($this->data->rank_level, $this->data->management_rank_level);
-        $managementRank  = ManagementRank::where('id', $this->data->management_rank_level)->first();
-        // dd($managementRank);
+        $managementRank  = ManagementRank::where('id', $this->data->management_rank_level)->first();;
 
         $managementName = '';
         $managementId = '';

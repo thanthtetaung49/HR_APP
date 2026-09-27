@@ -2,18 +2,13 @@
 
 namespace App\DataTables;
 
-use App\Models\Designation;
-use App\Models\Location;
 use App\Models\ManPowerReportHistory;
-use App\Models\Team;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
-use Yajra\DataTables\Services\DataTable;
 
 class ManPowerReportHistoryDataTable extends BaseDataTable
 {
@@ -43,31 +38,16 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 return $manPower->budget_year;
             })
             ->editColumn('quarter', function ($manPower) {
-                if ($manPower->quarter == 1) {
-                    return 'Q1 (Jan - Dec)';
-                } elseif ($manPower->quarter == 2) {
-                    return 'Q2 (Apr - Dec)';
-                } elseif ($manPower->quarter == 3) {
-                    return 'Q3 (Jul - Dec)';
-                } else {
-                    return 'Q4 (Oct - Dec)';
-                }
+                return 'Q1 (Apr - Mar)';
             })
             ->editColumn('location', function ($manPower) {
-                $department = Team::where('id', $manPower->team_id)->first();
-                $location = Location::where('id', $department->location_id)->first();
-
-                return $location->location_name;
+                return $manPower->location ?: '---';
             })
             ->editColumn('team', function ($manPower) {
-                $department = Team::where('id', $manPower->team_id)->first();
-
-                return $department ? $department->team_name : '---';
+                return $manPower->team ?: '---';
             })
             ->editColumn('position', function ($manPower) {
-                $designation = Designation::where('id', $manPower->position_id)->first();
-
-                return $designation ? $designation->name : '---';
+                return $manPower->position ?: '---';
             })
             ->editColumn('man_power_setup', function ($manPower) {
                 return $manPower->man_power_setup;
@@ -90,7 +70,7 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 return $manPower->man_power_basic_salary;
             })
             ->editColumn('total_man_power_basic_salary', function ($manPower) {
-                $salaries =  ($manPower->total_allowance > 0) ? $manPower->total_allowance : 0;
+                $salaries = ($manPower->salary_actual > 0) ? $manPower->salary_actual : 0;
 
                 if ($manPower->man_power_basic_salary > $salaries) {
                     $icon = '<i class="fa fa-check text-success"></i>';
@@ -131,17 +111,7 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
                 return $manPower->updated_at->format('Y-m-d');
             })
             ->editColumn('vacancy_percent', function ($manPower) {
-                $count =  ($manPower->count_employee > 0) ? $manPower->count_employee : 0;
-
-                $vacancy = 100;
-
-                if ($manPower->man_power_setup <= $count) {
-                    $vacancy = 0;
-                } else if ($count > 0) {
-                    $vacancy = 100 - ($count / $manPower->man_power_setup) * 100;
-                } else {
-                    $vacancy = 100;
-                }
+                $vacancy = (float) $manPower->vacancy_count;
 
                 if ($vacancy < 50) {
                     $icon = '<i class="fa fa-check text-success"></i>';
@@ -166,13 +136,88 @@ class ManPowerReportHistoryDataTable extends BaseDataTable
      */
     public function query(ManPowerReportHistory $model): QueryBuilder
     {
-        $query = $model->newQuery();
+        $latestAllowances = DB::table('allowances')
+            ->select('user_id', DB::raw('MAX(id) as latest_id'))
+            ->groupBy('user_id');
+
+        $activeEmployeeCondition = "users.status = 'active'
+            AND employee_details.notice_period_start_date IS NULL
+            AND (YEAR(employee_details.joining_date) <= CAST(man_power_report_histories.budget_year AS UNSIGNED)
+                OR employee_details.joining_date IS NULL)
+            AND employee_details.designation_id = man_power_report_histories.position_id";
+
+        $employeeCount = "COUNT(DISTINCT CASE WHEN {$activeEmployeeCondition}
+            THEN employee_details.user_id END)";
+
+        $basicSalary = "COALESCE(SUM(CASE WHEN {$activeEmployeeCondition}
+            THEN COALESCE(allowances.basic_salary, 0) ELSE 0 END), 0)";
+
+        $technicalAllowance = "COALESCE(SUM(CASE WHEN {$activeEmployeeCondition}
+            THEN COALESCE(allowances.technical_allowance, 0) ELSE 0 END), 0)";
+
+        $livingCostAllowance = "COALESCE(SUM(CASE WHEN {$activeEmployeeCondition}
+            THEN COALESCE(allowances.living_cost_allowance, 0) ELSE 0 END), 0)";
+
+        $salaryActual = "({$basicSalary} + {$technicalAllowance} + {$livingCostAllowance})";
+
+        $vacancyCount = "CASE
+            WHEN man_power_report_histories.man_power_setup IS NULL
+                OR man_power_report_histories.man_power_setup <= 0 THEN 0
+            ELSE GREATEST(
+                0,
+                100 - (({$employeeCount} / man_power_report_histories.man_power_setup) * 100)
+            )
+        END";
+
+        $query = $model->newQuery()
+            ->join('teams', 'man_power_report_histories.team_id', '=', 'teams.id')
+            ->join('locations', 'teams.location_id', '=', 'locations.id')
+            ->join('designations', 'man_power_report_histories.position_id', '=', 'designations.id')
+            ->leftJoin('employee_details', 'employee_details.department_id', '=', 'man_power_report_histories.team_id')
+            ->leftJoin('users', 'users.id', '=', 'employee_details.user_id')
+            ->leftJoinSub($latestAllowances, 'latest_allowances', function ($join) {
+                $join->on('latest_allowances.user_id', '=', 'users.id');
+            })
+            ->leftJoin('allowances', 'allowances.id', '=', 'latest_allowances.latest_id')
+            ->select(
+                'man_power_report_histories.*',
+                'locations.location_name as location',
+                'teams.team_name as team',
+                'designations.name as position',
+                DB::raw($employeeCount . ' as count_employee'),
+                DB::raw($basicSalary . ' as basic_salary'),
+                DB::raw($technicalAllowance . ' as technical_allowance'),
+                DB::raw($livingCostAllowance . ' as living_cost_allowance'),
+                DB::raw($salaryActual . ' as salary_actual'),
+                DB::raw($vacancyCount . ' as vacancy_count')
+            )
+            ->groupBy(
+                'man_power_report_histories.id',
+                'man_power_report_histories.man_power_report_id',
+                'man_power_report_histories.man_power_setup',
+                'man_power_report_histories.man_power_basic_salary',
+                'man_power_report_histories.team_id',
+                'man_power_report_histories.position_id',
+                'man_power_report_histories.budget_year',
+                'man_power_report_histories.quarter',
+                'man_power_report_histories.status',
+                'man_power_report_histories.remark_from',
+                'man_power_report_histories.remark_to',
+                'man_power_report_histories.created_by',
+                'man_power_report_histories.approved_date',
+                'man_power_report_histories.updated_date',
+                'man_power_report_histories.created_at',
+                'man_power_report_histories.updated_at',
+                'locations.location_name',
+                'teams.team_name',
+                'designations.name'
+            );
 
         if ($this->id) {
-            $query->where('man_power_report_id', $this->id);
+            $query->where('man_power_report_histories.man_power_report_id', $this->id);
         }
 
-        return $query;
+        return $query->orderByDesc('man_power_report_histories.created_at');
     }
 
     /**

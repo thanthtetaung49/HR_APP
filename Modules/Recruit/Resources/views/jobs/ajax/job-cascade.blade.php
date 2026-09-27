@@ -87,6 +87,8 @@
             const designationId = $(this).val();
             const rankDropdown = $('#rank_level');
             const managementRankDropdown = $('#management_rank_id');
+            const startDate = $('#start_date').val();
+            const selectStages = $("#selectStages");
 
             rankDropdown
                 .html('<option value="">--</option>')
@@ -96,15 +98,28 @@
                 .html('<option value="">--</option>')
                 .selectpicker('refresh');
 
+            selectStages.html('').selectpicker('refresh');
+
             if (!designationId) {
                 return;
             }
 
-            const url =
-                "{{ route('jobs.rank_by_designation', ':id') }}"
-                .replace(':id', designationId);
+            const url = "{{ route('jobs.rank_by_designation', ':designation') }}"
+                .replace(':designation', designationId) +
+                '?start_date=' + encodeURIComponent(startDate);
 
             $.get(url, function(response) {
+                if (response.startDate !== null && response.startDate !== undefined && response
+                    .startDate !== '') {
+                    $("#start_date").val(response.startDate);
+                }
+
+                if (response.endDate !== null && response.endDate !== undefined && response.endDate !==
+                    '') {
+                    $("#end_date").val(response.endDate);
+                }
+
+
                 if (
                     response.rank !== null &&
                     response.rank !== undefined &&
@@ -134,6 +149,12 @@
                 }
 
                 managementRankDropdown.selectpicker('refresh');
+
+                if (response.stageOption !== undefined) {
+                    selectStages
+                        .html(response.stageOption)
+                        .selectpicker('refresh');
+                }
             });
         });
 

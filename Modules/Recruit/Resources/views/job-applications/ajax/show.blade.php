@@ -57,7 +57,7 @@
                                             || ($editApplicationPermission == 'owned' && user()->id == $application->job->recruiter_id)
                                             || ($editApplicationPermission == 'both' && user()->id == $application->job->recruiter_id)
                                             || $application->added_by == user()->id)
-                                            <a class="dropdown-item openRightModal"
+                                            <a class="dropdown-item"
                                                href="{{ route('job-applications.edit', $application->id) }}">@lang('app.edit')</a>
                                         @endif
                                         @if ($deleteApplicationPermission == 'all'
@@ -539,7 +539,7 @@
 
             $.easyAjax({
                 url: requestUrl,
-                blockUI: true,
+                blockUI: false,
                 container: "#nav-tabContent",
                 historyPush: ($(RIGHT_MODAL).hasClass('in') ? false : true),
                 data: {

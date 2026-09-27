@@ -76,6 +76,7 @@ return array(
     'rejectLabel' => 'Open Add rejection remark model.',
     'emailAlreadyExists'  => 'Email already exist it should be unique.',
     'fullNameRequired' => 'The Full Name field is required.',
+    'fatherNameRequired' => 'The Father Name field is required.',
     'selectJobField' => 'The Select Job field is required.',
     'candidateDatabaseInfo' => 'These are the archived job applications.',
     'thankyouNote' => 'Thank you for considering a career with us.',

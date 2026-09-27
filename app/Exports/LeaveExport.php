@@ -86,7 +86,8 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             __('app.duration'),
             __('app.leaveStatus'),
             __('app.leaveType'),
-            __('app.paid')
+            __('app.paid'),
+            __('app.leaveReason')
         ];
 
         return $arr;
@@ -101,6 +102,8 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             ->selectRaw('leaves.*, leave_types.color, leave_types.type_name')
             ->orderBy('leaves.leave_date')
             ->orderBy('leaves.user_id');
+
+        // dd('hi ieiei');
 
         if($this->exportAll == false){
             if (!is_null($this->startdate)) {
@@ -160,6 +163,7 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             $leavedata[$employee_index]['leave_type'] = $leavesList->type->type_name;
 
             $leavedata[$employee_index]['paid'] = $leavesList->type->paid == 1 ? __('app.paid') : __('app.unpaid');
+            $leavedata[$employee_index]['reason'] = $leavesList->reason;
 
             $employee_index++;
             $emp_leave++;
@@ -168,6 +172,8 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
         $leavedata = collect($leavedata);
         self::$sum = $leavedata;
 
+        // dd($leavedata->first());
+
         return $leavedata;
 
     }
@@ -175,6 +181,7 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
     public function map($leavedata): array
     {
         $data = array();
+        // dd($data);
         $data[] = $leavedata['employee_name'];
         return $data;
     }

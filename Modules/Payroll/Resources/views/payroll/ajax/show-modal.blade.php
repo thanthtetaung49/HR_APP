@@ -21,7 +21,7 @@
                                 <div class="dropdown-menu dropdown-menu-right border-grey rounded b-shadow-4 p-0"
                                     aria-labelledby="dropdownMenuLink" tabindex="0">
                                     @if (
-                                        $salarySlip->status != 'paid' &&
+                                        $salarySlip->status != 'paid' && $salarySlip->status != 'locked' &&
                                             (user()->permission('edit_payroll') == 'all' || user()->permission('edit_payroll') == 'added'))
                                         <a class="dropdown-item openRightModal"
                                             href="{{ route('payroll.edit', $salarySlip->id) }}">@lang('app.edit')</a>

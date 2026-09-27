@@ -6,6 +6,7 @@ use App\DataTables\BaseDataTable;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Carbon as SupportCarbon;
 use Yajra\DataTables\Html\Column;
 use Modules\Recruit\Entities\RecruitJob;
 
@@ -46,13 +47,25 @@ class JobDataTable extends BaseDataTable
             ->editColumn('end_date', function ($row) {
                 if ($row->end_date != null) {
                     return $row->end_date->format($this->company->date_format);
-                }
-                else {
+                } else {
                     return __('recruit::modules.job.noEndDate');
                 }
             })
+            ->editColumn('application_age', function ($row) {
+                $startDate = Carbon::parse($row->start_date)->startOfDay();
+                $currentDate = Carbon::now()->startOfDay();
+
+                $dayCount = $startDate->diffInDays($currentDate);
+
+                if ($row->start_date != null) {
+                    return $dayCount . ' ' . ($dayCount == 1 ? 'day' : 'days');
+                } else {
+                    return '---';
+                }
+            })
             ->editColumn('status', function ($row) {
-                if ($this->editJobPermission != 'none'
+                if (
+                    $this->editJobPermission != 'none'
                     && (
                         $this->editJobPermission == 'all'
                         || ($this->editJobPermission == 'added' && $row->added_by == user()->id)
@@ -77,13 +90,11 @@ class JobDataTable extends BaseDataTable
                     $status .= ' value="closed" data-content="<i class=\'fa fa-circle mr-2 text-red\'></i> ' . __('app.closed') . '"' . __('app.closed') . '</option>';
 
                     $status .= '</select>';
-                }
-                else {
+                } else {
                     if ($row->status == 'open') {
                         $class = 'text-light-green';
                         $status = __('app.open');
-                    }
-                    else {
+                    } else {
                         $class = 'text-red';
                         $status = __('app.closed');
                     }
@@ -93,7 +104,7 @@ class JobDataTable extends BaseDataTable
 
                 return $status;
             })
-            ->editColumn('recruiter_id', function($row) {
+            ->editColumn('recruiter_id', function ($row) {
                 if (!is_null($row->recruiter_id)) {
                     return view('components.employee', [
                         'user' => $row->recruiter
@@ -112,41 +123,49 @@ class JobDataTable extends BaseDataTable
                         </a>
                         <div class="dropdown-menu dropdown-menu-right" aria-labelledby="dropdownMenuLink-' . $row->id . '" tabindex="0">';
 
-                if ($this->viewJobPermission == 'all' ||
+                if (
+                    $this->viewJobPermission == 'all' ||
                     ($this->viewJobPermission == 'added' && $row->added_by == user()->id) ||
                     ($this->viewJobPermission == 'owned' && user()->id == $row->recruiter_id) ||
                     ($this->viewJobPermission == 'both' && user()->id == $row->recruiter_id) ||
-                    $row->added_by == user()->id) {
+                    $row->added_by == user()->id
+                ) {
                     $action .= '<a href="' . route('jobs.show', [$row->id]) . '" class="dropdown-item"><i class="fa fa-eye mr-2"></i>' . __('app.view') . '</a>';
                 }
 
-                if ($this->editJobPermission == 'all' ||
+                if (
+                    $this->editJobPermission == 'all' ||
                     ($this->editJobPermission == 'added' && $row->added_by == user()->id) ||
                     ($this->editJobPermission == 'owned' && user()->id == $row->recruiter_id) ||
                     ($this->editJobPermission == 'both' && user()->id == $row->recruiter_id) ||
-                    $row->added_by == user()->id) {
+                    $row->added_by == user()->id
+                ) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('jobs.edit', [$row->id]) . '">
                                     <i class="fa fa-edit mr-2"></i>
                                     ' . trans('app.edit') . '
                                 </a>';
                 }
 
-                if ($this->deleteJobPermission == 'all' ||
+                if (
+                    $this->deleteJobPermission == 'all' ||
                     ($this->deleteJobPermission == 'added' && $row->added_by == user()->id) ||
                     ($this->deleteJobPermission == 'owned' && $row->recruiter_id == user()->id) ||
                     ($this->deleteJobPermission == 'both' && $row->recruiter_id == user()->id ||
-                        $row->added_by == user()->id)) {
+                        $row->added_by == user()->id)
+                ) {
                     $action .= '<a class="dropdown-item delete-table-row" href="javascript:;" data-job-id="' . $row->id . '">
                                     <i class="fa fa-trash mr-2"></i>
                                     ' . trans('app.delete') . '
                                 </a>';
                 }
 
-                if ($this->editJobPermission == 'all' ||
+                if (
+                    $this->editJobPermission == 'all' ||
                     ($this->editJobPermission == 'added' && $row->added_by == user()->id) ||
                     ($this->editJobPermission == 'owned' && user()->id == $row->recruiter_id) ||
                     ($this->editJobPermission == 'both' && user()->id == $row->recruiter_id) ||
-                    $row->added_by == user()->id) {
+                    $row->added_by == user()->id
+                ) {
                     $action .= '<a class="dropdown-item openRightModal" href="' . route('jobs.create') . '?duplicate_job=' . $row->id . '">
                                 <i class="fa fa-clone"></i>
                                 ' . trans('app.duplicate') . '
@@ -160,7 +179,7 @@ class JobDataTable extends BaseDataTable
                 return $action;
             })
             ->addIndexColumn()
-            ->rawColumns(['action', 'title','recruiter_id', 'start_date', 'end_date', 'status', 'check'])
+            ->rawColumns(['action', 'title', 'recruiter_id', 'start_date', 'end_date', 'status', 'check'])
             ->removeColumn('updated_at')
             ->removeColumn('created_at');
     }
@@ -209,8 +228,7 @@ class JobDataTable extends BaseDataTable
             $jobs->where(function ($q) use ($startDate, $endDate) {
                 if (request()->date_filter_on == 'due_date') {
                     $q->whereBetween(DB::raw('DATE(recruit_jobs.`end_date`)'), [$startDate, $endDate]);
-                }
-                elseif (request()->date_filter_on == 'start_date') {
+                } elseif (request()->date_filter_on == 'start_date') {
                     $q->whereBetween(DB::raw('DATE(recruit_jobs.`start_date`)'), [$startDate, $endDate]);
                 }
             });
@@ -222,12 +240,14 @@ class JobDataTable extends BaseDataTable
             });
         }
 
-        if($this->request()->recruiter != 'all' && $this->request()->recruiter != null && $this->request()->recruiter != ''){
+        if ($this->request()->recruiter != 'all' && $this->request()->recruiter != null && $this->request()->recruiter != '') {
             $jobs->where('recruit_jobs.recruiter_id', $this->request()->recruiter);
         }
 
         if ($this->request()->status != 'all' && $this->request()->status != '') {
             $jobs = $jobs->where('recruit_jobs.status', $this->request()->status);
+        } else {
+            $jobs = $jobs->where('recruit_jobs.status', 'open');
         }
 
         if ($this->request()->department_id != 'all' && $this->request()->department_id != '') {
@@ -274,9 +294,10 @@ class JobDataTable extends BaseDataTable
             ],
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => false],
             __('recruit::modules.job.jobTitle') => ['data' => 'title', 'name' => 'title', 'title' => __('recruit::modules.job.jobTitle')],
-            __('recruit::app.job.recruiter') => ['data' => 'recruiter_id','name' => 'recruit_jobs.recruiter_id', 'title' => __('recruit::app.job.recruiter')],
+            __('recruit::app.job.recruiter') => ['data' => 'recruiter_id', 'name' => 'recruit_jobs.recruiter_id', 'title' => __('recruit::app.job.recruiter')],
             __('recruit::modules.job.startDate') => ['data' => 'start_date', 'name' => 'start_date', 'title' => __('recruit::modules.job.startDate')],
             __('recruit::modules.job.endDate') => ['data' => 'end_date', 'name' => 'end_date', 'title' => __('recruit::modules.job.endDate')],
+            __('recruit::modules.job.applicationAge') => ['data' => 'application_age', 'name' => 'application_age', 'title' => __('recruit::modules.job.applicationAge')],
             __('app.status') => ['data' => 'status', 'name' => 'status', 'title' => __('app.status')],
             Column::computed('action', __('app.action'))
                 ->exportable(false)
@@ -286,5 +307,4 @@ class JobDataTable extends BaseDataTable
                 ->addClass('text-right pr-20')
         ];
     }
-
 }

@@ -174,6 +174,7 @@
 
                 <!-- NAV ITEM - CUSTOM MODULES  -->
                 @foreach ($worksuitePlugins as $item)
+                    {{-- @dump($item) --}}
                     @includeIf(strtolower($item) . '::sections.hr.sidebar')
                 @endforeach
             </div>

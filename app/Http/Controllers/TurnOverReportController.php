@@ -8,13 +8,12 @@ use App\Models\Location;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class TurnOverReportController extends AccountBaseController
 {
-    public $arr = [];
-
     public function __construct()
     {
         parent::__construct();
@@ -27,229 +26,239 @@ class TurnOverReportController extends AccountBaseController
         });
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         $this->authorize('viewAny', User::class);
 
-        $this->months = $this->months();
-        $this->turnOverReports = $this->turnOverReports();
-        $this->employeeTotal = $this->employeeTotal();
-        $this->locations = Location::get();
+        $year = (int) request('year', now()->year);
+        $locationId = request('locationId');
+        $report = $this->getReport($year, $locationId);
 
-        // dd($this->turnOverReports()->toArray());
+        $this->months = $this->months();
+        $this->reportRows = $this->reportRows();
+        $this->reportData = $report['reportData'];
+        $this->turnOverReports = $report['turnOverReports'];
+        $this->employeeTotal = $report['employeeTotal'];
+        $this->selectedYear = $year;
+        $this->locations = Location::orderBy('location_name')->get();
 
         return view('turn-over-reports.index', $this->data);
     }
 
-
     public function exportTurnOverReport(Request $request)
     {
+        $year = (int) ($request->year ?: now()->year);
         $locationId = $request->locationId;
-        $locationName = "";
 
-        if (empty($locationId) || $locationId == "") {
-            $locationName = "All Location";
-        } else {
-            $location = Location::findOrFail($locationId);
-            $locationName = $location->location_name;
-        }
+        $locationName = $locationId
+            ? Location::findOrFail($locationId)->location_name
+            : 'All Location';
 
-        $filterYear = $request->year;
+        $report = $this->getReport($year, $locationId);
 
-        $now = Carbon::now();
-        $year = $filterYear ? $filterYear : $now->format('Y');
-        $shortFormatYear = (int)$year % 100;
-
-        $this->months = $this->months();
-        $this->turnOverReports = $this->turnOverReports($filterYear, $locationId);
-        $this->employeeTotal = $this->employeeTotal($filterYear, $locationId);
-
-        return Excel::download(new TurnOverReportExport(
-            $this->months,
-            $this->turnOverReports,
-            $this->employeeTotal,
-            $shortFormatYear,
-            $locationName
-        ), 'turn-over-reports_' . $year . '_' . $locationName . '.xlsx');
+        return Excel::download(
+            new TurnOverReportExport(
+                $this->months(),
+                $this->reportRows(),
+                $report['reportData'],
+                $year % 100,
+                $locationName
+            ),
+            'turn-over-reports_' . $year . '_' . $locationName . '.xlsx'
+        );
     }
 
     public function filterTurnOverReport(Request $request)
     {
-        $year = $request->year;
+        $year = (int) ($request->year ?: now()->year);
         $locationId = $request->locationId;
-
-        $this->filterYear = $year;
-
-        $this->months = $this->months();
-        $this->turnOverReports = $this->turnOverReports($year, $locationId);
-
-        $this->employeeTotal = $this->employeeTotal($year, $locationId);
+        $report = $this->getReport($year, $locationId);
 
         return response()->json([
-            'months' => $this->months,
-            'turnOverReports' => $this->turnOverReports,
-            'employeeTotal' => $this->employeeTotal
+            'months' => $this->months(),
+            'reportRows' => $this->reportRows(),
+            'reportData' => $report['reportData'],
+            'turnOverReports' => $report['turnOverReports'],
+            'employeeTotal' => $report['employeeTotal'],
         ]);
     }
 
-    protected function months()
+    protected function months(): array
     {
-        return  [
-            1 => "Jan",
-            2 => "Feb",
-            3 => "Mar",
-            4 => "Apr",
-            5 => "May",
-            6 => "Jun",
-            7 => "Jul",
-            8 => "Aug",
-            9 => "Sep",
-            10 => "Oct",
-            11 => "Nov",
-            12 => "Dec"
+        return [
+            1 => 'Jan',
+            2 => 'Feb',
+            3 => 'Mar',
+            4 => 'Apr',
+            5 => 'May',
+            6 => 'Jun',
+            7 => 'Jul',
+            8 => 'Aug',
+            9 => 'Sep',
+            10 => 'Oct',
+            11 => 'Nov',
+            12 => 'Dec',
         ];
     }
 
-    // protected function probation($year = null)
-    // {
-    //     $probation = EmployeeDetails::select(
-    //         DB::raw('MONTH(employee_details.probation_end_date) as month'),
-    //         'employee_details.user_id',
-    //         DB::raw('CASE
-    //             WHEN employee_details.probation_end_date IS NOT NULL
-    //             THEN "Yes"
-    //             ELSE "No"
-    //         END AS has_probation
-    //         '),
-    //         DB::raw('COUNT(*) as total'),
-    //         'teams.department_type'
-    //     )
-    //         ->leftJoin('teams', 'teams.id', '=', 'employee_details.department_id')
-    //         ->whereNotNull('employee_details.probation_end_date')
-    //         ->whereYear('employee_details.created_at', now()->year)
-    //         ->when($year, function ($query) use ($year) {
-    //             $query->whereYear('employee_details.created_at', $year);
-    //         })
-    //         ->groupBy([
-    //             DB::raw('MONTH(employee_details.probation_end_date)'),
-    //             'teams.department_type'
-    //         ])
-    //         ->get();
-
-    //     return $probation;
-    // }
-
-    public function turnOverReports($year = null, $locationId = null)
+    protected function reportRows(): array
     {
-        $year = $year ?? now()->year;
-
-        // dd($year, $locationId);
-
-        $turnOverReports = EmployeeDetails::select(
-            DB::raw(
-                DB::raw('MONTH(employee_details.created_at) AS month'),
-            ),
-            DB::raw('COUNT(*) as total'),
-            DB::raw('CAST(
-                SUM(CASE WHEN employee_details.last_date IS not NULL THEN 1 ELSE 0 END) AS SIGNED
-            ) as resigned_total'),
-            DB::raw('CAST(
-                SUM(CASE WHEN employee_details.last_date IS NOT NULL AND
-                    employee_details.probation_end_date IS NOT NULL AND
-                    employee_details.last_date <= employee_details.probation_end_date
-                    THEN 1 ELSE 0 END) AS SIGNED ) as probation_total'),
-             DB::raw('CAST(
-                SUM(CASE WHEN employee_details.last_date IS NOT NULL AND
-                    employee_details.probation_end_date IS NOT NULL AND
-                    employee_details.last_date > employee_details.probation_end_date
-                    THEN 1 ELSE 0 END) AS SIGNED ) as permanent_total'),
-            // DB::raw('ABS(CAST(SUM(CASE WHEN employee_details.notice_period_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED) - CAST(SUM(CASE WHEN employee_details.probation_end_date IS NOT NULL THEN 1 ELSE 0 END) AS SIGNED)) as permanent_total'),
-            'teams.department_type',
-            'locations.id as location_id',
-            'locations.location_name as location_name',
-            'employee_details.last_date as last_date',
-            'employee_details.probation_end_date as probation_end_date'
-        )
-            ->leftJoin('users', 'users.id', '=', 'employee_details.user_id')
-            ->leftJoin('teams', 'teams.id', '=', 'employee_details.department_id')
-            ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
-            // ->where('users.name', 'Htoo Htoo Hlaing')
-            ->whereNotNull('employee_details.last_date')
-            // ->whereNotNull('employee_details.probation_end_date')
-            ->when($year, function ($query) use ($year) {
-                $query->whereRaw('YEAR(employee_details.created_at) = ?', [$year]);
-            })
-            ->when($locationId, function ($query) use ($locationId) {
-                $query->where('locations.id', '=', $locationId);
-            })
-            ->groupBy(
-                DB::raw('MONTH(employee_details.created_at)'),
-                'teams.department_type'
-            )
-            ->get();
-
-        // dd($year, $locationId, $turnOverReports->toArray());
-
-        return $turnOverReports;
+        return [
+            ['label' => 'Total MP', 'key' => 'manpower', 'percentage' => false],
+            ['label' => 'Resign', 'key' => 'resign', 'percentage' => false],
+            ['label' => 'Turnover %', 'key' => 'resign_percentage', 'percentage' => true],
+            ['label' => 'Probation', 'key' => 'probation', 'percentage' => false],
+            ['label' => 'Turnover %', 'key' => 'probation_percentage', 'percentage' => true],
+            ['label' => 'Permanent', 'key' => 'permanent', 'percentage' => false],
+            ['label' => 'Turnover %', 'key' => 'permanent_percentage', 'percentage' => true],
+        ];
     }
 
-
-    // public function permanent($year = null)
-    // {
-    //     $permanent = EmployeeDetails::select(
-    //         DB::raw('MONTH(employee_details.created_at) as month'),
-    //         'employee_details.user_id',
-    //         DB::raw('CASE
-    //             WHEN employee_details.notice_period_end_date IS NULL AND employee_details.probation_end_date IS NULL
-    //             THEN "Yes"
-    //             ELSE "No"
-    //         END AS has_permanent
-    //         '),
-    //         DB::raw('COUNT(*) as total'),
-    //         'teams.department_type'
-    //     )
-    //         ->leftJoin('teams', 'teams.id', '=', 'employee_details.department_id')
-    //         ->whereNull('employee_details.notice_period_end_date')
-    //         ->whereNull('employee_details.probation_end_date')
-    //         ->whereYear('employee_details.created_at', now()->year)
-    //         ->when($year, function ($query) use ($year) {
-    //             $query->whereYear('employee_details.created_at', $year);
-    //         })
-    //         ->groupBy([
-    //             DB::raw('MONTH(employee_details.created_at)'),
-    //             'teams.department_type'
-    //         ])
-    //         ->get();
-
-    //     return $permanent;
-    // }
-
-    public function employeeTotal($year = null, $locationId = null)
+    protected function getReport(int $year, $locationId = null): array
     {
-        $employeeTotal = EmployeeDetails::select(
-            DB::raw('
-            MONTH(employee_details.created_at) as month,
-            SUM(CASE WHEN teams.department_type = "operation" THEN 1 ELSE 0 END) as operation_employee_count,
-            SUM(CASE WHEN teams.department_type = "supporting" THEN 1 ELSE 0 END) as supporting_employee_count,
-            locations.id as location_id,
-            locations.location_name as location_name
-        ')
-        )
-            ->leftJoin('teams', 'teams.id', '=', 'employee_details.department_id')
-            ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
-            ->whereYear('employee_details.created_at', now()->year)
-            ->when($year, function ($query) use ($year) {
-                $query->whereYear('employee_details.created_at', $year);
-            })
-            ->when($locationId, function ($query) use ($locationId) {
-                $query->where('locations.id', '=', $locationId);
-            })
-            ->groupBy(DB::raw('MONTH(employee_details.created_at)'))
-            ->get();
+        $employeeTotal = $this->employeeTotal($year, $locationId);
+        $turnOverReports = $this->turnOverReports($year, $locationId);
 
-        return $employeeTotal;
+        return [
+            'employeeTotal' => $employeeTotal,
+            'turnOverReports' => $turnOverReports,
+            'reportData' => $this->buildMonthlyReport($employeeTotal, $turnOverReports),
+        ];
+    }
+
+    public function turnOverReports($year = null, $locationId = null): Collection
+    {
+        $year = (int) ($year ?: now()->year);
+
+        return EmployeeDetails::query()
+            ->join('teams', 'teams.id', '=', 'employee_details.department_id')
+            ->join('locations', 'locations.id', '=', 'teams.location_id')
+            ->whereNotNull('employee_details.last_date')
+            ->whereYear('employee_details.last_date', $year)
+            ->when($locationId, function ($query) use ($locationId) {
+                $query->where('locations.id', $locationId);
+            })
+            ->whereIn('teams.department_type', ['operation', 'supporting'])
+            ->selectRaw('MONTH(employee_details.last_date) AS month')
+            ->selectRaw('teams.department_type')
+            ->selectRaw('COUNT(DISTINCT employee_details.user_id) AS resigned_total')
+            ->selectRaw("COUNT(DISTINCT CASE
+                WHEN employee_details.probation_end_date IS NOT NULL
+                AND employee_details.last_date <= employee_details.probation_end_date
+                THEN employee_details.user_id END) AS probation_total")
+            ->selectRaw("COUNT(DISTINCT CASE
+                WHEN employee_details.probation_end_date IS NOT NULL
+                AND employee_details.last_date > employee_details.probation_end_date
+                THEN employee_details.user_id END) AS permanent_total")
+            ->groupByRaw('MONTH(employee_details.last_date), teams.department_type')
+            ->orderByRaw('MONTH(employee_details.last_date), teams.department_type')
+            ->get();
+    }
+
+    public function employeeTotal($year = null, $locationId = null): Collection
+    {
+        $year = (int) ($year ?: now()->year);
+        $monthsQuery = null;
+
+        foreach (range(1, 12) as $month) {
+            $monthQuery = DB::query()->selectRaw('? AS cutoff_date', [
+                Carbon::create($year, $month, 28)->toDateString(),
+            ]);
+
+            $monthsQuery = $monthsQuery
+                ? $monthsQuery->unionAll($monthQuery)
+                : $monthQuery;
+        }
+
+        return DB::query()
+            ->fromSub($monthsQuery, 'rm')
+            ->crossJoin('locations')
+            ->leftJoin('teams', 'teams.location_id', '=', 'locations.id')
+            ->leftJoin('employee_details', 'employee_details.department_id', '=', 'teams.id')
+            ->when($locationId, function ($query) use ($locationId) {
+                $query->where('locations.id', $locationId);
+            })
+            ->selectRaw('MONTH(rm.cutoff_date) AS month, rm.cutoff_date')
+            ->selectRaw("COUNT(DISTINCT CASE
+                WHEN teams.department_type = 'operation'
+                AND DATE(employee_details.joining_date) <= rm.cutoff_date
+                AND (employee_details.last_date IS NULL OR DATE(employee_details.last_date) >= rm.cutoff_date)
+                THEN employee_details.user_id END) AS operation_employee_count")
+            ->selectRaw("COUNT(DISTINCT CASE
+                WHEN teams.department_type = 'supporting'
+                AND DATE(employee_details.joining_date) <= rm.cutoff_date
+                AND (employee_details.last_date IS NULL OR DATE(employee_details.last_date) >= rm.cutoff_date)
+                THEN employee_details.user_id END) AS supporting_employee_count")
+            ->groupByRaw('MONTH(rm.cutoff_date), rm.cutoff_date')
+            ->orderByRaw('MONTH(rm.cutoff_date)')
+            ->get();
+    }
+
+    protected function buildMonthlyReport(Collection $employeeTotal, Collection $turnOverReports): array
+    {
+        $manpowerByMonth = $employeeTotal->keyBy(fn($item) => (int) $item->month);
+        $turnoverByMonth = $turnOverReports->groupBy(fn($item) => (int) $item->month);
+        $report = [];
+
+        foreach ($this->months() as $month => $label) {
+            $manpowerRow = $manpowerByMonth->get($month);
+            $turnoverRows = $turnoverByMonth->get($month, collect())->keyBy('department_type');
+            $operation = $turnoverRows->get('operation');
+            $supporting = $turnoverRows->get('supporting');
+
+            $manpower = $this->metric(
+                (int) ($manpowerRow->operation_employee_count ?? 0),
+                (int) ($manpowerRow->supporting_employee_count ?? 0)
+            );
+            $resign = $this->metric(
+                (int) ($operation->resigned_total ?? 0),
+                (int) ($supporting->resigned_total ?? 0)
+            );
+            $probation = $this->metric(
+                (int) ($operation->probation_total ?? 0),
+                (int) ($supporting->probation_total ?? 0)
+            );
+            $permanent = $this->metric(
+                (int) ($operation->permanent_total ?? 0),
+                (int) ($supporting->permanent_total ?? 0)
+            );
+
+            $report[$month] = [
+                'month' => $month,
+                'label' => $label,
+                'manpower' => $manpower,
+                'resign' => $resign,
+                'resign_percentage' => $this->percentageMetric($resign, $manpower),
+                'probation' => $probation,
+                'probation_percentage' => $this->percentageMetric($probation, $manpower),
+                'permanent' => $permanent,
+                'permanent_percentage' => $this->percentageMetric($permanent, $manpower),
+            ];
+        }
+
+        return $report;
+    }
+
+    protected function metric(int $operation, int $supporting): array
+    {
+        return [
+            'operation' => $operation,
+            'supporting' => $supporting,
+            'total' => $operation + $supporting,
+        ];
+    }
+
+    protected function percentageMetric(array $numerator, array $denominator): array
+    {
+        return [
+            'operation' => $this->percentage($numerator['operation'], $denominator['operation']),
+            'supporting' => $this->percentage($numerator['supporting'], $denominator['supporting']),
+            'total' => $this->percentage($numerator['total'], $denominator['total']),
+        ];
+    }
+
+    protected function percentage(int $value, int $total): int
+    {
+        return $total > 0 ? (int) round(($value / $total) * 100) : 0;
     }
 }

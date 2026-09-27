@@ -262,6 +262,8 @@ class ManPowerReportController extends AccountBaseController
             'approved_date' => $request->status == 'approved' ? now() : null,
         ]);
 
+        // dd($reports->quarter);
+
         ManPowerReportHistory::create([
             'man_power_report_id' => $reports->id,
             'man_power_setup' => $reports->man_power_setup,

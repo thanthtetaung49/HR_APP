@@ -630,6 +630,7 @@ return array(
     'disable' => 'Disable',
     'absent' => 'Absent',
     'paid' => 'Paid',
+    'leaveReason' => 'Reason',
     'unpaid' => 'Unpaid',
     'pending-confirmation' => 'Pending Confirmation',
     'monthlyLeaveType' => 'Monthly Leave Type',

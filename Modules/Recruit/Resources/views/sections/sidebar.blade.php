@@ -38,10 +38,10 @@
                              :permission="($recruitViewInterviewPermission != 'none' && $recruitViewInterviewPermission != '')"
             />
 
-            <x-sub-menu-item :link="route('job-offer-letter.index')"
+            {{-- <x-sub-menu-item :link="route('job-offer-letter.index')"
                              :text="__('recruit::app.menu.offerletter')"
                              :permission="($recruitViewOfferLetterPermission != 'none' && $recruitViewOfferLetterPermission != '')"
-            />
+            /> --}}
 
 
             <x-sub-menu-item :link="route('job-skills.index')"
