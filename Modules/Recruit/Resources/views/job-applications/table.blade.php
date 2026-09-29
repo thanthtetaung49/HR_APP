@@ -34,6 +34,22 @@
         </div> --}}
         <!-- status end -->
 
+        <div class="select-box py-2 d-flex px-2 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location" id="location" data-live-search="true"
+                    data-size="8">
+                    <option value="all" @selected(request('location', 'all') === 'all')>@lang('app.all')</option>
+                    @foreach ($hrLocations as $location)
+                        <option value="{{ $location->id }}" @selected((int) request('location') === (int) $location->id)>
+                            {{ $location->location_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
+
         <div class="select-box d-flex py-2 px-lg-2 px-md-2 px-0 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('recruit::modules.job.job')</p>
             <div class="select-status">
@@ -314,6 +330,7 @@
             const selection_phase = $('#selection_phase').val();
             const overall_status = $('#overall_status').val();
             const blacklist = $("#blacklist").val();
+            // const location = $("#location").val();
 
             data['startDate'] = startDate;
             data['endDate'] = endDate;
@@ -332,6 +349,7 @@
             data['selection_phase'] = selection_phase;
             data['overall_status'] = overall_status;
             data['blacklist'] = blacklist;
+            data['location'] = location;
 
         });
 
@@ -339,7 +357,7 @@
             window.LaravelDataTables["job-applications-table"].draw(true);
         }
 
-        $('#search-text-field, #status, #location, #job, #gender, #total_experience, #current_location, #current_ctc_min, #current_ctc_max, #expected_ctc_min, #expected_ctc_max, #selection_phase, #overall_status, #blacklist')
+        $('#search-text-field, #status, #location, #job, #gender, #total_experience, #current_location, #current_ctc_min, #current_ctc_max, #expected_ctc_min, #expected_ctc_max, #selection_phase, #overall_status, #blacklist, #location')
             .on('change keyup', function() {
                 if ($('#search-text-field').val() !== "") {
                     $('#reset-filters').removeClass('d-none');
@@ -368,6 +386,8 @@
                 } else if ($('#expected_ctc_max').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#blacklist').val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($('#location').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 }
                 showTable();

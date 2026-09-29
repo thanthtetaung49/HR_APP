@@ -2,45 +2,46 @@
 
 namespace Modules\Recruit\Http\Controllers;
 
-use App\Models\Team;
 use App\Helper\Files;
 use App\Helper\Reply;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use App\Models\CompanyAddress;
-use Modules\Recruit\Entities\RecruitJob;
-use Modules\Recruit\Entities\RecruitSkill;
-use Modules\Recruit\Entities\RecruitSetting;
 use App\Http\Controllers\AccountBaseController;
-use Modules\Recruit\Imports\JobApplicationImport;
+use App\Models\CompanyAddress;
 use App\Models\Currency;
 use App\Models\Designation;
+use App\Models\Location;
 use App\Models\ManagementRank;
+use App\Models\Team;
 use App\Traits\ImportExcel;
 use Carbon\Carbon;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Modules\Recruit\DataTables\JobApplicationsDataTable;
 use Modules\Recruit\Entities\ApplicationSource;
-use Modules\Recruit\Entities\RecruitJobApplication;
+use Modules\Recruit\Entities\RecruitApplicantBlacklist;
 use Modules\Recruit\Entities\RecruitApplicationFile;
 use Modules\Recruit\Entities\RecruitApplicationSkill;
 use Modules\Recruit\Entities\RecruitApplicationStatus;
-use Modules\Recruit\DataTables\JobApplicationsDataTable;
+use Modules\Recruit\Entities\RecruitApplicationStatusCategory;
 use Modules\Recruit\Entities\RecruitCandidateFollowUp;
 use Modules\Recruit\Entities\RecruitInterviewSchedule;
+use Modules\Recruit\Entities\RecruitJob;
 use Modules\Recruit\Entities\RecruitJobAddress;
-use Modules\Recruit\Entities\RecruitJobHistory;
+use Modules\Recruit\Entities\RecruitJobApplication;
 use Modules\Recruit\Entities\RecruitJobCustomAnswer;
+use Modules\Recruit\Entities\RecruitJobHistory;
+use Modules\Recruit\Entities\RecruitSetting;
+use Modules\Recruit\Entities\RecruitSkill;
 use Modules\Recruit\Events\JobApplicationStatusChangeEvent;
 use Modules\Recruit\Http\Requests\JobApplication\ImportProcessRequest;
 use Modules\Recruit\Http\Requests\JobApplication\ImportRequest;
 use Modules\Recruit\Http\Requests\JobApplication\StoreJobApplication;
 use Modules\Recruit\Http\Requests\JobApplication\StoreQuickApplication;
 use Modules\Recruit\Http\Requests\JobApplication\UpdateJobApplication;
+use Modules\Recruit\Imports\JobApplicationImport;
 use Modules\Recruit\Jobs\ImportJobApplicationJob;
-use PhpParser\Node\Expr\Empty_;
-use Modules\Recruit\Entities\RecruitApplicationStatusCategory;
-use Modules\Recruit\Entities\RecruitApplicantBlacklist;
 use Modules\Recruit\Services\ApplicantWorkflowService;
+use PhpParser\Node\Expr\Empty_;
 
 class JobApplicationController extends AccountBaseController
 {
@@ -68,6 +69,7 @@ class JobApplicationController extends AccountBaseController
         $this->locations = CompanyAddress::all();
         $this->jobLocations = RecruitJobAddress::with('location')->where('recruit_job_id', request()->id)->get();
         $this->jobApp = RecruitJob::where('id', request()->id)->first();
+        $this->hrLocations = Location::orderBy('location_name')->get();
 
         // $designation = Designation::findOrFail($request->designation_id);
         // $this->job->designation_id = $designation->id;
@@ -509,8 +511,8 @@ class JobApplicationController extends AccountBaseController
 
         // dd($request->all());
 
-        $jobApp->is_blacklisted = $request->blacklist == 1 ? 1 : 0 ;
-        $jobApp->blacklist_reason = $request->blacklist_reason ;
+        $jobApp->is_blacklisted = $request->blacklist == 1 ? 1 : 0;
+        $jobApp->blacklist_reason = $request->blacklist_reason;
     }
 
     private function cleanWorkExperience(array $rows): array

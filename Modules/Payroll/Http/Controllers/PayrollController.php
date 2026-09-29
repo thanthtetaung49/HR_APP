@@ -668,7 +668,7 @@ class PayrollController extends AccountBaseController
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
                     // $otherAllowance = $daysDifference * $perDayOtherAllowance;
-                    $depositRefund = $daysDifference * $perDayDepositRefund;
+                    // $depositRefund = $daysDifference * $perDayDepositRefund;
                 }
 
 
@@ -680,7 +680,7 @@ class PayrollController extends AccountBaseController
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
                     $specialAllowance = $daysDifference * $perDaySpecialAllowance;
                     // $otherAllowance = $daysDifference * $perDayOtherAllowance;
-                    $depositRefund = $daysDifference * $perDayDepositRefund;
+                    // $depositRefund = $daysDifference * $perDayDepositRefund;
                 }
 
                 foreach ($additionalSalaries as $additionalSalary) {

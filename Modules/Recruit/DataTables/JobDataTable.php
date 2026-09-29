@@ -192,10 +192,12 @@ class JobDataTable extends BaseDataTable
      */
     public function query(RecruitJob $jobs)
     {
+        // dd($this->request()->location);
+
         $startDate = null;
         $endDate = null;
 
-        $jobs = $jobs->with('recruiter')->select('recruit_jobs.id', 'recruit_jobs.title', 'recruit_jobs.start_date', 'recruit_jobs.end_date', 'recruit_jobs.status', 'recruit_jobs.recruiter_id');
+        $jobs = $jobs->with('recruiter')->select('recruit_jobs.id', 'recruit_jobs.title', 'recruit_jobs.start_date', 'recruit_jobs.end_date', 'recruit_jobs.status', 'recruit_jobs.recruiter_id', 'recruit_jobs.hr_location_id');
 
         if ($this->request()->startDate !== null && $this->request()->startDate != 'null' && $this->request()->startDate != '') {
             $startDate = Carbon::createFromFormat($this->company->date_format, $this->request()->startDate)->toDateString();
@@ -252,6 +254,10 @@ class JobDataTable extends BaseDataTable
 
         if ($this->request()->department_id != 'all' && $this->request()->department_id != '') {
             $jobs = $jobs->where('recruit_jobs.department_id', $this->request()->department_id);
+        }
+
+        if ($this->request()->location !== null && $this->request()->location != 'all' && $this->request()->location != '') {
+            $jobs = $jobs->where('recruit_jobs.hr_location_id', $this->request()->location);
         }
 
         return $jobs->orderBy('recruit_jobs.id', 'desc');

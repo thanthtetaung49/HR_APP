@@ -30,7 +30,9 @@ class EmployeeShiftChangeRequestController extends AccountBaseController
 
     public function index(ShiftChangeRequestDataTable $dataTable)
     {
-        $this->manageEmployeeShifts = user()->permission('manage_employee_shifts');
+        abort_403(user()->permission('manage_employee_shifts') !== 'all');
+
+        // $this->manageEmployeeShifts = user()->permission('manage_employee_shifts');
         $this->canFinalApprove = $this->isFinalApprover();
         $hasDirectReports = EmployeeDetails::where('reporting_to', user()->id)->exists();
 

@@ -422,7 +422,7 @@ class JobApplicationsDataTable extends BaseDataTable
             $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
         }
 
-        $model = $model->select('recruit_job_applications.*', 'recruit_jobs.title', 'recruit_jobs.recruiter_id', 'company_addresses.location', 'recruit_application_status.color', 'recruit_application_status.status', 'application_sources.application_source');
+        $model = $model->select('recruit_job_applications.*', 'recruit_jobs.title', 'recruit_jobs.recruiter_id', 'company_addresses.location', 'recruit_application_status.color', 'recruit_application_status.status', 'application_sources.application_source', 'recruit_jobs.hr_location_id');
         $model = $model->leftJoin('recruit_application_status', 'recruit_application_status.id', '=', 'recruit_job_applications.recruit_application_status_id');
         $model = $model->leftJoin('recruit_jobs', 'recruit_jobs.id', '=', 'recruit_job_applications.recruit_job_id')
             ->leftJoin('company_addresses', 'company_addresses.id', '=', 'recruit_job_applications.location_id')
@@ -471,9 +471,9 @@ class JobApplicationsDataTable extends BaseDataTable
             $model->where('recruit_jobs.id', '=', $request->job);
         }
 
-        if ($request->location != 0 && $request->location != null && $request->location != 'all') {
-            $model = $model->where('company_addresses.id', '=', $request->location);
-        }
+        // if ($request->location != 0 && $request->location != null && $request->location != 'all') {
+        //     $model = $model->where('company_addresses.id', '=', $request->location);
+        // }
 
         if ($request->status != 0 && $request->status != null && $request->status != 'all') {
             $model = $model->where('recruit_job_applications.recruit_application_status_id', '=', $request->status);
@@ -522,6 +522,13 @@ class JobApplicationsDataTable extends BaseDataTable
         if ($request->overall_status != null && $request->overall_status != 'all') {
             $model = $model->where('recruit_job_applications.overall_status', '=', $request->overall_status);
         }
+
+        if ($request->location !== null && $request->location != 'all' && $request->location != '') {
+            $model = $model->where('recruit_jobs.hr_location_id', $request->location);
+        }
+
+        // dd($request->location);
+
 
         // dd($model->get(), $request->selection_phase, $request->overall_status);
 

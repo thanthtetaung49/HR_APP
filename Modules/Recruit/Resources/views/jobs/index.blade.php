@@ -32,6 +32,21 @@
             </div>
         </div>
 
+        <div class="select-box py-2 d-flex px-2 border-right-grey border-right-grey-sm-0">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location" id="location" data-live-search="true"
+                    data-size="8">
+                    <option value="all" @selected(request('location', 'all') === 'all')>@lang('app.all')</option>
+                    @foreach ($hrLocations as $location)
+                        <option value="{{ $location->id }}" @selected((int) request('location') === (int) $location->id)>
+                            {{ $location->location_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <!-- SEARCH BY TASK START -->
         <div class="task-search d-flex  py-1 px-lg-3 px-0 border-right-grey align-items-center">
             <form class="w-100 mr-1 mr-lg-0 mr-md-1 ml-md-1 ml-0 ml-lg-0">
@@ -156,6 +171,7 @@
         $('#job-table').on('preXhr.dt', function(e, settings, data) {
             const dateRangePicker = $('#datatableRange').data('daterangepicker');
             let startDate = $('#datatableRange').val();
+            let location = $("#location").val();
 
             let endDate;
 
@@ -179,6 +195,7 @@
             data['status'] = status;
             data['department_id'] = department_id;
             data['date_filter_on'] = date_filter_on;
+            data['location'] = location;
 
         });
 
@@ -186,7 +203,7 @@
             window.LaravelDataTables["job-table"].draw(true);
         }
 
-        $('#search-text-field, #status, #recruiter, #department_id,#date_filter_on')
+        $('#search-text-field, #status, #recruiter, #department_id,#date_filter_on, #location')
             .on('change keyup', function() {
                 if ($('#search-text-field').val() !== "") {
                     $('#reset-filters').removeClass('d-none');
@@ -198,6 +215,8 @@
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#date_filter_on').val() != "start_date") {
                     $('#reset-filters').removeClass('d-none');
+                } else if ($('#location').val() != "all") {
+                    $('#reset-filters').addClass('d-none');
                 } else {
                     $('#reset-filters').addClass('d-none');
                 }
