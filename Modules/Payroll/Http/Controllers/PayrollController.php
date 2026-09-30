@@ -385,7 +385,7 @@ class PayrollController extends AccountBaseController
         $month = explode(' ', $request->month);
         $payrollCycle = $request->cycle;
         $year = $request->year;
-        $useAttendance = $request->useAttendance;
+        $useAttendance = $request->boolean('useAttendance');
         $payrollCycleData = PayrollCycle::find($payrollCycle);
 
         $startDate = CarbonImmutable::parse($month[0])->subMonth()->setDay(26);
@@ -565,7 +565,19 @@ class PayrollController extends AccountBaseController
 
             if ($endDate->greaterThan($joiningDate)) {
 
-                $payDays = (int) $this->countAttendace($startDate, $endDate, $userId, $daysInMonth, $useAttendance, $joiningDate, $exitDate);
+                if ($useAttendance) {
+                    $payDays = (int) $this->countAttendace(
+                        $startDate,
+                        $endDate,
+                        $userId,
+                        $daysInMonth,
+                        true,
+                        $joiningDate,
+                        $exitDate
+                    );
+                } else {
+                    $payDays = $daysInMonth;
+                }
 
                 $allowance = Allowance::where('user_id', $userId)->first();
 
@@ -693,38 +705,43 @@ class PayrollController extends AccountBaseController
 
                 $payrollSetting = PayrollSetting::first();
 
-                $gazattedAllowance = $gazattedPresentCount * (int) $payrollSetting->gazatted_allowance_rate;
+                if ($useAttendance) {
+                    $gazattedAllowance = $gazattedPresentCount * (int) $payrollSetting->gazatted_allowance_rate;
+                    $eveningShiftAllowance = $eveningShiftPresentCount * 500;
+                    $totalBetweenLateCount = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3));
+                    $totalAfterLateCount = floor($attLateAfter + $attBreakTimeAfter) * (float) $payrollSetting->late_detection_rate;
+                    $allLeaveWithoutPayCount = $totalBetweenLateCount + $totalAfterLateCount + $halfDayLateCount + $toalLwpCount;
+                    $leaveWithoutPayDetection = ($toalLwpCount * $perDaySalary);
+                    $betweenLateDetection = ($totalBetweenLateCount * $perDaySalary);
+                    $afterLateDetection = ($totalAfterLateCount * $perDaySalary) + ($halfDayLateCount * $perDaySalary);
+                    $absentDetection = $absentInMonth * $perDaySalary * 2;
+                    $totalLeaveWithoutPaySalary = $allLeaveWithoutPayCount * $perDaySalary;
+                } else {
+                    $gazattedAllowance = 0;
+                    $eveningShiftAllowance = 0;
+                    $totalBetweenLateCount = 0;
+                    $totalAfterLateCount = 0;
+                    $allLeaveWithoutPayCount = 0;
+                    $leaveWithoutPayDetection = 0;
+                    $betweenLateDetection = 0;
+                    $afterLateDetection = 0;
+                    $absentDetection = 0;
+                    $totalLeaveWithoutPaySalary = 0;
+                }
 
-                // dd($gazattedAllowance, $gazattedPresentCount, (int) $payrollSetting->gazatted_allowance_rate);
 
-                $eveningShiftAllowance = $eveningShiftPresentCount * 500;
-
-                $totalBetweenLateCount = floor(($attLateBetween / 3) + ($attBreakTimeLateBetween / 3));
-                $totalAfterLateCount = floor($attLateAfter + $attBreakTimeAfter) * (float) $payrollSetting->late_detection_rate;
-
-                // dd($totalAfterLateCount, floor($attLateAfter + $attBreakTimeAfter), (float) $payrollSetting->late_detection_rate, $payrollSetting->late_detection_rate);
-
-                $allLeaveWithoutPayCount = $totalBetweenLateCount + $totalAfterLateCount + $halfDayLateCount + $toalLwpCount;
-
-                $leaveWithoutPayDetection = ($toalLwpCount * $perDaySalary);
-                $betweenLateDetection = ($totalBetweenLateCount * $perDaySalary);
-                $afterLateDetection = ($totalAfterLateCount * $perDaySalary) + ($halfDayLateCount * $perDaySalary);
-
-                Log::info('attLateAfter', [
-                    'userId' => $userId,
-                    'userName' => $user->name,
-                    'attLateAfter' => $attLateAfter,
-                    'attBreakTimeAfter' => $attBreakTimeAfter,
-                    'attLateBetween' => $attLateBetween,
-                    'attBreakTimeLateBetween' => $attBreakTimeLateBetween,
-                    'halfDayLateCount' => $halfDayLateCount,
-                    'perDaySalary' => $perDaySalary,
-                    'daysInMonth' => $daysInMonth,
-                    'afterLateDetection' => $afterLateDetection
-                ]);
-
-                $absentDetection = $absentInMonth * $perDaySalary * 2;
-                $totalLeaveWithoutPaySalary = $allLeaveWithoutPayCount * $perDaySalary;
+                // Log::info('attLateAfter', [
+                //     'userId' => $userId,
+                //     'userName' => $user->name,
+                //     'attLateAfter' => $attLateAfter,
+                //     'attBreakTimeAfter' => $attBreakTimeAfter,
+                //     'attLateBetween' => $attLateBetween,
+                //     'attBreakTimeLateBetween' => $attBreakTimeLateBetween,
+                //     'halfDayLateCount' => $halfDayLateCount,
+                //     'perDaySalary' => $perDaySalary,
+                //     'daysInMonth' => $daysInMonth,
+                //     'afterLateDetection' => $afterLateDetection
+                // ]);
 
                 $otherDetection = $detuction ? $detuction->other_detection : 0;
                 $creditSales = $detuction ? $detuction->credit_sales : 0;

@@ -149,7 +149,7 @@ class ShiftChangeRequestDataTable extends BaseDataTable
 
     private function isFinalApprover(): bool
     {
-        return user()->hasRole('admin') || user()->hasRole('hr-manager');
+        return user()->hasRole('admin') || user()->hasRole('hr-manager') || user()->hasRole('hr-officer');
     }
 
     public function html()

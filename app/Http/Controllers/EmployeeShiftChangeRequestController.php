@@ -232,6 +232,6 @@ class EmployeeShiftChangeRequestController extends AccountBaseController
 
     private function isFinalApprover(): bool
     {
-        return user()->hasRole('admin') || user()->hasRole('hr-manager');
+        return user()->hasRole('admin') || user()->hasRole('hr-manager') || user()->hasRole('hr-officer');
     }
 }

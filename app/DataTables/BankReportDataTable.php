@@ -67,30 +67,42 @@ class BankReportDataTable extends BaseDataTable
      */
     public function query(User $model): QueryBuilder
     {
-        $month = request()->month;
-        $year = request()->year;
+        $month = request('month');
+        $year = request('year');
+        $locationId = request('locationId');
+        $searchText = request('searchText');
 
-        $model = $model
+        return $model
             ->withoutGlobalScope(ActiveScope::class)
-            ->select('users.id as id', 'users.name as name', 'users.bank_account_number as bank_account_number', 'salary_slips.net_salary as net_salary', 'locations.location_name as location_name', 'locations.id as location_id', 'salary_slips.year', 'salary_slips.month', 'employee_details.notice_period_end_date as notice_period_end_date')
-            ->leftJoin('salary_slips', 'salary_slips.user_id', 'users.id')
-            ->leftJoin('employee_details', 'employee_details.user_id', 'users.id')
-            ->leftJoin('teams', 'employee_details.department_id', 'teams.id')
-            ->leftJoin('locations', 'teams.location_id', 'locations.id')
-            ->where('salary_slips.year', $year)
-            ->where(DB::raw('CAST(salary_slips.month AS SIGNED)'), $month)
-            ->whereNotNull('users.bank_account_number');
-            // ->whereIn('users.status', ['active', 'deactive']);
-
-        if (isset(request()->locationId) && request()->locationId != '') {
-            $model->where('locations.id', request()->locationId);
-        }
-
-        if (isset(request()->searchText) && request()->searchText != '') {
-            $model->where('users.name', 'like', '%' . request()->searchText . '%');
-        }
-
-        return $model;
+            ->select(
+                'users.id',
+                'users.name',
+                'users.bank_account_number',
+                'salary_slips.net_salary',
+                'locations.location_name',
+                'locations.id as location_id',
+                'salary_slips.year',
+                'salary_slips.month',
+                'employee_details.notice_period_end_date'
+            )
+            ->join('salary_slips', 'salary_slips.user_id', '=', 'users.id')
+            ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
+            ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
+            ->leftJoin('locations', 'teams.location_id', '=', 'locations.id')
+            ->whereNotNull('users.bank_account_number')
+            ->whereIn('users.status', ['active', 'deactive'])
+            ->when($year !== null && $year !== '', function ($query) use ($year) {
+                $query->where('salary_slips.year', $year);
+            })
+            ->when($month !== null && $month !== '', function ($query) use ($month) {
+                $query->whereRaw('CAST(salary_slips.month AS SIGNED) = ?', [(int) $month]);
+            })
+            ->when($locationId !== null && $locationId !== '' && $locationId !== 'all', function ($query) use ($locationId) {
+                $query->where('locations.id', $locationId);
+            })
+            ->when($searchText !== null && $searchText !== '', function ($query) use ($searchText) {
+                $query->where('users.name', 'like', '%' . $searchText . '%');
+            });
     }
 
     /**
@@ -121,11 +133,11 @@ class BankReportDataTable extends BaseDataTable
     {
         return [
             '#' => ['data' => 'DT_RowIndex', 'orderable' => false, 'searchable' => false, 'visible' => true, 'title' => '#'],
-            __('app.menu.employees') => ['data' => 'name', 'name' => 'name', 'title' => __('app.menu.employees')],
-            __('app.menu.nrc') => ['data' => 'nrc', 'name' => 'nrc', 'title' => __('app.menu.nrc')],
-            __('app.menu.bankaccountNumber') => ['data' => 'bank_account_number', 'name' => 'bank_account_number', 'title' => __('app.menu.bankaccountNumber')],
-            __('app.onNoticePeriod') => ['data' => 'notice_period_end_date', 'name' => 'notice_period_end_date', 'title' => __('app.onNoticePeriod')],
-            __('app.menu.amount') => ['data' => 'net_salary', 'name' => 'net_salary', 'title' => __('app.menu.amount')],
+            __('app.menu.employees') => ['data' => 'name', 'name' => 'name', 'title' => __('app.menu.employees'), 'className' => 'text-left'],
+            __('app.menu.nrc') => ['data' => 'nrc', 'name' => 'nrc', 'title' => __('app.menu.nrc'), 'className' => 'text-left'],
+            __('app.menu.bankaccountNumber') => ['data' => 'bank_account_number', 'name' => 'bank_account_number', 'title' => __('app.menu.bankaccountNumber'), 'className' => 'text-left'],
+            __('app.onNoticePeriod') => ['data' => 'notice_period_end_date', 'name' => 'notice_period_end_date', 'title' => __('app.onNoticePeriod'), 'className' => 'text-left'],
+            __('app.menu.amount') => ['data' => 'net_salary', 'name' => 'net_salary', 'title' => __('app.menu.amount'), 'className' => 'text-left'],
         ];
     }
 
