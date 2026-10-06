@@ -63,13 +63,18 @@ class JobController extends AccountBaseController
     public function rankByDesignation(Request $request, $id)
     {
         $designation = Designation::where('id', $id)->first();
+        if (!$designation) {
+            return response()->json(['message' => 'Designation not found.'], 404);
+        }
+
         $rankId = (string) $designation->rank_id;
-        $managementRank = ManagementRank::whereJsonContains('rank',  $rankId)->first();
+        $managementRank = $designation->rank_id !== null
+            ? ManagementRank::whereJsonContains('rank', $rankId)->first()
+            : null;
 
-        $startDate = Carbon::createFromFormat('d-m-Y', $request->start_date);
+        $request->validate(['start_date' => 'required|date_format:' . $this->company->date_format]);
+        $startDate = Carbon::createFromFormat($this->company->date_format, $request->start_date);
         $endDate = null;
-
-        $manageRankId = $managementRank->id;
 
         if ($rankId < 4) {
             $stages = RecruitInterviewStage::whereIn('id', [4])->get(); // front line
@@ -90,18 +95,18 @@ class JobController extends AccountBaseController
                     </option>';
         }
 
-        if ($manageRankId == 3) {
+        if ($managementRank && $managementRank->id == 3) {
             $endDate = $startDate->copy()->addDays(30);
-        } elseif ($manageRankId == 1) {
+        } elseif ($managementRank && $managementRank->id == 1) {
             $endDate = $startDate->copy()->addDay(60);
-        } else {
+        } elseif ($managementRank) {
             $endDate = $startDate->copy()->addDay(90);
         }
 
         return response()->json([
-            'rank' => $rankId,
-            'startDate' => $startDate->format('d-m-Y'),
-            'endDate' => $endDate->format('d-m-Y'),
+            'rank' => $designation->rank_id,
+            'startDate' => $startDate->format($this->company->date_format),
+            'endDate' => $endDate?->format($this->company->date_format),
             'stageOption' => $stageOption,
             'management_rank' => $managementRank ? [
                 'id' => $managementRank->id,

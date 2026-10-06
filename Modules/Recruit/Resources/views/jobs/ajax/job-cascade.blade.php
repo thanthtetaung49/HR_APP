@@ -23,6 +23,8 @@
                 .html('<option value="">--</option>')
                 .selectpicker('refresh');
 
+            $('#selectStages').html('').selectpicker('refresh');
+
             if (!locationId) {
                 return;
             }
@@ -58,6 +60,12 @@
             $('#rank_level')
                 .html('<option value="">--</option>')
                 .selectpicker('refresh');
+
+            $('#management_rank_id')
+                .html('<option value="">--</option>')
+                .selectpicker('refresh');
+
+            $('#selectStages').html('').selectpicker('refresh');
 
             if (!departmentId) {
                 return;
@@ -99,6 +107,7 @@
                 .selectpicker('refresh');
 
             selectStages.html('').selectpicker('refresh');
+            $('#end_date').val('');
 
             if (!designationId) {
                 return;
