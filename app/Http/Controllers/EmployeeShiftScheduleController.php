@@ -541,6 +541,7 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
         if ($attendance) {
             $clockIn = Carbon::parse($attendance->clock_in_time);
+            $clockOut = null;
 
             if ($attendance->clock_out_time) {
                 $clockOut = Carbon::parse($attendance->clock_out_time);
@@ -568,11 +569,11 @@ class EmployeeShiftScheduleController extends AccountBaseController
 
             $lateTime = $officeStartTime->copy()->addMinutes(15);
 
-            $breakTimeStartTime = isset($attendance)
+            $breakTimeStartTime = isset($attendance) && isset($clockOut)
                 ? $clockOut->copy()->addMinutes(45)
                 : null;
 
-            $breakTimeEndTime = isset($attendance)
+            $breakTimeEndTime = isset($attendance) && isset($clockOut)
                 ? $clockOut->copy()->addMinutes(60)
                 : null;
 

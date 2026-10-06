@@ -187,8 +187,6 @@ class JobApplicationController extends AccountBaseController
             return [$jobApp, null];
         });
 
-        // dd($blacklistMatch);
-
         if ($blacklistMatch) {
             return Reply::dataOnly([
                 'status' => 'success',
@@ -374,6 +372,8 @@ class JobApplicationController extends AccountBaseController
             $job = RecruitJob::findOrFail($request->job_id);
 
             $this->fillApplicantFields($jobApp, $request, $job);
+            $this->storeApplicantPhoto($jobApp, $request);
+
             $jobApp->send_email = $request->boolean('send_email');
 
             $workflow = app(ApplicantWorkflowService::class);

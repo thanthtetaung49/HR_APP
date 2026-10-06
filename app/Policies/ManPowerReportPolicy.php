@@ -2,10 +2,8 @@
 
 namespace App\Policies;
 
-use App\Models\ManPowerReport;
 use App\Models\ReportPermission;
 use App\Models\User;
-use Illuminate\Auth\Access\Response;
 
 class ManPowerReportPolicy
 {

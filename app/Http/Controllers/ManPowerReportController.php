@@ -249,6 +249,8 @@ class ManPowerReportController extends AccountBaseController
             'position_id' => 'required',
         ])->validate();
 
+        // dd($request->man_power_basic_salary);
+
         $reports->update([
             'man_power_setup' => $request->man_power_setup,
             'man_power_basic_salary' => $request->man_power_basic_salary,

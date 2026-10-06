@@ -163,6 +163,7 @@ class ApplicantWorkflowService
             $user->location_id = $applicant->job?->hr_location_id;
             $user->department_id = $applicant->job?->department_id;
             $user->designation_id = $applicant->job?->designation_id;
+            $user->image = $applicant->photo ? $applicant->photo : null;
             $user->password = bcrypt(Str::random(32));
             $user->status = 'active';
             $user->save();

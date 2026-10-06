@@ -47,7 +47,8 @@
                                 </x-forms.text>
                             </div>
                             <div class="col-md-3">
-                                <x-forms.text fieldId="email" :fieldLabel="__('recruit::modules.jobApplication.email')" fieldName="email" :fieldPlaceholder="__('placeholders.email')" fieldRequired="true">
+                                <x-forms.text fieldId="email" :fieldLabel="__('recruit::modules.jobApplication.email')" fieldName="email" :fieldPlaceholder="__('placeholders.email')"
+                                    fieldRequired="true">
                                 </x-forms.text>
                             </div>
                             <div class="col-md-3">
@@ -303,6 +304,13 @@
                         Swal.fire({
                                 icon: 'warning',
                                 title: 'Blacklist Match',
+                                text: response.message
+                            })
+                            .then(() => window.location.href = response.redirectUrl);
+                    } else if (response.applicationExists) {
+                        Swal.fire({
+                                icon: 'warning',
+                                title: 'Application Exists',
                                 text: response.message
                             })
                             .then(() => window.location.href = response.redirectUrl);

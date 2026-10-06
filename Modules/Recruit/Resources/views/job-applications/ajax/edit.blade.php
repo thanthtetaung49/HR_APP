@@ -23,11 +23,15 @@
                                 <x-forms.label fieldId="job_id" fieldRequired="true" :fieldLabel="__('recruit::modules.jobApplication.jobs')"
                                     class="mt-3"></x-forms.label>
                                 <div class="form-group mb-0">
+                                    @if ($jobId)
+                                        <input type="hidden" name="job_id" value="{{ $jobId }}">
+                                    @endif
+
                                     <select name="job_id" id="job_id" class="form-control select-picker"
                                         data-size="8">
                                         <option value="">--</option>
                                         @foreach ($jobs as $job)
-                                            <option @selected($job->id == $jobApplication->recruit_job_id) value="{{ $job->id }}">
+                                            <option @selected($job->id == $jobApplication->recruit_job_id) value="{{ $job->id }}"  data-actual-rank="{{ $job->rank_level }}">
                                                 {{ $job->title }}</option>
                                         @endforeach
                                     </select>
@@ -73,8 +77,7 @@
 
                             <div class="col-md-3">
                                 <x-forms.text fieldId="current_location" :fieldLabel="__('recruit::modules.jobApplication.currentLocation')" fieldName="current_location"
-                                    :fieldValue="$jobApplication->current_location" fieldPlaceholder="e.g. New York"
-                                    ></x-forms.text>
+                                    :fieldValue="$jobApplication->current_location" fieldPlaceholder="e.g. New York"></x-forms.text>
                             </div>
 
                             <div class="col-md-3">

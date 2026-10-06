@@ -112,6 +112,9 @@ class JobApplicationsDataTable extends BaseDataTable
             ->addColumn('job_name', function ($row) {
                 return $row->title;
             })
+            ->addColumn('date_of_birth', function ($row) {
+                return Carbon::parse($row->date_of_birth)->format('Y-m-d') ?? '--';
+            })
             ->addColumn('legacy_status_name', fn($row) => $row->status)
             ->addColumn('age', fn($row) => $row->date_of_birth ? Carbon::parse($row->date_of_birth)->age : null)
             ->editColumn('work_experience_details', function ($row) {
