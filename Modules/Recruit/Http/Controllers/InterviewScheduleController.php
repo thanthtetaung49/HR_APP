@@ -6,6 +6,7 @@ use App\Helper\Reply;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Support\Renderable;
 use App\Http\Controllers\AccountBaseController;
+use App\Models\Location;
 use App\Models\User;
 use Carbon\Carbon;
 use Modules\Recruit\Entities\RecruitSetting;
@@ -61,6 +62,7 @@ class InterviewScheduleController extends AccountBaseController
         $viewPermission = user()->permission('view_interview_schedule');
         abort_403(!in_array($viewPermission, ['all', 'added', 'owned', 'both']));
         $this->employees = User::allEmployees();
+        $this->locations = Location::all();
 
         if ($viewPermission == 'all' || $viewPermission == 'added' || $viewPermission == 'owned' || $viewPermission == 'both') {
             return $dataTable->render('recruit::interview-schedule.table', $this->data);
@@ -78,6 +80,7 @@ class InterviewScheduleController extends AccountBaseController
         $this->employees = User::allEmployees();
         $this->candidates = User::allClients();
         $this->recruiter = Recruiter::with('user')->get();
+        $this->locations = Location::all();
 
         $this->employeeStatus = RecruitInterviewEmployees::select('recruit_interview_employees.user_accept_status', 'recruiters.user_id')
             ->join('recruiters', 'recruiters.id', 'recruit_interview_employees.user_id')

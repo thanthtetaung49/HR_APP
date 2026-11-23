@@ -173,7 +173,7 @@ class PayrollDataTable extends BaseDataTable
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $request->cycle)
             ->where('salary_slips.year', $request->year)
-            ->where('users.status', 'active')
+            // ->where('users.status', 'active')
             ->where(function ($query) use ($startDate) {
                 $query
                     ->whereNull('employee_details.last_date')

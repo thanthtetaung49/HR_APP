@@ -38,7 +38,7 @@
                     data-size="8">
                     <option value="all">@lang('app.all')</option>
                     @foreach ($employees as $employee)
-                                <x-user-option :user="$employee" />
+                        <x-user-option :user="$employee" />
                     @endforeach
 
                 </select>
@@ -60,6 +60,21 @@
             </form>
         </div>
         <!-- SEARCH BY END -->
+
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location_id" id="location_id" data-live-search="true"
+                    data-size="8">
+                    <option value="">@lang('app.all')</option>
+                    @foreach ($locations as $item)
+                        <option value="{{ $item->id }}">
+                            {{ $item->location_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
 
         <!-- RESET START -->
         <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
@@ -142,6 +157,7 @@
     <script>
         $('#interview-schedule-table').on('preXhr.dt', function(e, settings, data) {
             const dateRangePicker = $('#datatableRange').data('daterangepicker');
+            let locationId = $('#location_id').val();
             let startDate = $('#datatableRange').val();
 
             let endDate;
@@ -165,6 +181,7 @@
             data['status'] = status;
             data['searchText'] = searchText;
             data['date_filter_on'] = date_filter_on;
+            data['location_id'] = locationId;
 
         });
 
@@ -172,13 +189,15 @@
             window.LaravelDataTables["interview-schedule-table"].draw(true);
         }
 
-        $('#search-text-field, #status, #employee')
+        $('#search-text-field, #status, #employee, #location_id')
             .on('change keyup', function() {
                 if ($('#search-text-field').val() !== "") {
                     $('#reset-filters').removeClass('d-none');
                 } else if ($('#status').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
-                } else if ($('#employee').val() != "all") {
+                }  else if ($('#employee').val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                } else if ($('#location_id').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                 }
                 showTable();

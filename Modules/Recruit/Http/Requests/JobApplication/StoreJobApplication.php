@@ -52,10 +52,12 @@ class StoreJobApplication extends CoreRequest
                 'job_id' => 'required',
                 'full_name' => 'required',
                 'father_name' => 'required',
-                'email' => ['email', new CheckApplication],
+                // 'email' => ['email', new CheckApplication],
+                'email' => 'required|email',
                 'phone' => 'required',
                 'nrc' => 'required',
                 'date_of_birth' => 'required|date_format:"' . $setting->date_format . '"|before_or_equal:' . now($setting->timezone)->toDateString(),
+                'job_applied_date' => 'date',
                 'marital_status' => 'required|in:single,married',
                 'last_salary_minimum' => 'nullable|numeric|min:0',
                 'expected_salary_minimum' => 'nullable|numeric|min:0',
@@ -84,7 +86,6 @@ class StoreJobApplication extends CoreRequest
             if ($jobId->is_dob_require) {
                 $data['date_of_birth'] = 'required|date_format:"' . $setting->date_format . '"|before_or_equal:' . now($setting->timezone)->toDateString();
             }
-
         } else {
             $data = [
                 'job_id' => 'required',

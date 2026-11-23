@@ -6,14 +6,13 @@
         .filter-box {
             z-index: 2;
         }
-
     </style>
 @endpush
 
 
 @php
-$addLeavePermission = user()->permission('add_leave');
-$approveRejectPermission = user()->permission('approve_or_reject_leaves');
+    $addLeavePermission = user()->permission('add_leave');
+    $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 @endphp
 
 @section('filter-section')
@@ -22,7 +21,8 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
         <div class="select-box d-flex pr-2 border-right-grey border-right-grey-sm-0">
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.duration')</p>
             <div class="select-status d-flex">
-                <input type="text" class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
+                <input type="text"
+                    class="position-relative text-dark form-control border-0 p-2 text-left f-14 f-w-500 border-additional-grey"
                     id="datatableRange" placeholder="@lang('placeholders.dateRange')"
                     value="{{ request('start') && request('end') ? request('start') . ' ' . __('app.to') . ' ' . request('end') : '' }}">
             </div>
@@ -45,6 +45,19 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
         </div>
         <!-- SEARCH BY TASK END -->
 
+        <div class="select-box py-2 d-flex pr-2 border-right-grey border-right-grey-sm-0 ml-3">
+            <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center">@lang('app.menu.location')</p>
+            <div class="select-status">
+                <select class="form-control select-picker" name="location" id="location" data-live-search="true"
+                    data-size="8">
+                    <option value="">@lang('app.all')</option>
+                    @foreach ($locations as $location)
+                        <option value="{{ $location->id }}">{{ $location->location_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+        </div>
+
         <!-- RESET START -->
         <div class="select-box d-flex py-1 px-lg-2 px-md-2 px-0">
             <x-forms.button-secondary class="btn-xs d-none" id="reset-filters" icon="times-circle">
@@ -66,7 +79,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                                 <option value="all">@lang('app.all')</option>
                             @endif
                             @foreach ($employees as $employee)
-                                    <x-user-option :user="$employee" />
+                                <x-user-option :user="$employee" />
                             @endforeach
                         </select>
                     </div>
@@ -175,11 +188,9 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 
     </div>
     <!-- CONTENT WRAPPER END -->
-
 @endsection
 
 @push('scripts')
-
     @include('sections.datatable_js')
 
     <script>
@@ -208,6 +219,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             var leaveTypeId = $('#leave_type').val();
             var status = $('#status').val();
             var searchText = $('#search-text-field').val();
+            var location = $('#location').val();
 
             data['startDate'] = startDate;
             data['endDate'] = endDate;
@@ -215,6 +227,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             data['employeeId'] = employeeId;
             data['leaveTypeId'] = leaveTypeId;
             data['status'] = status;
+            data['location'] = location;
         });
 
         const showTable = () => {
@@ -222,7 +235,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
         }
 
         @if (canDataTableExport())
-            $('#export-all').click(function () {
+            $('#export-all').click(function() {
 
                 @if (request('start') && request('end'))
                     $('#datatableRange').data('daterangepicker').setStartDate("{{ request('start') }}");
@@ -231,6 +244,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
 
                 var dateRangePicker = $('#datatableRange').data('daterangepicker');
 
+                let location = $('#location').val();
                 let startDate = $('#datatableRange').val();
                 let endDate;
 
@@ -246,14 +260,14 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                 endDate = encodeURIComponent(endDate);
 
                 var url = "{{ route('leaves.export_all_leave') }}";
-                string = `?startDate=${startDate}&endDate=${endDate}`;
+                string = `?startDate=${startDate}&endDate=${endDate}&location=${location}`;
                 url += string;
                 window.location.href = url;
 
             });
         @endif
 
-        $('#start-date, #end-date, #employee_id, #leave_type, #status').on('change keyup',
+        $('#start-date, #end-date, #employee_id, #leave_type, #status, #location').on('change keyup',
             function() {
                 if ($('#start-date').val() != "") {
                     $('#reset-filters').removeClass('d-none');
@@ -268,6 +282,9 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                     $('#reset-filters').removeClass('d-none');
                     showTable();
                 } else if ($('#status').val() != "all") {
+                    $('#reset-filters').removeClass('d-none');
+                    showTable();
+                } else if ($('#location').val() != "all") {
                     $('#reset-filters').removeClass('d-none');
                     showTable();
                 } else {
@@ -392,9 +409,9 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                         },
                         success: function(response) {
                             if (response.status == "success") {
-                                if(type == 'multiple-leave'){
+                                if (type == 'multiple-leave') {
                                     window.location.reload();
-                                } else{
+                                } else {
                                     showTable();
                                 }
                             }
@@ -443,7 +460,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             let action = $(this).data('leave-action');
             let leaveId = $(this).data('leave-id');
             var type = $(this).data('type');
-            if(type == undefined){
+            if (type == undefined) {
                 var type = 'single';
             }
             let searchQuery = "?leave_action=" + action + "&leave_id=" + leaveId + "&type=" + type;
@@ -457,7 +474,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             let action = $(this).data('leave-action');
             let leaveId = $(this).data('leave-id');
             var type = $(this).data('type');
-            if(type == undefined){
+            if (type == undefined) {
                 var type = 'single';
             }
             let searchQuery = "?leave_action=" + action + "&leave_id=" + leaveId + "&type=" + type;
@@ -472,7 +489,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             var leaveId = $(this).data('leave-id');
             var leaveUId = $(this).data('leave-uid');
             leaveUId = (leaveUId == null) ? null : leaveUId;
-            
+
             var url = "{{ route('leaves.pre_approve_leave') }}";
 
             Swal.fire({
@@ -509,7 +526,7 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
                                 showTable();
                                 resetActionButtons();
                                 deSelectAll();
-                                window.location.reload(); 
+                                window.location.reload();
                             }
                         }
                     });
@@ -521,12 +538,11 @@ $approveRejectPermission = user()->permission('approve_or_reject_leaves');
             var leaveId = $(this).data('leave-id');
             var uniqueId = $(this).data('unique-id');
 
-            var url = "{{ route('leaves.view_related_leave', ':id') }}?uniqueId="+uniqueId;
+            var url = "{{ route('leaves.view_related_leave', ':id') }}?uniqueId=" + uniqueId;
             url = url.replace(':id', leaveId);
 
             $(MODAL_LG + ' ' + MODAL_HEADING).html('...');
             $.ajaxModal(MODAL_LG, url);
         });
-
     </script>
 @endpush

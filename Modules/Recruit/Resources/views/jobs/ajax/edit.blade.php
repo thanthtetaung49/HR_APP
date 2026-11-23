@@ -212,14 +212,25 @@
                             </div>
 
                             <div class="col-md-3">
+                                <x-forms.text fieldId="start_date" fieldRequired="true" :fieldLabel="__('modules.projects.startDate')"
+                                    fieldName="start_date" :fieldValue="$job->start_date->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true" />
+                            </div>
+
+                            <div class="col-md-3">
+                                <x-forms.text fieldId="end_date" fieldRequired="true" :fieldLabel="__('recruit::modules.job.endDate')"
+                                    fieldName="end_date" :fieldValue="$job->end_date ? $job->end_date->format($company->date_format) : ''" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true" />
+                            </div>
+
+                            {{-- <div class="col-md-3">
                                 <x-forms.datepicker fieldId="start_date" fieldRequired="true" :fieldLabel="__('modules.projects.startDate')"
-                                    fieldName="start_date" :fieldValue="$job->start_date->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true"  />
+                                    fieldName="start_date" :fieldValue="$job->start_date->format($company->date_format)" :fieldPlaceholder="__('placeholders.date')" :fieldReadOnly="true"  />
                             </div>
 
                             <div class="col-md-3" >
                                 <x-forms.datepicker fieldId="end_date" fieldRequired="true" :fieldLabel="__('recruit::modules.job.endDate')"
-                                    fieldName="end_date" :fieldValue="$job->end_date ? $job->end_date->format($company->date_format) : ''" :fieldPlaceholder="__('placeholders.date')" fieldReadOnly="true"  />
-                            </div>
+                                    fieldName="end_date" :fieldValue="$job->end_date ? $job->end_date->format($company->date_format) : ''" :fieldPlaceholder="__('placeholders.date')" :fieldReadOnly="true" />
+                            </div> --}}
+
                             {{-- <div class="col-md-6 col-lg-3">
                                 <div class="form-group">
                                     <div class="d-flex mt-5">

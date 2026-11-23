@@ -37,8 +37,6 @@
             <p class="mb-0 pr-2 f-14 text-dark-grey d-flex align-items-center" id="select-label">@lang('app.select')
                 @lang('app.month')</p>
             <div class="select-status">
-                {{-- <select class="form-control select-picker" name="month" id="month">
-                </select> --}}
                 <select class="form-control select-picker" id="month" name="month">
                     @foreach (range(1, 12) as $monthNumber)
                         <option value="{{ str_pad($monthNumber, 2, '0', STR_PAD_LEFT) }}" @selected($monthNumber === (int) now()->format('m'))>
@@ -264,8 +262,6 @@
             var type = $(this).attr('id');
             var cycle = $('#payrollCycle').val();
             getEmployee(cycle, type, id);
-
-            // }
         });
 
         $("#rank_id").change(function() {

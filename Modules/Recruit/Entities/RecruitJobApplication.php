@@ -18,13 +18,12 @@ class RecruitJobApplication extends BaseModel
 {
     use Notifiable, HasCompany, SoftDeletes, CustomFieldsTrait;
 
-    protected $dates = ['end_date', 'start_date', 'date_of_birth', 'deleted_at', 'start_date', 'end_date'];
-
-    // protected $fillable = ['name', 'email', 'phone', 'gender', 'status_id', 'start_date', 'end_date'];
+    protected $dates = ['end_date', 'start_date', 'date_of_birth', 'deleted_at', 'start_date', 'end_date', 'job_applied_date'];
     protected $guarded = [];
 
     protected $casts = [
         'date_of_birth' => 'date',
+        'job_applied_date' => 'date',
         'work_experience_details' => 'array',
         'is_blacklisted' => 'boolean',
         'last_salary_minimum' => 'decimal:2',

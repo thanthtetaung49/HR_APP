@@ -82,6 +82,7 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             '#',
             __('app.id'),
             __('app.employee'),
+            __('app.location'),
             __('app.leaveDate'),
             __('app.duration'),
             __('app.leaveStatus'),
@@ -99,11 +100,12 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
             ->join('leave_types', 'leave_types.id','leaves.leave_type_id')
             ->join('users', 'leaves.user_id', 'users.id')
             ->join('employee_details', 'employee_details.user_id', 'users.id')
-            ->selectRaw('leaves.*, leave_types.color, leave_types.type_name')
+            ->join('locations', 'users.location_id', 'locations.id')
+            ->selectRaw('leaves.*, leave_types.color, leave_types.type_name, locations.location_name')
             ->orderBy('leaves.leave_date')
             ->orderBy('leaves.user_id');
 
-        // dd('hi ieiei');
+        // dd(request()->all());
 
         if($this->exportAll == false){
             if (!is_null($this->startdate)) {
@@ -117,6 +119,10 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
 
         if (request()->searchText != '') {
             $leavesList->where('users.name', 'like', '%' . request()->searchText . '%');
+        }
+
+        if (request()->location != 'all' && request()->location != '') {
+            $leavesList->where('locations.id', request()->location);
         }
 
         if ($this->viewLeavePermission == 'owned') {
@@ -154,8 +160,9 @@ class LeaveExport implements FromCollection, WithHeadings, WithEvents
         foreach ($leaveLists as $leavesList) {
 
             $leavedata[$employee_index]['#'] = $emp_leave;
-            $leavedata[$employee_index]['employee_name'] = $leavesList->user->id;
-            $leavedata[$employee_index]['id'] = $leavesList->user->name;
+            $leavedata[$employee_index]['employee_name'] = $leavesList->user->name;
+            $leavedata[$employee_index]['id'] = $leavesList->user->id;
+            $leavedata[$employee_index]['location'] = $leavesList->location_name;
 
             $leavedata[$employee_index]['leave_date'] = $leavesList->leave_date->format('d-m-Y') .' ('.Carbon::parse($leavesList->leave_date)->translatedFormat('l').')';
             $leavedata[$employee_index]['duration'] = ucfirst($leavesList->duration);

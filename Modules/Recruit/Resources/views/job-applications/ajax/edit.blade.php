@@ -31,7 +31,8 @@
                                         data-size="8">
                                         <option value="">--</option>
                                         @foreach ($jobs as $job)
-                                            <option @selected($job->id == $jobApplication->recruit_job_id) value="{{ $job->id }}"  data-actual-rank="{{ $job->rank_level }}">
+                                            <option @selected($job->id == $jobApplication->recruit_job_id) value="{{ $job->id }}"
+                                                data-actual-rank="{{ $job->rank_level }}">
                                                 {{ $job->title }}</option>
                                         @endforeach
                                     </select>
@@ -103,11 +104,10 @@
                                 </div>
                             </div>
 
-
-
                             <div class="col-md-3">
                                 <x-forms.select fieldId="notice_period" :fieldLabel="__('recruit::modules.jobApplication.noticePeriod')" fieldName="notice_period">
                                     <option value="">--</option>
+                                    <option value="new" @selected($jobApplication->notice_period == 'new')>New</option>
                                     @foreach (['15', '30', '45', '60', '75', '90'] as $days)
                                         <option value="{{ $days }}" @selected($jobApplication->notice_period == $days)>
                                             {{ $days }} @lang('recruit::modules.jobApplication.days')
@@ -135,6 +135,14 @@
                                     fieldName="date_of_birth" fieldId="date_of_birth-1" :fieldPlaceholder="__('placeholders.date')"
                                     :fieldValue="$jobApplication->date_of_birth
                                         ? $jobApplication->date_of_birth->format($company->date_format)
+                                        : ''" />
+                            </div>
+
+                            <div class="col-md-3" id="dob">
+                                <x-forms.text class="date-picker" :fieldRequired="true" :fieldLabel="__('recruit::modules.jobApplication.jobAppliedDate')"
+                                    fieldName="job_applied_date" fieldId="job_applied_date" :fieldPlaceholder="__('placeholders.date')"
+                                    :fieldValue="$jobApplication->job_applied_date
+                                        ? $jobApplication->job_applied_date->format($company->date_format)
                                         : ''" />
                             </div>
 
@@ -400,6 +408,11 @@
                     calculateApplicantAge();
                 }, 0);
             }
+        });
+
+        datepicker('#job_applied_date', {
+            ...datepickerConfig,
+            position: 'bl',
         });
 
         $(document).find('.dropify').dropify({

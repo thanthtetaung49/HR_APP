@@ -55,6 +55,7 @@ class LateReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
             'attendances.half_day_late',
             'l.leave_date',
             'locations.id as location_id',
+            'locations.location_name as location_name',
             DB::raw('ROW_NUMBER() OVER (PARTITION BY attendances.user_id, DATE(attendances.clock_in_time) ORDER BY attendances.clock_in_time ASC) as row_num')
         ])
             ->join('users as u', 'u.id', '=', 'attendances.user_id')
@@ -75,13 +76,14 @@ class LateReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
                 'a2.name',
                 'a2.att_date',
                 'a2.location_id',
+                'a2.location_name',
                 DB::raw("SUM(CASE WHEN a2.late = 'yes' AND a2.row_num = 1 THEN 1 ELSE 0 END) AS normal_late"),
                 DB::raw("SUM(CASE WHEN a2.late_between = 'yes' AND a2.row_num = 1 THEN 1 ELSE 0 END) AS late_between"),
                 DB::raw("SUM(CASE WHEN a2.break_time_late = 'yes' AND a2.row_num = 2 THEN 1 ELSE 0 END) AS breaktime_late"),
                 DB::raw("SUM(CASE WHEN a2.breaktime_late_between = 'yes' AND a2.row_num = 2 THEN 1 ELSE 0 END) AS breaktime_late_between"),
                 DB::raw("SUM(CASE WHEN a2.leave_date IS NOT NULL AND a2.half_day = 'yes' AND a2.half_day_late = 'yes' THEN 1 ELSE 0 END) AS halfday_late"),
             ])
-            ->groupBy('a2.user_id', 'a2.name', 'a2.att_date', 'a2.location_id')
+            ->groupBy('a2.user_id', 'a2.name', 'a2.att_date', 'a2.location_id', 'a2.location_name')
             ->orderBy('a2.att_date')
             ->orderBy('a2.user_id');
 
@@ -108,6 +110,7 @@ class LateReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
         return [
             "#",
             __('app.menu.employees'),
+            __('app.menu.location'),
             __('app.menu.attendanceDate'),
             __('app.menu.normalLate'),
             __('app.menu.lateBetween'),
@@ -123,6 +126,7 @@ class LateReportExport implements FromCollection, ShouldAutoSize, WithStyles, Wi
         return [
             ++$index,
             $row->name,
+            $row->location_name,
             $row->att_date,
             $row->normal_late,
             $row->late_between,

@@ -148,6 +148,7 @@
                             <div class="col-md-3">
                                 <x-forms.select fieldId="notice_period" :fieldLabel="__('recruit::modules.jobApplication.noticePeriod')" fieldName="notice_period">
                                     <option value="">--</option>
+                                    <option value="new">New</option>
                                     <option value="15">15 @lang('recruit::modules.jobApplication.days')</option>
                                     <option value="30">30 @lang('recruit::modules.jobApplication.days')</option>
                                     <option value="45">45 @lang('recruit::modules.jobApplication.days')</option>
@@ -172,6 +173,12 @@
                             <div class="col-md-3" id="dob">
                                 <x-forms.text class="date-picker" :fieldRequired="true" :fieldLabel="__('recruit::modules.jobApplication.dateOfBirth')"
                                     fieldName="date_of_birth" fieldId="date_of_birth-1" :fieldPlaceholder="__('placeholders.date')"
+                                    fieldValue="" />
+                            </div>
+
+                            <div class="col-md-3" id="dob">
+                                <x-forms.text class="date-picker" :fieldRequired="true" :fieldLabel="__('recruit::modules.jobApplication.jobAppliedDate')"
+                                    fieldName="job_applied_date" fieldId="job_applied_date" :fieldPlaceholder="__('placeholders.date')"
                                     fieldValue="" />
                             </div>
 
@@ -257,6 +264,11 @@
             }
         });
 
+        datepicker('#job_applied_date', {
+            ...datepickerConfig,
+            position: 'bl',
+        });
+
         // datepicker('#start_date', {
         //     ...datepickerConfig,
         //     position: 'bl',
@@ -311,9 +323,28 @@
                         Swal.fire({
                                 icon: 'warning',
                                 title: 'Application Exists',
-                                text: response.message
+                                text: response.message,
+                                showCancelButton: true,
+                                confirmButtonText: 'Save',
+                                cancelButtonText: 'Cancel',
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                reverseButtons: true
                             })
-                            .then(() => window.location.href = response.redirectUrl);
+                            .then(function(result) {
+                                if (result.isConfirmed) {
+                                    const form = $('#save-job-application-data-form');
+
+                                    form.find('input[name="save_existing"]').remove();
+                                    form.append(
+                                        '<input type="hidden" name="save_existing" value="1">'
+                                    );
+
+                                    $(buttonSelector)
+                                        .prop('disabled', false)
+                                        .trigger('click');
+                                }
+                            })
                     } else {
                         window.location.href = response.redirectUrl;
                     }

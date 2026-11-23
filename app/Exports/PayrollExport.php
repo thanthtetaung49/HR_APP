@@ -87,7 +87,7 @@ class PayrollExport implements FromCollection, WithStyles, WithHeadings, ShouldA
             ->where('roles.name', '<>', 'client')
             ->where('salary_slips.payroll_cycle_id', $this->payrollCycle)
             ->where('salary_slips.year', $this->year)
-            ->where('users.status', 'active')
+            // ->where('users.status', 'active')
             ->when(in_array('employee', user_roles()) && count(user_roles()) === 1, function ($query) {
                 $query->where('salary_slips.status', '<>', 'generated')
                     ->where('users.id', user()->id);

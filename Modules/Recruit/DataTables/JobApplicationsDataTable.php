@@ -425,11 +425,12 @@ class JobApplicationsDataTable extends BaseDataTable
             $endDate = Carbon::createFromFormat($this->company->date_format, $request->endDate)->toDateString();
         }
 
-        $model = $model->select('recruit_job_applications.*', 'recruit_jobs.title', 'recruit_jobs.recruiter_id', 'company_addresses.location', 'recruit_application_status.color', 'recruit_application_status.status', 'application_sources.application_source', 'recruit_jobs.hr_location_id');
+        $model = $model->select('recruit_job_applications.*', 'recruit_jobs.title', 'recruit_jobs.recruiter_id', 'company_addresses.location', 'recruit_application_status.color', 'recruit_application_status.status', 'application_sources.application_source', 'recruit_jobs.hr_location_id', 'locations.location_name as location_name');
         $model = $model->leftJoin('recruit_application_status', 'recruit_application_status.id', '=', 'recruit_job_applications.recruit_application_status_id');
         $model = $model->leftJoin('recruit_jobs', 'recruit_jobs.id', '=', 'recruit_job_applications.recruit_job_id')
             ->leftJoin('company_addresses', 'company_addresses.id', '=', 'recruit_job_applications.location_id')
             ->leftJoin('application_sources', 'application_sources.id', '=', 'recruit_job_applications.application_source_id')
+            ->leftJoin('locations', 'locations.id', '=', 'recruit_jobs.hr_location_id')
             // ->where('recruit_job_applications.is_blacklisted', false)
             ->groupBy('recruit_job_applications.id');
 
@@ -589,7 +590,7 @@ class JobApplicationsDataTable extends BaseDataTable
             __('recruit::modules.front.fullName') => ['data' => 'name', 'visible' => false, 'name' => 'name', 'title' => __('recruit::modules.front.fullName')],
             __('recruit::modules.jobApplication.jobs') => ['data' => 'recruit_job_id', 'exportable' => false, 'name' => 'recruit_jobs.title', 'title' => __('recruit::modules.jobApplication.jobs'), 'width' => '150px', 'className' => 'text-nowrap'],
             __('recruit::app.jobOffer.job') => ['data' => 'job_name', 'visible' => false, 'name' => 'job_name', 'title' => __('recruit::app.jobOffer.job')],
-            // __('recruit::modules.job.location') => ['data' => 'location', 'name' => 'company_addresses.location', 'title' => __('recruit::modules.job.location')],
+            __('recruit::modules.job.location') => ['data' => 'location_name', 'name' => 'locations.location_name', 'title' => __('recruit::modules.job.location')],
             __('recruit::modules.jobApplication.gender') => ['data' => 'gender', 'name' => 'gender', 'visible' => false, 'title' => __('recruit::modules.jobApplication.gender')],
             __('recruit::app.jobApplication.date') => ['data' => 'created_at', 'name' => 'created_at', 'title' => __('recruit::app.jobApplication.date'), 'width' => '150px', 'className' => 'text-nowrap'],
             // __('app.status') => ['data' => 'status', 'name' => 'status', 'exportable' => false, 'orderable' => false, 'title' => __('app.status')],

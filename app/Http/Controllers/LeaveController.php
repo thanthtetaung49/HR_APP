@@ -3,19 +3,22 @@
 namespace App\Http\Controllers;
 
 use App\DataTables\LeaveDataTable;
+use App\Exports\LeaveExport;
 use App\Helper\Reply;
 use App\Http\Requests\Leaves\ActionLeave;
 use App\Http\Requests\Leaves\StoreLeave;
 use App\Http\Requests\Leaves\UpdateLeave;
+use App\Models\Attendance;
+use App\Models\AttendanceSetting;
+use App\Models\Company;
 use App\Models\EmployeeDetails;
 use App\Models\EmployeeLeaveQuota;
-use App\Exports\LeaveExport;
-use Maatwebsite\Excel\Facades\Excel;
+use App\Models\EmployeeShift;
 use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\LeaveSetting;
 use App\Models\LeaveType;
-use App\Models\Company;
+use App\Models\Location;
 use App\Models\User;
 use App\Scopes\ActiveScope;
 use Carbon\Carbon;
@@ -23,9 +26,7 @@ use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Models\AttendanceSetting;
-use App\Models\EmployeeShift;
-use App\Models\Attendance;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveController extends AccountBaseController
 {
@@ -60,6 +61,7 @@ class LeaveController extends AccountBaseController
         $this->employees = $reportingTo->merge($employee);
 
         $this->leaveTypes = LeaveType::all();
+        $this->locations = Location::all();
 
         return $dataTable->render('leaves.index', $this->data);
     }

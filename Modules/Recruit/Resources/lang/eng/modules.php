@@ -143,6 +143,7 @@ return array(
         'phone' => 'Phone',
         'gender' => 'Gender',
         'dateOfBirth' => 'Date Of Birth',
+        'jobAppliedDate' => 'Job Applied Date',
         'startDate' => 'Start Date',
         'endDate' => 'End Date',
         'applicationAge' => 'Application Age',
@@ -177,6 +178,7 @@ return array(
         'over15' => 'Over 15 years',
         'over90' => 'More than 90 Days',
         'days' => 'Days',
+        'new' => 'New',
         'below1lpa' => 'Below 1 lacs',
         'lacs' => 'lacs',
         'minimum' => 'minimum',
@@ -199,6 +201,7 @@ return array(
     ),
 
     'interviewSchedule' => array(
+        'location' => 'Location',
         'employee' => 'Employee',
         'startDate' => 'Start Date',
         'schedule_date' => 'Schedule Date',

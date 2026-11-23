@@ -17,6 +17,7 @@ use App\Models\Holiday;
 use App\Models\Leave;
 use App\Models\Team;
 use App\Models\User;
+use App\Scopes\ActiveScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -93,14 +94,14 @@ class PayrollController extends AccountBaseController
 
         $payrollCycle = PayrollCycle::where('cycle', 'monthly')->first();
 
-        $this->employees = User::join('employee_details', 'employee_details.user_id', '=', 'users.id')
+        $this->employees = User::withoutGlobalScope(ActiveScope::class)
+            ->join('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
             ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle->id)
+            // ->where('users.status', 'active')
             ->select('users.*', 'employee_details.rank', 'employee_details.last_date')
-            ->where('users.status', 'active')
-            // ->where('users.id', 459)
             // ->where(function ($query) use ($startDate) {
             //     $query
             //         ->whereNull('employee_details.last_date')
@@ -116,7 +117,6 @@ class PayrollController extends AccountBaseController
             })
             ->get();
 
-        // dd($this->employees);
 
         $this->salaryPaymentMethods = SalaryPaymentMethod::all();
 
@@ -395,7 +395,7 @@ class PayrollController extends AccountBaseController
         $daysInMonth = (int) abs($lastDayOfMonth->diffInDays($startDate) + 26);
 
         if ($request->userIds || $request->employee_id) {
-            $users = User::with('employeeDetail')
+            $users = User::withoutGlobalScope(ActiveScope::class)->with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
                 ->join('employee_monthly_salaries', 'employee_monthly_salaries.user_id', '=', 'users.id')
                 ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
@@ -411,7 +411,7 @@ class PayrollController extends AccountBaseController
 
             // $users = $users->get();
         } else if ($request->rank_id) {
-            $users = User::with('employeeDetail')
+            $users = User::withoutGlobalScope(ActiveScope::class)->with('employeeDetail')
                 ->join('employee_payroll_cycles', 'employee_payroll_cycles.user_id', '=', 'users.id')
                 ->join('employee_monthly_salaries', 'employee_monthly_salaries.user_id', '=', 'users.id')
                 ->where('employee_payroll_cycles.payroll_cycle_id', $payrollCycle)
@@ -420,7 +420,7 @@ class PayrollController extends AccountBaseController
                 ->select('users.id', 'users.name', 'users.email', 'users.status', 'users.email_notifications', 'users.created_at', 'users.image', 'users.mobile', 'users.country_id', 'employee_monthly_salaries.id as salary_id')
                 ->where('employee_details.rank', $request->rank_id);
         } else {
-            $users = User::with('employeeDetail')
+            $users = User::withoutGlobalScope(ActiveScope::class)->with('employeeDetail')
                 ->leftJoin('employee_details', 'employee_details.user_id', '=', 'users.id')
                 ->join('role_user', 'role_user.user_id', '=', 'users.id')
                 ->join('roles', 'roles.id', '=', 'role_user.role_id')
@@ -431,10 +431,10 @@ class PayrollController extends AccountBaseController
                 ->where('roles.name', '<>', 'client')
                 ->where('employee_monthly_salaries.allow_generate_payroll', 'yes')
                 ->orderBy('users.name', 'asc')
-                ->where(function ($query) use ($startDate) {
-                    $query->whereDate('employee_details.last_date', '>', $startDate->format('Y-m-d'))
-                        ->orWhereNull('employee_details.last_date');
-                })
+                // ->where(function ($query) use ($startDate) {
+                //     $query->whereDate('employee_details.last_date', '>', $startDate->format('Y-m-d'))
+                //         ->orWhereNull('employee_details.last_date');
+                // })
                 ->groupBy('users.id');
         }
 
@@ -447,6 +447,8 @@ class PayrollController extends AccountBaseController
                     $startDate->format('Y-m-d')
                 );
         })->get();
+
+        // dd($users->toArray(), $startDate->format('Y-m-d'), $endDate->format('Y-m-d'));
 
         $protectedUserIds = SalarySlip::where('payroll_cycle_id', $payrollCycle)
             ->whereDate('salary_from', $startDate->toDateString())
@@ -673,7 +675,7 @@ class PayrollController extends AccountBaseController
                 $depositRefund = $perDayDepositRefund * $daysInMonth;
 
                 // joining date
-                if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThan($startDate)) {
+                if ($joiningDate->between($startDate, $endDate) && $joiningDate->greaterThanOrEqualTo($startDate)) {
                     $daysDifference = $joiningDate->diffInDays($endDate) + 1;
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
@@ -683,10 +685,18 @@ class PayrollController extends AccountBaseController
                     // $depositRefund = $daysDifference * $perDayDepositRefund;
                 }
 
+                // dd($exitDate, $startDate, $endDate);
+
+                // $exitDate = Carbon::parse('2026-10-25');
+                // dd($exitDate);
+
 
                 // exist date
-                if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThan($exitDate)) {
+                if (!is_null($exitDate) && $exitDate->between($startDate, $endDate) && $endDate->greaterThanOrEqualTo($exitDate)) {
                     $daysDifference = $startDate->diffInDays($exitDate) + 1;
+
+                    // dd($daysDifference, $exitDate);
+
                     $basicSalaryInMonth = $daysDifference * $perDaySalary;
                     $technicalAllowance = $daysDifference * $perDayTechAllowance;
                     $livingCostAllowance = $daysDifference * $perDayLivingCostAllowance;
@@ -694,6 +704,7 @@ class PayrollController extends AccountBaseController
                     // $otherAllowance = $daysDifference * $perDayOtherAllowance;
                     // $depositRefund = $daysDifference * $perDayDepositRefund;
                 }
+
 
                 foreach ($additionalSalaries as $additionalSalary) {
                     if ($additionalSalary->type == 'increment') {
@@ -1542,17 +1553,18 @@ class PayrollController extends AccountBaseController
             DB::raw("SEC_TO_TIME(SUM(TIMESTAMPDIFF(SECOND, attendances.clock_in_time, attendances.clock_out_time))) as total_hours")
         )
             ->whereIn(DB::raw("DATE(attendances.clock_in_time)"), $holidayData)
+            // ->whereIn(DB::raw("DATE(attendances.clock_in_time)"), ['2026-10-25'])
             ->whereBetween(DB::raw('DATE(attendances.clock_in_time)'), [$startDate->toDateString(), $endDate->toDateString()])
             ->where('attendances.half_day', 'no')
             ->where('attendances.user_id', $userId)
-            // ->where('attendances.employee_shift_id', '<>', 1) // employee_shift_id 1 must not be offDay
+            ->where('attendances.employee_shift_id', '<>', 1) // employee_shift_id 1 must not be offDay
             ->groupBy(DB::raw('DATE(attendances.clock_in_time), attendances.user_id'))
             ->havingRaw('SUM(TIMESTAMPDIFF(SECOND, attendances.clock_in_time, attendances.clock_out_time)) >= ?', [
                 8 * 60 * 60
             ])
             ->count();
 
-        // dd($presentCount->toArray());
+        // dd($presentCount->get()->toArray());
 
         return $presentCount;
     }
@@ -1620,10 +1632,16 @@ class PayrollController extends AccountBaseController
             $isHRManager = true;
         }
 
-        $users = User::join('employee_details', 'employee_details.user_id', '=', 'users.id')
+        $users = User::withoutGlobalScope(ActiveScope::class)->join('employee_details', 'employee_details.user_id', '=', 'users.id')
             ->leftJoin('teams', 'employee_details.department_id', '=', 'teams.id')
             ->leftJoin('designations', 'employee_details.designation_id', '=', 'designations.id')
-            ->where('users.status', 'active')
+            // ->where('users.status', 'active')
+            // ->where(function ($query) use ($startDate) {
+            //     $query->whereNull('employee_details.last_date')
+            //         ->orWhereDate(
+            //             'employee_details.last_date', '>=', $startDate->format('Y-m-d')
+            //         );
+            // })
             ->when(($isHRManager) && !$isAdmin, function ($query) {
                 $query->whereNotNull('designations.rank_id')
                     ->where('designations.rank_id', '<=', 4);

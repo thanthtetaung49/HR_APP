@@ -55,6 +55,7 @@ class UpdateJobApplication extends CoreRequest
                 'phone' => 'required',
                 'father_name' => 'required',
                 'date_of_birth' => 'required|date_format:"' . $setting->date_format . '"|before_or_equal:' . now($setting->timezone)->toDateString(),
+                'job_applied_date' => 'date',
                 'marital_status' => 'required|in:single,married',
                 'last_salary_minimum' => 'nullable|numeric|min:0',
                 'expected_salary_minimum' => 'nullable|numeric|min:0',
@@ -79,7 +80,7 @@ class UpdateJobApplication extends CoreRequest
             ];
 
             if (! is_null(request()->email) && request()->application_id != request()->id) {
-                $data['email'] = [new CheckApplication];
+                $data['email'] = ['required', 'email'];
             }
 
             if ($jobId->is_gender_require) {
@@ -89,8 +90,6 @@ class UpdateJobApplication extends CoreRequest
             if ($jobId->is_dob_require) {
                 $data['date_of_birth'] = 'required|date_format:"' . $setting->date_format . '"|before_or_equal:' . now($setting->timezone)->toDateString();
             }
-
-
         } else {
             $data = [
                 'job_id' => 'required',

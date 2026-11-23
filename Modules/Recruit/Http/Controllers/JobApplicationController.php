@@ -137,21 +137,25 @@ class JobApplicationController extends AccountBaseController
         $addPermission = user()->permission('add_job_application');
         abort_403(!in_array($addPermission, ['all', 'added']));
 
-        $existApplicant = RecruitJobApplication::where('recruit_job_id', $request->job_id)
+        $applicationExists = RecruitJobApplication::where('recruit_job_id', $request->job_id)
             ->where(function ($query) use ($request) {
-                $query->where('email', $request->email)
-                    ->orWhere('nrc', $request->nrc);
-            })
-            ->first();
+                $query->where('email', $request->email);
 
-        if ($existApplicant) {
+                if ($request->filled('nrc')) {
+                    $query->orWhere('nrc', $request->nrc);
+                }
+            })
+            ->exists();
+
+        if ($applicationExists && !$request->boolean('save_existing')) {
             return Reply::dataOnly([
                 'status' => 'success',
                 'applicationExists' => true,
-                'message' => 'You have already applied for this job with the provided email or NRC.',
-                'redirectUrl' => route('job-applications.index'),
+                'message' => 'An application already exists for this job with the provided email or NRC. Do you want to save another application?',
             ]);
         }
+
+        // dd('hi');
 
         [$jobApp, $blacklistMatch] = DB::transaction(function () use ($request) {
             $job = RecruitJob::findOrFail($request->job_id);
@@ -226,6 +230,10 @@ class JobApplicationController extends AccountBaseController
         $interviewer = [];
         $this->application = RecruitJobApplication::with('job', 'applicationStatus', 'location', 'source', 'comments', 'comments.user', 'files')->findOrFail($id);
         $scheduleData = RecruitInterviewSchedule::with('employees')->where('recruit_job_application_id', $id)->first();
+
+        $mangementRankId = $this->application->management_rank_level;
+        $managementRank = ManagementRank::where('id', $mangementRankId)->first();
+        $this->managementRank = $managementRank->name ?? null;
 
         $this->currencySymbol = Currency::where('id', '=', $this->application->job->currency_id)->first();
 
@@ -366,6 +374,8 @@ class JobApplicationController extends AccountBaseController
             || ($this->editPermission == 'both' && user()->id == $jobApp->job->recruiter_id)
             || $jobApp->added_by == user()->id));
 
+        // dd($request->notice_period);
+
         $oldStatusId = $jobApp->recruit_application_status_id;
 
         $blacklistMatch = DB::transaction(function () use ($jobApp, $request) {
@@ -444,6 +454,13 @@ class JobApplicationController extends AccountBaseController
             )->format('Y-m-d')
             : null;
 
+        $jobApp->job_applied_date = $request->filled('job_applied_date')
+            ? Carbon::createFromFormat(
+                $this->company->date_format,
+                $request->job_applied_date
+            )->format('Y-m-d')
+            : null;
+
         $jobApp->rank_level = $job->rank_level;
         $jobApp->management_rank_level = $job->management_rank_level;
         $jobApp->marital_status =
@@ -509,10 +526,12 @@ class JobApplicationController extends AccountBaseController
             ? $request->job_offer_decision_reason
             : null;
 
-        // dd($request->all());
+
 
         $jobApp->is_blacklisted = $request->blacklist == 1 ? 1 : 0;
         $jobApp->blacklist_reason = $request->blacklist_reason;
+
+        // dd($jobApp->notice_period);
     }
 
     private function cleanWorkExperience(array $rows): array
